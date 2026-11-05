@@ -47,7 +47,7 @@ See the root [README](../README.md) for a concise tree and commands. The backend
 - [x] Health endpoints return correct responses — readiness and liveness returned HTTP 200 / `UP` with Flyway enabled.
 - [x] API documentation works — `/v3/api-docs` returned HTTP 200 with OpenAPI 3.1.0 and `/swagger-ui.html` returned HTTP 200.
 - [x] GitHub Actions workflows pass — backend, frontend, and infrastructure workflows all succeeded on `main`.
-- [x] No high-confidence secrets detected in repository history — all six reachable commits were scanned; `.env` is ignored and is not tracked. Pattern scanning does not guarantee detection of every possible secret format.
+- [x] No high-confidence secrets detected in repository history — all seven reachable commits before this final checklist-only commit were scanned; `.env` is ignored and is not tracked. Pattern scanning does not guarantee detection of every possible secret format.
 - [x] No paid infrastructure activated — no hosted service was provisioned.
 - [x] All Phase 1 documentation created.
 
@@ -62,9 +62,9 @@ Verified locally:
 
 Not verified:
 
-- Scanning outside the six reachable Git commits or detecting unrecognized/obfuscated secret formats.
+- Scanning outside the seven scanned Git commits or detecting unrecognized/obfuscated secret formats.
 
-The configured Supabase project connection succeeded over TLS. After isolating application data in the `railconnect` schema, `mvn verify` passed: six unit tests and four integration tests, including PostgreSQL connectivity, Flyway migration, API health, and authorization checks. Flyway applied V1 without baselining or changing the existing `public` schema. Backend and frontend GitHub Actions runs passed on commit `21cd0f2`; the infrastructure workflow passed on commit `cc92f98`, including full Compose startup, API health/OpenAPI probes, and teardown. Six reachable commits were scanned for high-confidence secret patterns with no matches; `.env` remains ignored and untracked. No paid infrastructure was provisioned.
+The configured Supabase project connection succeeded over TLS. After isolating application data in the `railconnect` schema, `mvn verify` passed: six unit tests and four integration tests, including PostgreSQL connectivity, Flyway migration, API health, and authorization checks. Flyway applied V1 without baselining or changing the existing `public` schema. Backend and frontend GitHub Actions runs passed on commit `21cd0f2`; the infrastructure workflow passed on commit `cc92f98`, including full Compose startup, API health/OpenAPI probes, and teardown. Seven reachable commits before this final documentation-only commit were scanned for high-confidence secret patterns with no matches; `.env` remains ignored and untracked. No paid infrastructure was provisioned.
 
 ## Phase boundary
 
