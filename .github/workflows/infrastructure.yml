@@ -30,17 +30,15 @@ jobs:
           sed -i 's/^RAILCONNECT_DB_USERNAME=.*/RAILCONNECT_DB_USERNAME=ci_user/' .env
           sed -i 's/^RAILCONNECT_DB_PASSWORD=.*/RAILCONNECT_DB_PASSWORD=ci_password/' .env
           docker compose config --quiet
-      - name: Build backend container
-        run: docker build -f infrastructure/docker/backend.Dockerfile backend/railconnect-core
-      - name: Build frontend containers
-        shell: bash
+      - name: Start Docker Compose stack
         run: |
-          set -euo pipefail
-          for app in passenger-web admin-portal operations-portal; do
-            docker build \
-              -f infrastructure/docker/frontend.Dockerfile \
-              --build-arg "APP_WORKSPACE=@railconnect/${app}" \
-              --build-arg "APP_PATH=apps/${app}" \
-              --build-arg "NEXT_PUBLIC_API_BASE_URL=http://localhost:8080" \
-              .
-          done
+          docker compose up --build --detach --wait --wait-timeout 240
+      - name: Verify API health and documentation
+        run: |
+          curl --fail --retry 12 --retry-delay 5 http://localhost:8080/api/v1/health/readiness
+          curl --fail http://localhost:8080/api/v1/health/liveness
+          curl --fail http://localhost:8080/v3/api-docs
+          curl --fail http://localhost:8080/swagger-ui.html
+      - name: Stop Docker Compose stack
+        if: always()
+        run: docker compose down --volumes
