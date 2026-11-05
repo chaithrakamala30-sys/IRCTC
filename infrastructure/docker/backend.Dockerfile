@@ -1,7 +1,7 @@
 FROM maven:3.9.15-eclipse-temurin-25 AS build
 WORKDIR /workspace
-COPY pom.xml .
-COPY src ./src
+COPY backend/railconnect-core/pom.xml ./pom.xml
+COPY backend/railconnect-core/src ./src
 RUN mvn --batch-mode --no-transfer-progress -DskipTests package
 
 FROM eclipse-temurin:25-jre-alpine
