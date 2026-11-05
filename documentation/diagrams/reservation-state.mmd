@@ -1,0 +1,24 @@
+stateDiagram-v2
+  [*] --> REQUESTED
+  REQUESTED --> HELD: atomic inventory allocated
+  REQUESTED --> RAC: approved policy and passenger accepts
+  REQUESTED --> WAITLISTED: approved policy and passenger accepts
+  REQUESTED --> REJECTED: invalid / unavailable
+  HELD --> PAYMENT_PENDING: payment required
+  HELD --> CONFIRMED: zero-value approved path
+  HELD --> EXPIRED: persisted TTL reached
+  HELD --> PAYMENT_FAILED: verified failure
+  PAYMENT_PENDING --> CONFIRMED: verified success + valid allocation
+  PAYMENT_PENDING --> PAYMENT_FAILED: verified failure
+  PAYMENT_PENDING --> EXPIRED: approved timeout and reconciliation
+  PAYMENT_PENDING --> PAYMENT_PENDING: ambiguous / delayed callback
+  CONFIRMED --> CANCEL_PENDING: eligible cancellation requested
+  CANCEL_PENDING --> CANCELLED: cancellation committed
+  CONFIRMED --> DISRUPTED: operational disruption recorded
+  WAITLISTED --> HELD: eligible promotion offer
+  RAC --> CONFIRMED: approved allocation transition
+  REJECTED --> [*]
+  EXPIRED --> [*]
+  PAYMENT_FAILED --> [*]
+  CANCELLED --> [*]
+  DISRUPTED --> [*]

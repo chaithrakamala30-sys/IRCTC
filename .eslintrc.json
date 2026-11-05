@@ -1,0 +1,16 @@
+{
+  "root": true,
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript"
+  ],
+  "rules": {
+    "@next/next/no-html-link-for-pages": "off"
+  },
+  "ignorePatterns": [
+    "**/.next/**",
+    "**/out/**",
+    "**/node_modules/**",
+    "apps/**/next-env.d.ts"
+  ]
+}

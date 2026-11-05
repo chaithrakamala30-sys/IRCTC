@@ -1,0 +1,44 @@
+{
+  "name": "railconnect",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev:passenger": "npm run dev --workspace @railconnect/passenger-web -- -p 3001",
+    "dev:admin": "npm run dev --workspace @railconnect/admin-portal -- -p 3002",
+    "dev:operations": "npm run dev --workspace @railconnect/operations-portal -- -p 3003",
+    "build": "npm run build --workspaces --if-present",
+    "build:passenger": "npm run build --workspace @railconnect/passenger-web",
+    "build:admin": "npm run build --workspace @railconnect/admin-portal",
+    "build:operations": "npm run build --workspace @railconnect/operations-portal",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "lint": "eslint apps packages",
+    "check:frontend": "npm run lint && npm run typecheck && npm run build"
+  },
+  "devDependencies": {
+    "autoprefixer": "10.4.22",
+    "@types/node": "22.19.1",
+    "@types/react": "19.1.17",
+    "@types/react-dom": "19.1.11",
+    "eslint": "8.57.1",
+    "eslint-config-next": "15.5.29",
+    "postcss": "8.5.32",
+    "tailwindcss": "3.4.19",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  },
+  "overrides": {
+    "minimatch": "11.0.4",
+    "postcss": "8.5.32"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

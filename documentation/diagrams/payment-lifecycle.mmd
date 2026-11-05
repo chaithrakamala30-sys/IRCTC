@@ -1,0 +1,16 @@
+stateDiagram-v2
+  [*] --> CREATED
+  CREATED --> REQUIRES_ACTION
+  CREATED --> PENDING
+  REQUIRES_ACTION --> PENDING
+  PENDING --> SUCCEEDED: verified provider status
+  PENDING --> FAILED: verified provider status
+  PENDING --> EXPIRED: verified timeout policy
+  PENDING --> UNKNOWN: provider cannot be reached
+  UNKNOWN --> PENDING: retry / reconciliation
+  UNKNOWN --> SUCCEEDED: verified query or callback
+  UNKNOWN --> FAILED: verified query or callback
+  SUCCEEDED --> REFUND_PENDING: authorized refund request
+  REFUND_PENDING --> PARTIALLY_REFUNDED: verified partial refund
+  REFUND_PENDING --> REFUNDED: verified full refund
+  REFUND_PENDING --> REFUND_PENDING: provider outcome unknown

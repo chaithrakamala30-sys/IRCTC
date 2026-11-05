@@ -1,0 +1,17 @@
+sequenceDiagram
+  autonumber
+  participant API as Modular monolith
+  participant DB as PostgreSQL
+  participant W as Outbox worker
+  participant N as Notification adapter
+  participant S as Search/reporting projection
+  API->>DB: Begin business transaction
+  API->>DB: Persist reservation/payment state + outbox event
+  DB-->>API: Commit atomically
+  W->>DB: Claim event with lease / SKIP LOCKED
+  W->>N: Deliver idempotently
+  N-->>W: Accepted / retryable failure
+  W->>DB: Mark delivered or schedule bounded retry
+  W->>S: Project versioned event asynchronously
+  S-->>W: Acknowledge offset/watermark
+  Note over DB,S: Projection lag is observable; source-of-truth remains PostgreSQL

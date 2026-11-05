@@ -1,0 +1,94 @@
+sequenceDiagram
+  autonumber
+  participant U as Passenger
+  participant A as API
+  participant D as PostgreSQL
+  participant P as Payment provider
+  U->>A: POST booking + Idempotency-Key
+  A->>D: Begin; lock idempotency/quota; select seats
+  D->>D: Constraint-protected holds + reservation + payment intent + outbox
+  D-->>A: Commit hold
+  A->>P: Create payment session (after commit)
+  P-->>A: Session reference
+  A-->>U: PAYMENT_PENDING + expiry
+  U->>P: Complete provider checkout
+  P->>A: Signed success callback
+  A->>D: Verify, dedupe, lock and confirm reservation/allocation
+  D-->>A: Commit ledger, ticket/PNR and outbox
+  A-->>P: Acknowledge durable event
+
+sequenceDiagram
+  autonumber
+  participant U as Passenger
+  participant A as API
+  participant D as PostgreSQL
+  participant P as Provider
+  U->>A: Create booking
+  A->>D: Commit hold and pending payment intent
+  A->>P: Create payment session
+  P-->>U: Payment declined
+  P->>A: Signed failure callback (may be delayed)
+  A->>D: Dedupe event; mark payment failed; release hold
+  D-->>A: Commit
+  A-->>U: Failed / released; retry requires new booking
+
+sequenceDiagram
+  autonumber
+  participant U as Passenger
+  participant A as API
+  participant D as PostgreSQL
+  U->>A: POST booking key K, payload H
+  A->>D: Insert unique principal+K; create booking
+  D-->>A: Commit result R
+  A-->>U: Return R
+  U->>A: Retry key K, payload H after timeout
+  A->>D: Read idempotency record
+  D-->>A: Same hash, stored result R
+  A-->>U: Return same R; no duplicate allocation
+
+sequenceDiagram
+  autonumber
+  participant P as Provider
+  participant A as Webhook API
+  participant D as PostgreSQL
+  participant W as Reconciler
+  P--xA: Success callback delayed / delivery unavailable
+  Note over D: Reservation remains PAYMENT_PENDING; no false confirmation
+  W->>D: Find aged UNKNOWN/PENDING payment
+  W->>P: Query provider status
+  P-->>W: Verified succeeded status
+  W->>D: Lock payment/hold; validate amount and hold/inventory
+  alt Inventory still safely held
+    D->>D: Commit SUCCEEDED + CONFIRMED + ticket/outbox
+  else Hold expired or berth reallocated
+    D->>D: Record paid exception and refund/recovery obligation
+  end
+
+sequenceDiagram
+  autonumber
+  participant U as Passenger
+  participant A as API
+  participant D as PostgreSQL
+  participant P as Provider
+  U->>A: Cancel reservation (idempotency key)
+  A->>D: Lock reservation; evaluate versioned rule
+  D->>D: Commit CANCELLED + release inventory + refund obligation + outbox
+  A->>P: Request refund after commit
+  P-->>A: Refund reference / pending
+  A->>D: Persist refund result idempotently
+  A-->>U: Cancellation committed; refund status pending/known
+
+sequenceDiagram
+  autonumber
+  participant W as Waitlist worker
+  participant D as PostgreSQL
+  participant U as Passenger
+  W->>D: Lock next eligible queue entry (SKIP LOCKED)
+  W->>D: Recheck policy, passenger eligibility and available inventory
+  alt Eligible and inventory available
+    W->>D: Create bounded offer/hold and outbox event
+    D-->>W: Commit
+    W-->>U: Notify promotion offer / next action
+  else Not eligible or no inventory
+    W->>D: Record policy outcome and continue/stop per rule version
+  end

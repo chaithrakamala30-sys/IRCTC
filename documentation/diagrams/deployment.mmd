@@ -1,0 +1,28 @@
+flowchart TB
+  subgraph Dev["Local development / CI"]
+    FE[Next.js static build]
+    BE[Spring Boot container]
+    PG[(Disposable PostgreSQL)]
+    FE --> BE --> PG
+    TEST[Test payment adapter]
+    BE --> TEST
+  end
+  subgraph Demo["Optional free preview — synthetic data only"]
+    EDGE[Cloudflare Pages static assets]
+    APP[Render Free web service; sleeps / ephemeral FS]
+    DB[(Supabase Free DB; pauses / limited)]
+    EDGE -->|HTTPS API| APP --> DB
+  end
+  subgraph Future["Future production reference — NOT approved or free"]
+    CDN[Static CDN]
+    LB[Load balancer / gateway]
+    API[Stateless app replicas]
+    DATA[(Durable PostgreSQL + independent backups)]
+    OUT[Outbox workers]
+    PAY[Approved payment provider]
+    CDN --> LB --> API --> DATA
+    API --> PAY
+    DATA --> OUT
+  end
+  Dev -. no real data .-> Demo
+  Demo -. only after separate cost/security approval .-> Future

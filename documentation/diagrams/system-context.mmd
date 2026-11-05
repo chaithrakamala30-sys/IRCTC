@@ -1,0 +1,12 @@
+flowchart LR
+  P[Passenger browser] -->|HTTPS| CDN[Static web delivery]
+  A[Admin / operations browser] -->|HTTPS + MFA| CDN
+  CDN -->|Versioned REST API| API[Spring Boot modular monolith]
+  API -->|Transactions / constraints| DB[(PostgreSQL source of truth)]
+  API -. disposable cache only .-> R[(Optional Redis)]
+  API --> O[Transactional outbox]
+  O --> W[Durable worker loop]
+  W --> N[Notification adapter]
+  API -->|Provider abstraction; later| PG[Authorized payment provider]
+  PG -->|Signed callback| API
+  DB --> S[Search / reporting projections]

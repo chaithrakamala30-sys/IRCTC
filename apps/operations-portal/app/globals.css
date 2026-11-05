@@ -1,0 +1,86 @@
+@import "@railconnect/ui/styles.css";
+
+.ops-shell {
+  min-height: 100vh;
+}
+
+.ops-header {
+  align-items: center;
+  background: #102b50;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  min-height: 74px;
+  padding: 14px max(24px, calc((100vw - 1200px) / 2));
+}
+
+.ops-header .brand,
+.ops-header .brand-copy span,
+.ops-header .portal-nav-link {
+  color: #e3edfb;
+}
+
+.ops-header .brand-mark {
+  background: white;
+  border-color: #cee0fa;
+  color: #1056b5;
+}
+
+.ops-main {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 42px 24px;
+}
+
+.ops-title {
+  margin-bottom: 24px;
+}
+
+.ops-title h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.045em;
+  margin: 8px 0;
+}
+
+.ops-title > p:last-child {
+  color: var(--color-muted);
+}
+
+.ops-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1.2fr 0.8fr;
+}
+
+.ops-card h2 {
+  font-size: 1.08rem;
+  margin: 0 0 8px;
+}
+
+.ops-card p {
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.ops-unavailable {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .ops-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 18px;
+  }
+
+  .ops-main {
+    padding: 28px 16px;
+  }
+
+  .ops-grid {
+    grid-template-columns: 1fr;
+  }
+}

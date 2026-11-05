@@ -1,0 +1,24 @@
+erDiagram
+  STATION ||--o{ TRAIN_STOP : appears_at
+  TRAIN ||--o{ ROUTE_VERSION : has
+  ROUTE_VERSION ||--|{ TRAIN_STOP : orders
+  TRAIN ||--o{ OPERATING_SCHEDULE : operates
+  ROUTE_VERSION ||--o{ OPERATING_SCHEDULE : scheduled_as
+  OPERATING_SCHEDULE ||--o{ TRAIN_RUN : creates
+  ROUTE_VERSION ||--o{ TRAIN_RUN : frozen_into
+  TRAIN_RUN ||--|{ RUN_STOP : snapshots
+  STATION ||--o{ RUN_STOP : serves
+  TRAIN_RUN ||--o{ RUN_SEAT : contains
+  COACH_TEMPLATE ||--|{ COACH_TEMPLATE_SEAT : defines
+  TRAIN_RUN ||--o{ RESERVATION_SEGMENT : journey_for
+  RESERVATION ||--|{ RESERVATION_SEGMENT : contains
+  RESERVATION ||--|{ RESERVATION_PASSENGER : includes
+  RESERVATION_PASSENGER ||--o{ SEAT_ALLOCATION : assigned
+  RUN_SEAT ||--o{ SEAT_ALLOCATION : allocated
+  RESERVATION ||--o{ PAYMENT_ATTEMPT : paid_by
+  PAYMENT_ATTEMPT ||--o{ PAYMENT_PROVIDER_EVENT : receives
+  PAYMENT_ATTEMPT ||--o{ REFUND : refunded
+  RESERVATION ||--o{ TICKET : issues
+  TRAIN_RUN ||--o{ QUOTA_INVENTORY : governed_by
+  RULE_VERSION ||--o{ FARE_QUOTE : computes
+  RESERVATION ||--o{ FARE_QUOTE : based_on

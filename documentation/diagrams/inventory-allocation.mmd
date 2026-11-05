@@ -1,0 +1,29 @@
+sequenceDiagram
+  autonumber
+  participant C1 as Booking request A
+  participant C2 as Booking request B
+  participant DB as PostgreSQL
+  C1->>DB: Begin; lock quota; select seat S for [2,5)
+  C2->>DB: Begin; lock quota; select same candidate S
+  Note over DB: Row lock / SKIP LOCKED serializes selection
+  C1->>DB: Insert HELD allocation (run R, seat S, [2,5))
+  C2->>DB: Insert competing overlapping allocation
+  DB-->>C2: Exclusion constraint conflict; rollback all writes
+  DB-->>C1: Commit hold + reservation + idempotency + outbox
+  C2-->>C2: Bounded retry for another seat or typed conflict
+
+sequenceDiagram
+  autonumber
+  participant X as Expiry worker
+  participant B as Booking transaction
+  participant DB as PostgreSQL
+  X->>DB: Select expired HELD rows FOR UPDATE SKIP LOCKED
+  B->>DB: Lock candidate allocation; recheck expires_at using DB time
+  alt Expiry worker transitions first
+    X->>DB: Mark hold/allocation EXPIRED; commit
+    B->>DB: Re-select inventory; cannot reuse released seat without new lock
+  else Booking safely confirms before expiry
+    B->>DB: Transition HELD to CONFIRMED; commit
+    X->>DB: Recheck state; skip confirmed allocation
+  end
+  Note over DB: Expired state is explicit; time is not used in partial index predicate

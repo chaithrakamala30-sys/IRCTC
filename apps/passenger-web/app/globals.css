@@ -1,0 +1,321 @@
+@import "@railconnect/ui/styles.css";
+
+.passenger-mobile,
+.passenger-laptop {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 28px 24px 0;
+}
+
+.mobile-topline,
+.laptop-topline {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.mobile-main {
+  display: grid;
+  gap: 18px;
+  padding-bottom: 84px;
+}
+
+.mobile-hero {
+  background:
+    radial-gradient(circle at 90% 10%, rgb(255 255 255 / 28%), transparent 32%),
+    linear-gradient(142deg, #0b397a 0%, #1056b5 58%, #2d7cc4 100%);
+  border-radius: 22px;
+  color: white;
+  min-height: 235px;
+  overflow: hidden;
+  padding: 25px 22px;
+  position: relative;
+}
+
+.mobile-hero::after {
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 50%;
+  content: "";
+  height: 190px;
+  position: absolute;
+  right: -78px;
+  top: 79px;
+  width: 190px;
+}
+
+.mobile-hero h1 {
+  font-size: clamp(2rem, 9vw, 2.7rem);
+  letter-spacing: -0.05em;
+  line-height: 1.04;
+  margin: 20px 0 11px;
+  max-width: 11ch;
+}
+
+.mobile-hero p {
+  color: #e0edff;
+  margin: 0;
+  max-width: 36ch;
+}
+
+.mobile-hero .eyebrow {
+  color: #ffd9a8;
+}
+
+.eyebrow {
+  color: var(--color-brand);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.mobile-card h2,
+.laptop-card h2 {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+
+.mobile-card p,
+.laptop-card p {
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.mobile-status-card {
+  align-items: flex-start;
+  display: flex;
+  gap: 13px;
+}
+
+.status-icon {
+  align-items: center;
+  background: #e9f2ff;
+  border-radius: 12px;
+  color: var(--color-brand);
+  display: inline-flex;
+  flex: 0 0 42px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  height: 42px;
+  justify-content: center;
+}
+
+.mobile-nav {
+  backdrop-filter: blur(16px);
+  background: rgb(255 255 255 / 95%);
+  border: 1px solid var(--color-border);
+  border-radius: 17px;
+  bottom: 12px;
+  box-shadow: var(--shadow-card);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  left: 12px;
+  padding: 8px;
+  position: fixed;
+  right: 12px;
+  z-index: 5;
+}
+
+.mobile-nav a {
+  border-radius: 10px;
+  color: var(--color-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 9px 5px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.mobile-nav a[aria-current="page"] {
+  background: #eaf2ff;
+  color: var(--color-brand);
+}
+
+.laptop-main {
+  padding-top: 40px;
+}
+
+.laptop-hero {
+  align-items: center;
+  background:
+    radial-gradient(ellipse at 86% 44%, rgb(217 119 36 / 16%), transparent 37%),
+    linear-gradient(110deg, #f8fbff 0%, #eaf2fd 100%);
+  border: 1px solid #dfe9f6;
+  border-radius: 30px;
+  display: grid;
+  gap: 40px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.7fr);
+  min-height: 380px;
+  overflow: hidden;
+  padding: 54px;
+}
+
+.laptop-hero-copy h1 {
+  font-size: clamp(2.8rem, 5vw, 4.25rem);
+  letter-spacing: -0.055em;
+  line-height: 1.02;
+  margin: 20px 0;
+  max-width: 10ch;
+}
+
+.laptop-hero-copy h1 span {
+  color: var(--color-accent);
+}
+
+.laptop-hero-copy > p:not(.eyebrow) {
+  color: var(--color-muted);
+  font-size: 1.08rem;
+  max-width: 52ch;
+}
+
+.route-illustration {
+  align-items: center;
+  background: white;
+  border: 1px solid #d9e4f2;
+  border-radius: 25px;
+  box-shadow: 0 22px 65px rgb(18 36 67 / 12%);
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  min-height: 220px;
+  padding: 28px;
+  position: relative;
+}
+
+.route-line {
+  background: linear-gradient(90deg, #1d67be, #d97724);
+  height: 3px;
+  position: absolute;
+  right: 25%;
+  top: 50%;
+  width: 50%;
+}
+
+.route-stop {
+  align-items: center;
+  background: #1056b5;
+  border: 6px solid #dceaff;
+  border-radius: 50%;
+  color: white;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 800;
+  height: 56px;
+  justify-content: center;
+  position: relative;
+  width: 56px;
+  z-index: 1;
+}
+
+.route-stop:last-child {
+  background: var(--color-accent);
+  border-color: #fff0dd;
+}
+
+.laptop-details {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 22px;
+}
+
+.laptop-card {
+  min-height: 146px;
+}
+
+.laptop-footer {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.switch-actions {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.device-router {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  margin: 12vh auto;
+  max-width: 620px;
+  padding: 24px;
+  text-align: center;
+}
+
+.device-router h1 {
+  font-size: 2rem;
+  margin: 12px 0 0;
+}
+
+.device-router p {
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.device-router-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.page-message {
+  margin: 15vh auto;
+  max-width: 560px;
+  padding: 24px;
+}
+
+.page-message h1 {
+  font-size: 2rem;
+  margin: 0 0 10px;
+}
+
+.page-message p {
+  color: var(--color-muted);
+}
+
+@media (max-width: 760px) {
+  .passenger-mobile,
+  .passenger-laptop {
+    padding: 16px 16px 0;
+  }
+
+  .mobile-topline {
+    margin-bottom: 15px;
+  }
+
+  .passenger-laptop {
+    padding-top: 14px;
+  }
+
+  .laptop-hero {
+    gap: 24px;
+    grid-template-columns: 1fr;
+    padding: 28px 22px;
+  }
+
+  .laptop-hero-copy h1 {
+    font-size: 2.7rem;
+  }
+
+  .route-illustration {
+    min-height: 150px;
+  }
+
+  .laptop-details {
+    grid-template-columns: 1fr;
+  }
+
+  .laptop-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+}

@@ -1,0 +1,35 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+dist/
+target/
+build/
+coverage/
+*.tsbuildinfo
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+!.env.local.example
+*.pem
+*.key
+
+# Java / IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+*.class
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+*.tmp
+backend/railconnect-core/$out
+
+# Local persistence
+data/
+postgres-data/
+redis-data/

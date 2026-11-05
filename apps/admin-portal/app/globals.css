@@ -1,0 +1,98 @@
+@import "@railconnect/ui/styles.css";
+
+.admin-shell {
+  min-height: 100vh;
+}
+
+.admin-header {
+  align-items: center;
+  background: #102b50;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  min-height: 74px;
+  padding: 14px max(24px, calc((100vw - 1200px) / 2));
+}
+
+.admin-header .brand,
+.admin-header .brand-copy span,
+.admin-header .portal-nav-link {
+  color: #e3edfb;
+}
+
+.admin-header .brand-mark {
+  background: #fff;
+  border-color: #cee0fa;
+  color: #1056b5;
+}
+
+.admin-main {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 42px 24px;
+}
+
+.admin-title-row {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.admin-title-row h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.045em;
+  margin: 8px 0 0;
+}
+
+.admin-title-row p {
+  color: var(--color-muted);
+  margin: 8px 0 0;
+}
+
+.admin-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-card {
+  min-height: 166px;
+}
+
+.admin-card h2 {
+  font-size: 1.05rem;
+  margin: 0 0 9px;
+}
+
+.admin-card p {
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.admin-card .status-pill {
+  margin-top: 20px;
+}
+
+@media (max-width: 760px) {
+  .admin-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 18px;
+  }
+
+  .admin-main {
+    padding: 28px 16px;
+  }
+
+  .admin-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+}
