@@ -43,11 +43,11 @@ See the root [README](../README.md) for a concise tree and commands. The backend
 - [x] Backend builds without errors (Java 17 unit tests and JAR packaging passed).
 - [x] PostgreSQL connection verified — Flyway connected to Supabase PostgreSQL 17.11 over TLS.
 - [x] Flyway migration successfully executed — V1 ran in the dedicated `railconnect` schema; `mvn verify` confirmed the metadata table and Flyway history.
-- [ ] Docker Compose starts successfully — Docker/Compose unavailable.
+- [x] Docker Compose starts successfully — GitHub Actions built and started the full Compose stack; API readiness/liveness and OpenAPI/Swagger probes passed; CI shut the stack down afterward.
 - [x] Health endpoints return correct responses — readiness and liveness returned HTTP 200 / `UP` with Flyway enabled.
 - [x] API documentation works — `/v3/api-docs` returned HTTP 200 with OpenAPI 3.1.0 and `/swagger-ui.html` returned HTTP 200.
-- [ ] GitHub Actions workflows pass — the GitHub repository is empty and no workflow runs exist. The SSH remote is configured, but GitHub rejected the available SSH identity (`Permission denied (publickey)`), so the project could not be pushed.
-- [x] No secrets committed in the current repository history — the initial 135-file commit passed a credential-pattern scan; local `.env` is ignored and was not staged. This does not establish anything about secrets in external systems or prior GitHub history.
+- [x] GitHub Actions workflows pass — backend, frontend, and infrastructure workflows all succeeded on `main`.
+- [x] No high-confidence secrets detected in repository history — all five reachable commits were scanned; `.env` is ignored and is not tracked. Pattern scanning does not guarantee detection of every possible secret format.
 - [x] No paid infrastructure activated — no hosted service was provisioned.
 - [x] All Phase 1 documentation created.
 
@@ -62,10 +62,9 @@ Verified locally:
 
 Not verified:
 
-- Docker Compose validation/builds.
-- Execution of GitHub Actions workflows: the remote `chaithrakamala30-sys/IRCTC` was empty at inspection, and GitHub rejected the push with HTTP 403 (`Permission denied` to the authenticated account).
+- Scanning outside the five reachable Git commits or detecting unrecognized/obfuscated secret formats.
 
-The configured Supabase project connection succeeded over TLS. After isolating application data in the `railconnect` schema, `mvn verify` passed: six unit tests and four integration tests, including PostgreSQL connectivity, Flyway migration, API health, and authorization checks. Flyway applied V1 without baselining or changing the existing `public` schema. A runtime launch with Flyway enabled also confirmed readiness/liveness and Swagger/OpenAPI. The project was committed locally as `a417338`; a credential-pattern scan found no high-confidence secrets in the committed source, and `.env` remained ignored and uncommitted. The origin is configured as `git@github.com:chaithrakamala30-sys/IRCTC.git`, but GitHub rejected the available SSH key with `Permission denied (publickey)`. CI is configured to run backend integration tests against ephemeral PostgreSQL and validate/build Docker images, but those workflows have not been executed. Close the remaining acceptance gates with Docker/Compose and a successful push from an SSH key authorized for the repository.
+The configured Supabase project connection succeeded over TLS. After isolating application data in the `railconnect` schema, `mvn verify` passed: six unit tests and four integration tests, including PostgreSQL connectivity, Flyway migration, API health, and authorization checks. Flyway applied V1 without baselining or changing the existing `public` schema. Backend and frontend GitHub Actions runs passed on commit `21cd0f2`; the infrastructure workflow passed on commit `cc92f98`, including full Compose startup, API health/OpenAPI probes, and teardown. Five reachable commits were scanned for high-confidence secret patterns with no matches; `.env` remains ignored and untracked. No paid infrastructure was provisioned.
 
 ## Phase boundary
 
