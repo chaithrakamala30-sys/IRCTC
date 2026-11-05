@@ -4,6 +4,7 @@ import {
   PortalNavigation,
   type NavigationItem,
 } from "@railconnect/ui";
+import Link from "next/link";
 
 const navigationItems: NavigationItem[] = [
   { href: "/laptop", label: "Home" },
@@ -20,9 +21,17 @@ export function PassengerHeader({ experience }: PassengerHeaderProps) {
     <header className="site-header">
       <Brand href={`/${experience}`} />
       {experience === "laptop" ? (
-        <PortalNavigation activeHref="/laptop" items={navigationItems} />
+        <div className="passenger-header-actions">
+          <PortalNavigation activeHref="/laptop" items={navigationItems} />
+          <Link className="button button--secondary" href="/laptop/login">Sign in</Link>
+          <Link className="button button--primary" href="/laptop/register">Create account</Link>
+        </div>
       ) : (
-        <DeviceExperienceSwitch current={experience} />
+        <div className="passenger-header-actions">
+          <DeviceExperienceSwitch current={experience} />
+          <Link className="header-account-link" href="/mobile/login">Sign in</Link>
+          <Link className="header-account-link" href="/mobile/register">Join</Link>
+        </div>
       )}
     </header>
   );

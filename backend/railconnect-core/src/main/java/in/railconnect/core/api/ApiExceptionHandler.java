@@ -1,6 +1,7 @@
 package in.railconnect.core.api;
 
 import jakarta.validation.ConstraintViolationException;
+import in.railconnect.core.identity.IdentityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -60,6 +61,16 @@ public class ApiExceptionHandler {
             PayloadTooLargeException exception
     ) {
         return requestTooLarge();
+    }
+
+    @ExceptionHandler(IdentityException.class)
+    public ResponseEntity<ApiEnvelope<Void>> handleIdentityException(IdentityException exception) {
+        return failure(
+                exception.status(),
+                exception.code(),
+                exception.getMessage(),
+                List.of()
+        );
     }
 
     @ExceptionHandler(Exception.class)

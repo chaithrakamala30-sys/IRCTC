@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "export",
   poweredByHeader: false,
-  transpilePackages: ["@railconnect/ui"],
+  transpilePackages: ["@railconnect/api", "@railconnect/ui"],
 };
 
 export default nextConfig;

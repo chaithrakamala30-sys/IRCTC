@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@railconnect/api": "0.1.0",
     "@railconnect/ui": "0.1.0",
     "next": "15.5.29",
     "react": "19.1.10",

@@ -52,11 +52,11 @@ describe("apiFetch", () => {
     const response = await apiFetch<{ status: string }>("/api/v1/health");
 
     expect(response.data).toEqual({ status: "UP" });
-    expect(fetch).toHaveBeenCalledWith(
-      "http://localhost:8080/api/v1/health",
-      expect.objectContaining({
-        headers: { Accept: "application/json" },
-      }),
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const requestInit = vi.mocked(fetch).mock.calls[0]?.[1];
+    expect(requestInit?.credentials).toBe("include");
+    expect(new Headers(requestInit?.headers).get("Accept")).toBe(
+      "application/json",
     );
   });
 
