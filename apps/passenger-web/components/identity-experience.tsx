@@ -169,7 +169,7 @@ export function PassengerIdentityExperience({
                   <input
                     autoComplete="tel"
                     name="mobileNumber"
-                    pattern="^\+[1-9][0-9\s().-]{6,20}$"
+                    pattern="^\+[1-9](?:[0-9]|\s|\x28|\x29|\.|\x2d){6,20}$"
                     placeholder="+14155552671"
                     required
                     type="tel"

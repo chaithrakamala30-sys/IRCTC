@@ -1,6 +1,6 @@
 # Implementation roadmap — Phases 1–20
 
-This is a dependency-ordered proposal. Phase 1 was explicitly approved and completed as a foundation; Phase 2 and later phases are not authorized. Each phase has its own acceptance gate. Real inventory, real payments, and external railway integrations remain off until their separate gates pass.
+This is a dependency-ordered proposal. Phases 1 and 2 were explicitly approved. Phase 1 is complete; Phase 2 identity and access-control implementation is present, with database-backed validation still pending. Phase 3 and later phases are not authorized. Each phase has its own acceptance gate. Real inventory, real payments, and external railway integrations remain off until their separate gates pass.
 
 ## Phase summary
 
@@ -36,10 +36,10 @@ This is a dependency-ordered proposal. Phase 1 was explicitly approved and compl
 - **Tests/exit:** clean build, lint/typecheck/unit test, local DB startup and teardown, CI green from clean checkout; generated artifacts reproducible. **DB changes:** none.
 
 ### Phase 2 — Identity and access control
-- **Scope/files:** identity-access module, session service, password/MFA workflow, role/permission and resource-scope model.
-- **Database/API:** users, credentials, sessions, MFA, roles/permissions, audit baseline; `/auth/*`, `/me`, admin identity endpoints.
-- **Security:** Argon2id benchmark, CSRF/session rotation, recovery, enumeration resistance, privileged MFA.
-- **Tests/exit:** auth/session tests, IDOR/role/scope negative matrix, revocation and lockout tested; privacy fields approved.
+- **Scope/files:** implemented identity module, persistent browser sessions, passenger registration/login/profile pages, separate mobile/laptop webpages, and admin identity console.
+- **Database/API:** V2 migration defines users, role/permission grants, sessions, throttles, authentication events, audit logs, recovery/MFA groundwork, and Spring Session JDBC tables. Authentication, profile, session, MFA-placeholder, and admin identity endpoints are documented in [identity API reference](identity-api-reference.md).
+- **Security:** Argon2id password hashing, CSRF tokens, session-ID rotation, server-side session revocation, generic registration/login responses, request throttles, recent-authentication checks for sensitive staff changes, and bootstrap-only initial Super Administrator. Password recovery and MFA delivery/enrollment are explicitly unavailable.
+- **Tests/exit:** Java unit tests and frontend tests/builds pass. Database-backed flow tests are authored but not executed; Docker is unavailable in the current environment and V2 has not been applied. Phase 2 is therefore implemented but not fully validated. See [Phase 2 testing report](phase-2-testing-report.md); do not proceed to Phase 3 until database-backed validation and the remaining acceptance decisions are completed.
 
 ### Phase 3 — Station and train catalogue
 - **Scope/files:** railway-catalog domain/services/repositories, admin draft/review/publish flows.

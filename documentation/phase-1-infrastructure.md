@@ -68,4 +68,4 @@ The configured Supabase project connection succeeded over TLS. After isolating a
 
 ## Phase boundary
 
-Stop after Phase 1. Phase 2 identity/RBAC implementation requires explicit approval. Do not load real passenger data, add fake availability, enable payment, or deploy a production service.
+Phase 1 is complete. Phase 2 identity/RBAC implementation was explicitly approved and is documented in the Phase 2 guides. Its database-backed verification is still pending; do not proceed to Phase 3. Do not load real passenger data, add fake availability, enable payment, or deploy a production service.

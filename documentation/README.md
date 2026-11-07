@@ -11,11 +11,12 @@ This package contains the Phase 0 architecture baseline and Phase 1 setup guides
 5. [Security threat model](09-security-threat-model.md), [scalability strategy](10-scalability-strategy.md), [infrastructure and DevOps](11-infrastructure-and-devops.md), [testing strategy](12-testing-strategy.md), [deployment strategy](13-deployment-strategy.md), and [UI / roles](16-ui-navigation-and-roles.md)
 6. [Implementation roadmap](14-implementation-roadmap.md), [risk register](15-risk-register.md), and [zero-cost infrastructure audit](zero-cost-infrastructure.md)
 7. Phase 1: [infrastructure overview](phase-1-infrastructure.md), [local development](local-development-guide.md), [database](database-setup.md), [backend](backend-setup.md), [frontend](frontend-setup.md), [Docker](docker-guide.md), [environment](environment-configuration.md), [security](security-foundation.md), [CI](cicd-guide.md), and [zero-cost deployment](zero-cost-deployment.md)
-8. [Mermaid diagrams](diagrams/)
+8. Phase 2 identity: [overview](phase-2-identity-overview.md), [authentication architecture](authentication-architecture.md), [session management](session-management.md), [password security](password-security.md), [RBAC matrix](rbac-matrix.md), [MFA and recovery limitations](mfa-and-recovery-limitations.md), [admin access control](admin-access-control.md), [security audit logging](security-audit-logging.md), [API reference](identity-api-reference.md), and [testing report](phase-2-testing-report.md)
+9. [Mermaid diagrams](diagrams/)
 
 ## Baseline and change control
 
-- Phase 0 is complete. Phase 1 was explicitly approved and has been implemented as a local foundation; Phase 2 must not start without explicit approval.
+- Phase 0 and Phase 1 are complete. Phase 2 was explicitly approved and its identity/RBAC implementation is present; database-backed verification remains pending, so Phase 3 is not authorized.
 - Indian Railways / IRCTC policies and interfaces are not assumed or reproduced. Any future integration requires documented authorization and verified specifications.
 - Inventory is owned and administered by RailConnect. No real inventory is available until an authorized administrator loads and validates it.
 - The infrastructure budget target is ₹0. A free-tier limit is not a service-level agreement; providers may change terms, pause services, or suspend exhausted accounts.
