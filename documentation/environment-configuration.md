@@ -29,6 +29,23 @@ Only `.env.example` is committed; it contains placeholder values and non-secret 
 | `NEXT_PUBLIC_API_BASE_URL` | When frontend calls API | Public build-time URL, no secret; default local API URL in example. |
 | `POSTGRES_PORT` | Compose | Loopback host port, default 54329. |
 
+## Vercel frontend and hosted API
+
+Vercel hosts the Next.js frontend; Supabase hosts PostgreSQL. Supabase does not run this repository's Spring Boot REST API. A registration page deployed on Vercel therefore also needs a separately running, publicly reachable Spring Boot API.
+
+The passenger and admin apps proxy `/api/*` requests through their Vercel deployment to Render. This keeps browser API calls on the frontend site so the browser can send the CSRF and session cookies without relying on third-party cookies. Vercel builds for these two apps must use the Next.js server output; the static export remains enabled for local Docker builds.
+
+Set these Vercel environment variables for the passenger and admin projects, then redeploy:
+
+| Variable | Value |
+|---|---|
+| `RAILCONNECT_API_ORIGIN` | `https://irctc-wb68.onrender.com` |
+| `NEXT_PUBLIC_API_BASE_URL` | The origin of that specific Vercel project, with no trailing slash; for example, `https://irctc-rho.vercel.app` for the passenger project |
+
+Set `RAILCONNECT_CORS_ALLOWED_ORIGINS` in Render to the exact browser-facing origins of the Vercel projects, comma-separated, and set `RAILCONNECT_SESSION_COOKIE_SECURE=true`. Keep the Supabase database variables in Render's secret settings; do not put database credentials in Vercel frontend variables.
+
+The website's generic network error can mean the API base URL was missing or malformed, the API is offline/unreachable, or the Vercel proxy/Render connection failed. Check the browser Network panel for `/api/v1/auth/csrf` and verify the backend's health endpoint before retrying registration.
+
 ## Supabase switch
 
 Set `RAILCONNECT_DB_URL`, username, and password in the chosen environment. For Compose, set `RAILCONNECT_COMPOSE_DB_URL` to the same TLS-required JDBC endpoint, because the application runs in a container. The application defaults to a dedicated `railconnect` schema rather than the shared `public` schema; Flyway creates it if needed. Do not embed credentials in URLs when separately provided username/password can be used. Verify the selected connection mode and connection limits before use.
