@@ -405,6 +405,27 @@ public class FareService {
         return withStatus(snapshot, status);
     }
 
+    @Transactional(readOnly = true)
+    public FareQuoteResponse quoteForBooking(UUID quoteId, UUID ownerId) {
+        StoredQuote stored = jdbc.query("""
+                SELECT owner_user_id, snapshot::text, expires_at
+                FROM fare_quotes
+                WHERE fare_quote_id = :quoteId
+                  AND owner_user_id = :ownerId
+                  AND expires_at > CURRENT_TIMESTAMP
+                """, Map.of("quoteId", quoteId, "ownerId", ownerId), result -> result.next()
+                ? new StoredQuote(
+                        result.getObject("owner_user_id", UUID.class),
+                        result.getString("snapshot"),
+                        result.getTimestamp("expires_at").toInstant())
+                : null);
+        if (stored == null) {
+            throw new FareException(HttpStatus.UNPROCESSABLE_ENTITY, "FARE_QUOTE_INVALID_OR_EXPIRED",
+                    "The fare quote is unavailable, expired, or does not belong to this passenger");
+        }
+        return withStatus(readQuote(stored.snapshot()), "ACTIVE");
+    }
+
     private UUID createVersionRecord(
             UUID ruleId,
             int versionNumber,

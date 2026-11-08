@@ -43,6 +43,20 @@ type Reservation = {
     preferenceResult: string | null;
   }[];
 };
+type Booking = {
+  bookingId: string;
+  bookingReference: string;
+  status: string;
+  trainNumber: string;
+  trainName: string;
+  journeyDate: string;
+  originName: string;
+  destinationName: string;
+  totalPayable: string;
+  currency: string;
+  paymentDeadline: string;
+  passengers: { displayName: string; coachNumber: string; berthNumber: string }[];
+};
 
 function isHoldExpired(expiresAt: string): boolean {
   const value = new Date(expiresAt).getTime();
@@ -71,6 +85,7 @@ export function SeatInventoryPanel({
   fromStationId,
   toStationId,
   classes,
+  fareQuoteId,
 }: {
   device: "mobile" | "laptop";
   trainId: string;
@@ -78,6 +93,7 @@ export function SeatInventoryPanel({
   fromStationId: string;
   toStationId: string;
   classes: CoachClassOption[];
+  fareQuoteId?: string;
 }) {
   const [run, setRun] = useState<TrainRun | null>(null);
   const [selectedClass, setSelectedClass] = useState(classes[0]?.code ?? "");
@@ -88,7 +104,9 @@ export function SeatInventoryPanel({
   ]);
   const [groupSeatingRequested, setGroupSeatingRequested] = useState(false);
   const [reservation, setReservation] = useState<Reservation | null>(null);
+  const [booking, setBooking] = useState<Booking | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState("");
+  const [bookingIdempotencyKey, setBookingIdempotencyKey] = useState("");
   const [loading, setLoading] = useState(true);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -367,6 +385,36 @@ export function SeatInventoryPanel({
     }
   }
 
+  async function createBooking() {
+    if (!reservation || !fareQuoteId || reservation.status !== "ALLOCATED_PENDING_BOOKING") return;
+    setSaving(true);
+    setError("");
+    setNotice("");
+    const requestKey = bookingIdempotencyKey || crypto.randomUUID();
+    setBookingIdempotencyKey(requestKey);
+    try {
+      const response = await apiFetch<Booking>("/api/v1/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": requestKey,
+        },
+        body: JSON.stringify({
+          fareQuoteId,
+          reservationRequestId: reservation.reservationRequestId,
+        }),
+      });
+      if (!response.data) throw new Error("The server did not return the booking.");
+      setBooking(response.data);
+      setBookingIdempotencyKey("");
+      setNotice("Booking created and awaiting payment. No payment has been taken; this is not a paid ticket.");
+    } catch (caught) {
+      setError(message(caught));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function releaseReservation() {
     if (!reservation) return;
     setSaving(true);
@@ -613,14 +661,62 @@ export function SeatInventoryPanel({
                   {saving ? "Working…" : "Allocate provisional berths"}
                 </button>
               )}
-              {["REQUESTED", "ALLOCATED_PENDING_BOOKING"].includes(reservation.status) && (
+              {!booking && ["REQUESTED", "ALLOCATED_PENDING_BOOKING"].includes(reservation.status) && (
                 <button className="button button--secondary" disabled={saving}
                   onClick={() => void releaseReservation()} type="button">
                   Release request
                 </button>
               )}
+              {reservation.status === "ALLOCATED_PENDING_BOOKING" && !booking && (
+                <div className="booking-create-panel">
+                  <p>
+                    Create a booking from this provisional allocation and an active fare quote for the same
+                    journey and passenger count. The backend verifies both before saving the payable amount.
+                  </p>
+                  <button
+                    className="button button--primary"
+                    disabled={saving || !fareQuoteId}
+                    onClick={() => void createBooking()}
+                    type="button"
+                  >
+                    {saving ? "Creating booking…" : "Create booking"}
+                  </button>
+                  {!fareQuoteId && <small>Get an itemized fare quote below before creating the booking.</small>}
+                </div>
+              )}
+              {booking && (
+                <div className="booking-confirmation" role="status">
+                  <p className="eyebrow">RailConnect booking reference</p>
+                  <strong className="booking-reference">{booking.bookingReference}</strong>
+                  <p>Status: <strong>{booking.status.replaceAll("_", " ")}</strong></p>
+                  <p>
+                    {booking.trainNumber} · {booking.trainName} · {booking.journeyDate}
+                  </p>
+                  <p>{booking.originName} to {booking.destinationName}</p>
+                  <ul>
+                    {booking.passengers.map((passenger, index) => (
+                      <li key={`${booking.bookingId}-${index}`}>
+                        {passenger.displayName} — {passenger.coachNumber}, berth {passenger.berthNumber}
+                      </li>
+                    ))}
+                  </ul>
+                  <p>
+                    Total payable: <strong>
+                      {new Intl.NumberFormat("en-IN", {
+                        style: "currency",
+                        currency: booking.currency,
+                      }).format(Number(booking.totalPayable))}
+                    </strong>
+                  </p>
+                  <p>Payment deadline: <strong>{new Date(booking.paymentDeadline).toLocaleString()}</strong></p>
+                  <p className="reservation-disclaimer">
+                    Awaiting payment. No payment has been processed and this is not a confirmed or paid ticket.
+                  </p>
+                  <Link href={`/${device}/account#bookings`}>View booking history</Link>
+                </div>
+              )}
               <p className="reservation-disclaimer">
-                A provisional allocation is not a confirmed booking or ticket.
+                {!booking && "A provisional allocation is not a confirmed booking or ticket."}
               </p>
             </section>
           )}

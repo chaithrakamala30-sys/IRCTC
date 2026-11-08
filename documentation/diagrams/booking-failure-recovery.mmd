@@ -1,0 +1,15 @@
+flowchart TD
+    A[Booking command] --> B{Input and ownership valid?}
+    B -- no --> C[Typed 4xx; no booking write]
+    B -- yes --> D{Quote active and allocation provisional?}
+    D -- no --> E[Typed conflict or quote error]
+    D -- yes --> F[One PostgreSQL transaction]
+    F --> G{Any insert, constraint, or association fails?}
+    G -- no --> H[Commit booking, snapshots, idempotency, history]
+    G -- yes --> I[Rollback all Phase 8 writes and booking attachment]
+    I --> J[Return safe error and request correlation ID]
+    J --> K[Existing Phase 7 allocation remains under its persisted expiry]
+    K --> L[Known limitation: durable booking failure queue/reconciler not yet implemented]
+    H --> M{Client retries same key and payload}
+    M --> N[Return the same booking resource]
+    M --> O[Different payload with same key returns conflict]

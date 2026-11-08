@@ -163,6 +163,36 @@ class DatabaseMigrationIT {
         Integer basePassengerCategoryCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM fare_passenger_categories WHERE category_code = 'ADULT' AND active = TRUE",
                 Integer.class);
+        Integer bookingTableCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name IN (
+                    'bookings', 'booking_passengers', 'booking_status_history',
+                    'booking_idempotency_records', 'booking_request_rate_limits', 'booking_audit_log'
+                  )
+                """,
+                Integer.class);
+        Integer bookingPermissionCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM permissions
+                WHERE permission_code IN ('bookings:own:create', 'bookings:own:read')
+                """,
+                Integer.class);
+        Integer bookingTriggerCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM pg_trigger
+                WHERE NOT tgisinternal
+                  AND tgname IN (
+                    'bookings_snapshot_immutable',
+                    'booking_passengers_immutable',
+                    'booking_status_history_append_only',
+                    'booking_audit_append_only',
+                    'booking_idempotency_immutable'
+                  )
+                """,
+                Integer.class);
 
         assertThat(connectionResult).isEqualTo(1);
         assertThat(migrationCount).isGreaterThanOrEqualTo(1);
@@ -179,5 +209,8 @@ class DatabaseMigrationIT {
         assertThat(reservationPermissionCount).isEqualTo(11);
         assertThat(reservationTriggerCount).isEqualTo(10);
         assertThat(publishedReservationPolicyCount).isEqualTo(1);
+        assertThat(bookingTableCount).isEqualTo(6);
+        assertThat(bookingPermissionCount).isEqualTo(2);
+        assertThat(bookingTriggerCount).isEqualTo(5);
     }
 }

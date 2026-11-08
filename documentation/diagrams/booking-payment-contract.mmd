@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant Payment as Future Phase 9 Payment Engine
+    participant Port as BookingPaymentPort
+    participant Booking as Booking Engine
+    participant Reservation as Phase 7 Reservation Engine
+    Payment->>Port: getPaymentStartContext(bookingId)
+    Port-->>Payment: Reference, amount, currency, deadline
+    Payment->>Payment: Verify provider outcome outside booking transaction
+    alt Verified success before safe expiry
+        Payment->>Port: acceptVerifiedSuccess(amount, currency, event key)
+        Port->>Booking: Validate transition and idempotency
+        Booking->>Reservation: Confirm using matching booking ID
+    else Definitive failure
+        Payment->>Port: acceptVerifiedFailure(event key)
+        Port->>Reservation: Release through controlled workflow
+    else Pending or uncertain
+        Payment->>Port: recordPendingOutcome or reconcileUncertainOutcome
+        Port-->>Payment: Preserve state; do not infer failure
+    end

@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> AWAITING_PAYMENT: validated booking transaction commits
+    AWAITING_PAYMENT --> EXPIRED: deadline reached and allocation safely released
+    AWAITING_PAYMENT --> CONFIRMED: future Phase 9 verified success only
+    AWAITING_PAYMENT --> PAYMENT_FAILED: future Phase 9 definitive failure only
+    EXPIRED --> [*]
+    CONFIRMED --> [*]
+    PAYMENT_FAILED --> [*]
+
+    note right of AWAITING_PAYMENT
+        Phase 8 implements entry and expiry only.
+        No public state-update endpoint exists.
+        Payment outcomes are not inferred from timeout.
+    end note

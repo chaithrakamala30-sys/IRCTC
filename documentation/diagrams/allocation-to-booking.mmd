@@ -1,0 +1,16 @@
+sequenceDiagram
+    actor Passenger
+    participant Inventory as Phase 6 Inventory
+    participant Reservation as Phase 7 Reservation
+    participant Booking as Phase 8 Booking
+    participant DB as Shared PostgreSQL
+    Passenger->>Inventory: Create one owned hold per passenger
+    Inventory-->>Passenger: Active hold references
+    Passenger->>Reservation: Create request and allocate holds
+    Reservation->>DB: Transfer claims atomically to provisional allocations
+    Reservation-->>Passenger: ALLOCATED_PENDING_BOOKING and assigned berths
+    Passenger->>Booking: Create booking from quote and reservation IDs
+    Booking->>Reservation: Verify owner and provisional allocation
+    Booking->>DB: Persist snapshots and booking, attach booking ID
+    DB-->>Booking: Commit booking and allocation association atomically
+    Booking-->>Passenger: AWAITING_PAYMENT booking details

@@ -269,6 +269,10 @@ public class ReservationService {
         if (RELEASED.equals(request.status())) {
             return details(requestId, owner);
         }
+        if (request.bookingCorrelationId() != null) {
+            throw failure(HttpStatus.CONFLICT, "ALLOCATION_ATTACHED_TO_BOOKING",
+                    "This provisional allocation can only be released through its booking workflow");
+        }
         if (!REQUESTED.equals(request.status()) && !PENDING_BOOKING.equals(request.status())) {
             throw failure(HttpStatus.CONFLICT, "RESERVATION_NOT_RELEASABLE",
                     "Only unconfirmed reservation allocations can be released");
@@ -500,6 +504,10 @@ public class ReservationService {
         if (RELEASED.equals(request.status())) {
             return details(requestId, null);
         }
+        if (request.bookingCorrelationId() != null) {
+            throw failure(HttpStatus.CONFLICT, "ALLOCATION_ATTACHED_TO_BOOKING",
+                    "This provisional allocation can only be released through its booking workflow");
+        }
         if (!REQUESTED.equals(request.status()) && !PENDING_BOOKING.equals(request.status())) {
             throw failure(HttpStatus.CONFLICT, "RESERVATION_NOT_RELEASABLE",
                     "Only unconfirmed reservation allocations can be released");
@@ -522,10 +530,16 @@ public class ReservationService {
             throw failure(HttpStatus.CONFLICT, "ALLOCATION_NOT_CONFIRMABLE",
                     "The provisional allocation is not eligible for booking confirmation");
         }
+        if (request.bookingCorrelationId() != null
+                && !bookingCorrelationId.equals(request.bookingCorrelationId())) {
+            throw failure(HttpStatus.CONFLICT, "BOOKING_CORRELATION_MISMATCH",
+                    "The booking reference does not match this allocation");
+        }
         int confirmed = jdbc.update(
                 """
                 UPDATE reservation_requests
-                SET status = 'CONFIRMED', booking_correlation_id = ?, updated_at = CURRENT_TIMESTAMP
+                SET status = 'CONFIRMED', booking_correlation_id = COALESCE(booking_correlation_id, ?),
+                    updated_at = CURRENT_TIMESTAMP
                 WHERE reservation_request_id = ? AND status = 'ALLOCATED_PENDING_BOOKING'
                   AND expires_at > CURRENT_TIMESTAMP
                 """,
@@ -548,6 +562,40 @@ public class ReservationService {
     }
 
     @Transactional
+    public ReservationDetails attachToBooking(UUID requestId, UUID owner, UUID bookingId) {
+        UUID runId = ownedRunId(requestId, owner);
+        advisoryLock("inventory-run-claims:" + runId);
+        RequestRow request = lockRequest(requestId, owner);
+        if (!PENDING_BOOKING.equals(request.status())) {
+            throw failure(HttpStatus.CONFLICT, "ALLOCATION_NOT_BOOKABLE",
+                    "A live provisional allocation is required to create a booking");
+        }
+        if (request.bookingCorrelationId() != null) {
+            if (bookingId.equals(request.bookingCorrelationId())) {
+                return details(requestId, owner);
+            }
+            throw failure(HttpStatus.CONFLICT, "ALLOCATION_ALREADY_BOOKED",
+                    "The provisional allocation is already attached to another booking");
+        }
+        int attached = jdbc.update(
+                """
+                UPDATE reservation_requests
+                SET booking_correlation_id = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE reservation_request_id = ?
+                  AND status = 'ALLOCATED_PENDING_BOOKING'
+                  AND booking_correlation_id IS NULL
+                  AND expires_at > CURRENT_TIMESTAMP
+                """,
+                bookingId, requestId);
+        if (attached != 1) {
+            throw failure(HttpStatus.CONFLICT, "ALLOCATION_NOT_BOOKABLE",
+                    "The provisional allocation expired before booking creation");
+        }
+        audit(requestId, owner, "BOOKING_ATTACHED", Map.of("bookingId", bookingId));
+        return details(requestId, owner);
+    }
+
+    @Transactional
     public ReservationDetails releaseForBookingFailure(
             UUID requestId,
             UUID bookingCorrelationId,
@@ -561,7 +609,7 @@ public class ReservationService {
             throw failure(HttpStatus.CONFLICT, "BOOKING_CORRELATION_MISMATCH",
                     "The booking reference does not match this allocation");
         }
-        if (RELEASED.equals(request.status())) {
+        if (RELEASED.equals(request.status()) || EXPIRED.equals(request.status())) {
             return details(requestId, null);
         }
         if (!PENDING_BOOKING.equals(request.status())) {

@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant Sweep as Booking expiry sweep
+    participant Booking as BookingService
+    participant Reservation as Phase 7 ReservationService
+    participant DB as PostgreSQL
+    Sweep->>Booking: Select due AWAITING_PAYMENT booking
+    Booking->>DB: Lock and recheck status and deadline
+    Booking->>Reservation: Read linked allocation state
+    alt Allocation is provisional
+        Booking->>Reservation: Release with booking correlation and reason
+        Reservation->>DB: Release claims idempotently
+        Reservation-->>Booking: RELEASED
+    else Allocation already expired or released
+        Reservation-->>Booking: Existing terminal state
+    else Allocation confirmed or uncertain
+        Booking->>DB: Leave booking unchanged for reconciliation
+    end
+    Booking->>DB: Mark EXPIRED, append history and audit

@@ -1,0 +1,14 @@
+sequenceDiagram
+    actor Passenger
+    participant Fare as Phase 5 FareService
+    participant Booking as BookingService
+    participant DB as PostgreSQL
+    Passenger->>Fare: Create quote for journey and passenger categories
+    Fare->>DB: Store immutable quote, owner, rule version, amount, expiry
+    Fare-->>Passenger: Quote ID and itemized fare
+    Passenger->>Booking: Booking request with quote ID and idempotency key
+    Booking->>Fare: Validate owned, unexpired quote
+    Booking->>DB: Match stored journey, class, currency, and total
+    Booking->>DB: Copy immutable fare snapshot and payable amount
+    DB-->>Booking: Booking transaction committed
+    Booking-->>Passenger: RailConnect reference, AWAITING_PAYMENT, deadline

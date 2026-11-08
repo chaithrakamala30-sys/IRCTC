@@ -1,0 +1,16 @@
+flowchart TD
+    A[Passenger selects journey] --> B[Phase 5 creates fare quote]
+    B --> C[Passenger creates Phase 6 holds]
+    C --> D[Phase 7 creates provisional allocation]
+    D --> E[POST /api/v1/bookings with quote and reservation IDs]
+    E --> F{Validate owner, expiry, run, journey, class, count}
+    F -- invalid --> G[Return typed error; no booking]
+    F -- valid --> H[Persist immutable fare and journey snapshots]
+    H --> I[Persist booking and passenger berth snapshots]
+    I --> J[Attach allocation correlation in same database transaction]
+    J --> K[AWAITING_PAYMENT]
+    K --> L[Passenger reviews reference and deadline]
+    K --> M{Payment deadline}
+    M --> N[Release allocation through Phase 7]
+    N --> O[EXPIRED]
+    K -. Phase 9 only .-> P[Verified payment workflow]

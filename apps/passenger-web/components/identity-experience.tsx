@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { apiFetch, ApiRequestError } from "../lib/api";
+import { BookingHistoryPanel } from "./booking-history";
 
 type DeviceExperience = "mobile" | "laptop";
 type AuthMode = "login" | "register";
@@ -411,6 +412,7 @@ export function PassengerAccountExperience({
             <a href="#profile">Personal information</a>
             <a href="#security">Password and security</a>
             <a href="#sessions">Active sessions</a>
+            <a href="#bookings">My bookings</a>
           </aside>
         )}
         <section className="account-content" aria-labelledby="account-title">
@@ -497,6 +499,8 @@ export function PassengerAccountExperience({
                   </ul>
                 )}
               </section>
+
+              <BookingHistoryPanel device={device} />
             </>
           )}
         </section>
