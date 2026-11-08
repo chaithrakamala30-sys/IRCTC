@@ -11,6 +11,7 @@ import in.railconnect.core.masterdata.MasterDataModels.CompositionRequest;
 import in.railconnect.core.masterdata.MasterDataModels.LookupRequest;
 import in.railconnect.core.masterdata.MasterDataModels.RouteStopRequest;
 import in.railconnect.core.masterdata.MasterDataModels.RouteVersionRequest;
+import in.railconnect.core.masterdata.MasterDataModels.ScheduleExceptionInput;
 import in.railconnect.core.masterdata.MasterDataModels.ScheduleRequest;
 import in.railconnect.core.masterdata.MasterDataModels.Station;
 import in.railconnect.core.masterdata.MasterDataModels.StationRequest;
@@ -18,37 +19,54 @@ import in.railconnect.core.masterdata.MasterDataModels.StationStatusRequest;
 import in.railconnect.core.masterdata.MasterDataModels.StationVerificationRequest;
 import in.railconnect.core.masterdata.MasterDataModels.TrainRequest;
 import in.railconnect.core.masterdata.MasterDataService;
+import in.railconnect.core.search.PublicTrainSearchService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.DayOfWeek;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 @EnabledIfEnvironmentVariable(named = "RAILCONNECT_DB_URL", matches = "jdbc:postgresql:.+")
 class MasterDataFlowIT {
     @Autowired
     private MasterDataService masterDataService;
 
     @Autowired
+    private PublicTrainSearchService publicTrainSearchService;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @Test
     @Transactional
-    void createsPublishesAndAuditsRailwayMasterData() {
+    void createsPublishesAndAuditsRailwayMasterData() throws Exception {
         UUID actor = null;
         Station origin = createStation("Origin");
+        Station intermediate = createStation("Midway");
         Station destination = createStation("Terminal");
         UUID originId = origin.stationId();
 
@@ -66,22 +84,33 @@ class MasterDataFlowIT {
                 destination.stationId(), new StationVerificationRequest(true, "verified in test"), actor, null);
         destination = masterDataService.changeStationStatus(
                 destination.stationId(), new StationStatusRequest("ACTIVE", "test activation"), actor, null);
+        intermediate = masterDataService.verifyStationCode(
+                intermediate.stationId(), new StationVerificationRequest(true, "verified in test"), actor, null);
+        intermediate = masterDataService.changeStationStatus(
+                intermediate.stationId(), new StationStatusRequest("ACTIVE", "test activation"), actor, null);
 
+        LocalDate serviceMonday = LocalDate.now(ZoneId.of("Asia/Kolkata"))
+                .with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
+        LocalDate runExceptionDate = serviceMonday.plusDays(1);
+        LocalDate cancellationDate = serviceMonday.plusWeeks(1);
         RouteVersionRequest routeRequest = new RouteVersionRequest(
                 "Integration test route",
                 origin.stationId(),
                 destination.stationId(),
-                BigDecimal.TEN,
+                BigDecimal.valueOf(100),
                 LocalDate.now(),
                 null,
                 "test route",
                 List.of(
                         new RouteStopRequest(
-                                origin.stationId(), 1, null, LocalTime.of(8, 0), 0, 0,
+                                origin.stationId(), 1, null, LocalTime.of(23, 30), 0, 0,
                                 0, BigDecimal.ZERO, "ORIGIN", null),
                         new RouteStopRequest(
-                                destination.stationId(), 2, LocalTime.of(9, 0), null, 0, 0,
-                                0, BigDecimal.TEN, "TERMINAL", null)
+                                intermediate.stationId(), 2, LocalTime.of(0, 25), LocalTime.of(0, 30), 1, 1,
+                                5, BigDecimal.valueOf(40), "REGULAR", null),
+                        new RouteStopRequest(
+                                destination.stationId(), 3, LocalTime.of(1, 30), null, 1, 1,
+                                0, BigDecimal.valueOf(100), "TERMINAL", null)
                 )
         );
         var route = masterDataService.createRoute(routeRequest, actor, null);
@@ -101,7 +130,7 @@ class MasterDataFlowIT {
                         origin.stationId(),
                         destination.stationId(),
                         route.routeId(),
-                        BigDecimal.TEN,
+                        BigDecimal.valueOf(100),
                         "integration test",
                         LocalDate.now(),
                         null
@@ -119,10 +148,13 @@ class MasterDataFlowIT {
                         train.trainId(),
                         route.routeVersionId(),
                         "Asia/Kolkata",
-                        LocalDate.now(),
+                        serviceMonday,
                         null,
-                        List.of(1, 3, 5),
-                        List.of(),
+                        List.of(serviceMonday.getDayOfWeek().getValue()),
+                        List.of(
+                                new ScheduleExceptionInput(runExceptionDate, "RUN", "test extra service"),
+                                new ScheduleExceptionInput(cancellationDate, "CANCEL", "test cancellation")
+                        ),
                         "test schedule"
                 ),
                 actor,
@@ -130,6 +162,53 @@ class MasterDataFlowIT {
         );
         schedule = masterDataService.publishSchedule(schedule.scheduleId(), actor, null);
         assertThat(schedule.status()).isEqualTo("PUBLISHED");
+        var intermediateJourney = publicTrainSearchService.search(
+                intermediate.stationId(),
+                destination.stationId(),
+                serviceMonday.plusDays(1),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "DEPARTURE_EARLIEST",
+                0,
+                20
+        );
+        assertThat(intermediateJourney.totalItems()).isEqualTo(1);
+        assertThat(intermediateJourney.items().get(0).journeyDate()).isEqualTo(serviceMonday.plusDays(1));
+        assertThat(intermediateJourney.items().get(0).arrivalDate()).isEqualTo(serviceMonday.plusDays(1));
+        assertThat(intermediateJourney.items().get(0).durationMinutes()).isEqualTo(60);
+        assertThat(publicTrainSearchService.search(
+                destination.stationId(),
+                intermediate.stationId(),
+                serviceMonday.plusDays(1),
+                null, null, null, null, null, null, null, null,
+                "DEPARTURE_EARLIEST", 0, 20
+        ).totalItems()).isZero();
+        assertThat(publicTrainSearchService.search(
+                origin.stationId(),
+                destination.stationId(),
+                runExceptionDate,
+                null, null, null, null, null, null, null, null,
+                "DEPARTURE_EARLIEST", 0, 20
+        ).totalItems()).isEqualTo(1);
+        assertThat(publicTrainSearchService.search(
+                origin.stationId(),
+                destination.stationId(),
+                cancellationDate,
+                null, null, null, null, null, null, null, null,
+                "DEPARTURE_EARLIEST", 0, 20
+        ).totalItems()).isZero();
+        assertThat(publicTrainSearchService.searchStations(origin.stationCode(), 10))
+                .anySatisfy(station -> assertThat(station.stationId()).isEqualTo(originId));
+        assertThat(publicTrainSearchService.searchStations("Origin Junction", 10))
+                .anySatisfy(station -> assertThat(station.stationId()).isEqualTo(originId));
+        var citySuggestions = publicTrainSearchService.searchStations("Test city", 20);
+        assertThat(citySuggestions).extracting(station -> station.stationId()).doesNotHaveDuplicates();
 
         var coachClass = masterDataService.createCoachClass(
                 new CoachClassRequest(
@@ -191,6 +270,85 @@ class MasterDataFlowIT {
         );
         assertThat(compositionSnapshotType).isEqualTo("object");
         assertThat(compositionSnapshotCoachCount).isEqualTo(1);
+        var filteredJourney = publicTrainSearchService.search(
+                origin.stationId(),
+                intermediate.stationId(),
+                serviceMonday,
+                category.code(),
+                coachClass.code(),
+                LocalTime.of(23, 0),
+                LocalTime.of(23, 59),
+                null,
+                null,
+                180,
+                train.trainName(),
+                "DURATION_LONGEST",
+                0,
+                20
+        );
+        assertThat(filteredJourney.totalItems()).isEqualTo(1);
+        assertThat(filteredJourney.items().get(0).coachClasses()).singleElement()
+                .satisfies(configuredClass -> assertThat(configuredClass.code()).isEqualTo(coachClass.code()));
+        var trainDetail = publicTrainSearchService.detail(
+                train.trainId(), origin.stationId(), destination.stationId(), serviceMonday);
+        assertThat(trainDetail.route()).hasSize(3);
+        assertThat(trainDetail.route()).filteredOn(stop -> stop.selectedOrigin()).hasSize(1);
+        assertThat(trainDetail.route()).filteredOn(stop -> stop.selectedDestination()).hasSize(1);
+        mockMvc.perform(get("/api/v1/public/trains/search")
+                        .param("fromStationId", origin.stationId().toString())
+                        .param("toStationId", intermediate.stationId().toString())
+                        .param("journeyDate", serviceMonday.toString())
+                        .param("coachClass", coachClass.code()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.items[0].trainId").value(train.trainId().toString()))
+                .andExpect(jsonPath("$.data.items[0].coachClasses[0].code").value(coachClass.code()));
+        mockMvc.perform(get("/api/v1/public/stations/search")
+                        .param("q", origin.stationCode())
+                        .param("limit", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].stationId").value(originId.toString()));
+
+        var overlappingSchedule = masterDataService.createSchedule(
+                new ScheduleRequest(
+                        train.trainId(),
+                        route.routeVersionId(),
+                        "Asia/Kolkata",
+                        serviceMonday,
+                        null,
+                        List.of(serviceMonday.getDayOfWeek().getValue()),
+                        List.of(),
+                        "overlap regression"
+                ),
+                actor,
+                null
+        );
+        assertThatThrownBy(() -> masterDataService.publishSchedule(
+                overlappingSchedule.scheduleId(), actor, null))
+                .isInstanceOfSatisfying(MasterDataException.class, exception ->
+                        assertThat(exception.code()).isEqualTo("SCHEDULE_EFFECTIVE_DATES_OVERLAP"));
+
+        var futureSchedule = masterDataService.createSchedule(
+                new ScheduleRequest(
+                        train.trainId(),
+                        route.routeVersionId(),
+                        "Asia/Kolkata",
+                        serviceMonday.plusDays(7),
+                        null,
+                        List.of(serviceMonday.getDayOfWeek().getValue()),
+                        List.of(),
+                        "future schedule version"
+                ),
+                actor,
+                null
+        );
+        masterDataService.publishSchedule(futureSchedule.scheduleId(), actor, null);
+        LocalDate previousScheduleEnd = jdbcTemplate.queryForObject(
+                "SELECT effective_to FROM train_schedules WHERE schedule_id = ?",
+                LocalDate.class,
+                schedule.scheduleId()
+        );
+        assertThat(previousScheduleEnd).isEqualTo(serviceMonday.plusDays(6));
 
         Integer stationVersions = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM station_versions WHERE station_id = ?",
@@ -214,7 +372,7 @@ class MasterDataFlowIT {
                 new StationRequest(
                         code,
                         label + " " + UUID.randomUUID(),
-                        List.of(),
+                        List.of(label + " Junction"),
                         "Test city",
                         "Test state",
                         "India",

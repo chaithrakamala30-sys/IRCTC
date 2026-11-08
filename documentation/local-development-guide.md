@@ -35,7 +35,7 @@ npm ci
 npm run dev:passenger
 ```
 
-To select another workspace, use `npm run dev:admin` or `npm run dev:operations`. Configure `NEXT_PUBLIC_API_BASE_URL` when the UI starts making API calls; the foundation currently makes no API requests.
+To select another workspace, use `npm run dev:admin` or `npm run dev:operations`. Passenger search calls the public API. When the Vercel same-origin rewrite is not in use, configure `NEXT_PUBLIC_API_BASE_URL` to the local API origin and ensure the frontend origin is included in `RAILCONNECT_CORS_ALLOWED_ORIGINS`. Search requires PostgreSQL data with active stations and published schedules/routes; an empty database does not produce sample results.
 
 ## Run the backend outside Compose
 

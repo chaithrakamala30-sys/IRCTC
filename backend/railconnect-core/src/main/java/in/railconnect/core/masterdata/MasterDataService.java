@@ -677,6 +677,11 @@ public class MasterDataService {
         if (!"DRAFT".equals(draft.status())) {
             throw conflict("SCHEDULE_NOT_DRAFT", "Only a draft schedule can be published");
         }
+        jdbcTemplate.queryForObject(
+                "SELECT train_id FROM trains WHERE train_id = ? FOR UPDATE",
+                UUID.class,
+                draft.trainId()
+        );
         int publishedRouteCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM train_route_versions WHERE route_version_id = ? AND status = 'PUBLISHED'",
                 Integer.class,
@@ -684,6 +689,54 @@ public class MasterDataService {
         );
         if (publishedRouteCount != 1) {
             throw badRequest("SCHEDULE_ROUTE_NOT_PUBLISHED", "The schedule route version must be published first");
+        }
+        List<UUID> supersededScheduleIds = jdbcTemplate.query(
+                """
+                        SELECT existing.schedule_id
+                        FROM train_schedules existing
+                        WHERE existing.train_id = ?
+                          AND existing.published_at IS NOT NULL
+                          AND existing.status = 'PUBLISHED'
+                          AND existing.effective_from < ?
+                          AND COALESCE(existing.effective_to, DATE 'infinity') >= ?
+                        """,
+                (result, rowNumber) -> result.getObject("schedule_id", UUID.class),
+                draft.trainId(),
+                draft.effectiveFrom(),
+                draft.effectiveFrom()
+        );
+        LocalDate supersededThrough = draft.effectiveFrom().minusDays(1);
+        for (UUID supersededScheduleId : supersededScheduleIds) {
+            Schedule previous = schedule(supersededScheduleId);
+            jdbcTemplate.update(
+                    "UPDATE train_schedules SET effective_to = ? WHERE schedule_id = ?",
+                    supersededThrough,
+                    supersededScheduleId
+            );
+            Schedule updated = schedule(supersededScheduleId);
+            audit(actor, "SCHEDULE", supersededScheduleId, "EFFECTIVE_RANGE_CLOSED",
+                    previous, updated, "Superseded by schedule version " + draft.versionNumber());
+        }
+        Integer overlappingSchedules = jdbcTemplate.queryForObject(
+                """
+                        SELECT COUNT(*)
+                        FROM train_schedules existing
+                        WHERE existing.train_id = ?
+                          AND existing.schedule_id <> ?
+                          AND existing.published_at IS NOT NULL
+                          AND existing.status IN ('PUBLISHED', 'SUPERSEDED')
+                          AND existing.effective_from <= COALESCE(?, DATE 'infinity')
+                          AND COALESCE(existing.effective_to, DATE 'infinity') >= ?
+                        """,
+                Integer.class,
+                draft.trainId(),
+                scheduleId,
+                draft.effectiveTo(),
+                draft.effectiveFrom()
+        );
+        if (overlappingSchedules != null && overlappingSchedules > 0) {
+            throw conflict("SCHEDULE_EFFECTIVE_DATES_OVERLAP",
+                    "Published schedule versions for a train must have non-overlapping effective dates");
         }
         jdbcTemplate.update(
                 "UPDATE train_schedules SET status = 'SUPERSEDED' WHERE train_id = ? AND status = 'PUBLISHED'",

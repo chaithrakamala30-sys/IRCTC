@@ -2,7 +2,7 @@
 
 ## Status and boundaries
 
-Phase 3 adds the first authenticated railway administration APIs and admin-portal workspace for reference data. It does not enable passenger train search, dated train runs, seat availability, booking, reservations, payment, or live railway-system integrations. No railway data is seeded; authorized staff must supply and validate the records.
+Phase 3 adds the first authenticated railway administration APIs and admin-portal workspace for reference data. This phase by itself does not enable passenger train search, dated train runs, seat availability, booking, reservations, payment, or live railway-system integrations. Phase 4 subsequently adds read-only passenger timetable search over the published data; see [Phase 4](phase-4-train-search.md). No railway data is seeded; authorized staff must supply and validate the records.
 
 The change is append-only at the database level: `V5__create_railway_master_data.sql` adds the schema without editing V1–V4. The migration is intended for PostgreSQL 16+ and is run by Flyway. Hosted database changes require explicit approval and a restorable backup.
 

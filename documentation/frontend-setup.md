@@ -17,7 +17,7 @@ All apps use strict TypeScript, React 19, Tailwind CSS, static export, responsiv
 - Users can open either route from any device. There is no user-agent sniffing and the chosen route is not overridden once entered.
 - Shared components, design tokens, API contract, and security behavior prevent the two views from drifting.
 
-Both routes state that search, availability, reservations, and payment are not enabled. No synthetic train results or booking controls are shown.
+Both routes search published RailConnect master data using the public API. Search can return no results until staff publish valid railway records. No synthetic train results, fares, availability, reservation, or booking controls are shown.
 
 ## Run and build
 
@@ -40,7 +40,7 @@ Use the shared `@railconnect/ui` package for navigation, buttons, form labels/er
 
 ## API utility and environment
 
-`apps/passenger-web/lib/api.ts` validates the public API base URL and response envelope, and throws an explicit `ApiRequestError` for HTTP or contract failures. Configure `NEXT_PUBLIC_API_BASE_URL` at build time for static output. Do not place secrets in `NEXT_PUBLIC_*` variables. The foundation pages do not call the API yet.
+`apps/passenger-web/lib/api.ts` validates the public API base URL and response envelope, and throws an explicit `ApiRequestError` for HTTP or contract failures. Passenger search uses `/api/v1/public/*` for station suggestions, search filters, journey results, and route details. The client uses same-origin API paths by default; configure `NEXT_PUBLIC_API_BASE_URL` for local cross-origin development or preserve the same-origin proxy in hosted deployments. Do not place secrets in `NEXT_PUBLIC_*` variables.
 
 ## Error handling
 

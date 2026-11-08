@@ -85,6 +85,7 @@ public class SecurityConfiguration {
                                 "/api/v1/health/**",
                                 "/api/v1/system/info"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         .requestMatchers("/actuator/**").authenticated()
                         .anyRequest().authenticated())
                 .headers(headers -> headers

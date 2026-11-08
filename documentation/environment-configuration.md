@@ -21,7 +21,8 @@ Only `.env.example` is committed; it contains placeholder values and non-secret 
 | `RAILCONNECT_DB_NAME` | Compose | Local PostgreSQL database name; default placeholder value is `railconnect`. |
 | `RAILCONNECT_DB_POOL_SIZE` | No | Default 5; lower for constrained providers and scale carefully. |
 | `RAILCONNECT_MAX_REQUEST_BODY_BYTES` | No | API request-body limit; default 1 MiB. |
-| `RAILCONNECT_CORS_ALLOWED_ORIGINS` | No | Exact localhost app origins; comma-separated, no wildcard. Replace with exact site origins per environment. |
+| `RAILCONNECT_SEARCH_MAX_DAYS` | No | Passenger train-search horizon; defaults to 365 days and accepts 1–730. |
+| `RAILCONNECT_CORS_ALLOWED_ORIGINS` | No | Exact browser-facing app origins; comma-separated, no wildcard. Replace with exact site origins per environment. |
 | `PORT` | No | Backend listener; default 8080. |
 | `RAILCONNECT_OPENAPI_ENABLED` | No | Defaults true for local development; set false where public docs are not desired. |
 | `RAILCONNECT_REDIS_ENABLED` | No | Defaults false; enable only if a Redis service is intentionally configured. |

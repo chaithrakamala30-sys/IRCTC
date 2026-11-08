@@ -79,6 +79,8 @@ server:
     include-stacktrace: never
 
 railconnect:
+  search:
+    maximum-days: ${RAILCONNECT_SEARCH_MAX_DAYS:365}
   redis:
     enabled: ${RAILCONNECT_REDIS_ENABLED:false}
   supabase:

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     template: "%s | RailConnect",
   },
   description:
-    "RailConnect passenger portal foundation. Train search and booking are not enabled yet.",
+    "Search published RailConnect train routes and schedules. Fares, seat availability, and booking are not enabled.",
 };
 
 export const viewport: Viewport = {
