@@ -224,6 +224,18 @@ export function SeatInventoryPanel({
       .then((response) => {
         if (!response.data) throw new Error("The server did not return the saved reservation request.");
         if (!active) return;
+        if (["RELEASED", "FAILED", "EXPIRED"].includes(response.data.status)) {
+          try {
+            window.localStorage.removeItem(reservationStorageKey);
+          } catch {
+            setError("The saved reservation request is no longer active, but its browser entry could not be cleared.");
+            return;
+          }
+          setReservation(null);
+          setNotice("The previous reservation request is no longer active. You can hold a berth again.");
+          void loadHolds();
+          return;
+        }
         setReservation(response.data);
         setSelectedClass(response.data.coachClassCode);
         setGroupSeatingRequested(response.data.groupSeatingRequested);
@@ -492,8 +504,18 @@ export function SeatInventoryPanel({
         },
       );
       if (!response.data) throw new Error("The server did not return the release result.");
-      setReservation(response.data);
-      setNotice("Reservation request released.");
+      try {
+        if (reservationStorageKey) {
+          window.localStorage.removeItem(reservationStorageKey);
+        }
+      } catch {
+        setError("Reservation request released, but its browser entry could not be cleared. Refresh after clearing site storage.");
+        return;
+      }
+      setReservation(null);
+      setHolds([]);
+      setNotice("Reservation request released. You can hold a berth again.");
+      await loadHolds();
       await loadAvailability();
     } catch (caught) {
       setError(message(caught));
