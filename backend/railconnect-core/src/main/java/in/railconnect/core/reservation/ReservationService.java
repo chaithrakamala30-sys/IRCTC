@@ -29,6 +29,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -238,7 +239,7 @@ public class ReservationService {
                     allocation_policy_version = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE reservation_request_id = ? AND status = 'REQUESTED'
                 """,
-                PENDING_BOOKING, plan.groupSeatingResult(), expiry, policy.version(), requestId);
+                PENDING_BOOKING, plan.groupSeatingResult(), Timestamp.from(expiry), policy.version(), requestId);
         stateHistory(requestId, REQUESTED, PENDING_BOOKING, "ALLOCATION_CREATED", owner);
         audit(requestId, owner, "ALLOCATION_CREATED", Map.of(
                 "passengerCount", assignments.size(),
