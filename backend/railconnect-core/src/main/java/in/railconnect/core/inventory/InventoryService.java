@@ -460,18 +460,21 @@ public class InventoryService {
                         WHERE berth.train_run_id = ?
                           AND coach.coach_class_code = ?
                           AND berth.base_status = 'AVAILABLE'
-                          AND (CAST(? AS varchar) IS NULL OR berth.berth_type = ?)
                           AND NOT EXISTS (
                               SELECT 1 FROM inventory_segment_claims claim
                               WHERE claim.inventory_berth_id = berth.inventory_berth_id
                                 AND claim.segment_index >= ? AND claim.segment_index < ?
                           )
-                        ORDER BY coach.position, berth.display_order
+                        ORDER BY CASE
+                                   WHEN CAST(? AS varchar) IS NOT NULL AND berth.berth_type = ? THEN 0
+                                   ELSE 1
+                                 END,
+                                 coach.position, berth.display_order
                         LIMIT 1
                         """,
                 (result, row) -> result.getObject(1, UUID.class),
-                request.trainRunId(), classCode, preferredType, preferredType,
-                journey.fromIndex(), journey.toIndex());
+                request.trainRunId(), classCode,
+                journey.fromIndex(), journey.toIndex(), preferredType, preferredType);
         if (candidates.isEmpty()) {
             throw failure(HttpStatus.CONFLICT, "NO_BERTH_AVAILABLE",
                     "No berth is available for the selected class and journey");
@@ -551,6 +554,19 @@ public class InventoryService {
         }
         HoldResponse before = owned.get(0);
         if ("ACTIVE".equals(before.status())) {
+            Integer linkedRequestCount = jdbc.queryForObject(
+                    """
+                    SELECT COUNT(*)
+                    FROM reservation_request_holds request_hold
+                    JOIN reservation_requests request
+                      ON request.reservation_request_id = request_hold.reservation_request_id
+                    WHERE request_hold.inventory_hold_id = ? AND request.status = 'REQUESTED'
+                    """,
+                    Integer.class, holdId);
+            if (linkedRequestCount != null && linkedRequestCount > 0) {
+                throw failure(HttpStatus.CONFLICT, "HOLD_LINKED_TO_RESERVATION",
+                        "Release the reservation request before releasing its inventory hold");
+            }
             jdbc.update("DELETE FROM inventory_segment_claims WHERE inventory_hold_id = ?", holdId);
             jdbc.update("""
                     UPDATE inventory_holds SET status = 'RELEASED', released_at = CURRENT_TIMESTAMP,

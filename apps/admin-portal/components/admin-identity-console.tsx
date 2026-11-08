@@ -6,6 +6,7 @@ import { Brand } from "@railconnect/ui";
 import { AdminMasterDataConsole } from "./admin-master-data-console";
 import { AdminFareConsole } from "./admin-fare-console";
 import { AdminInventoryConsole } from "./admin-inventory-console";
+import { AdminReservationConsole } from "./admin-reservation-console";
 
 type AdminUser = {
   userId: string;
@@ -56,7 +57,7 @@ type AdminSession = {
   current: boolean;
 };
 
-type AdminTab = "identity" | "master-data" | "fares" | "inventory";
+type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations";
 
 type AdminTabItem = {
   id: AdminTab;
@@ -438,26 +439,32 @@ export function AdminIdentityConsole() {
   const isSuperAdmin = user.roles.includes("SUPER_ADMIN");
   const isRailwayAdmin = user.roles.includes("RAILWAY_ADMIN");
   const isFinanceAdmin = user.roles.includes("FINANCE_ADMIN");
+  const isReservationOfficer = user.roles.includes("RESERVATION_OFFICER");
   const tabs: AdminTabItem[] = isSuperAdmin
     ? [
       { id: "identity", label: "Identity administration" },
       { id: "master-data", label: "Railway master data" },
       { id: "fares", label: "Fare management" },
       { id: "inventory", label: "Seat inventory" },
+      { id: "reservations", label: "Reservations" },
     ]
     : isRailwayAdmin
       ? [
         { id: "master-data", label: "Railway master data" },
         { id: "fares", label: "Fare management" },
         { id: "inventory", label: "Seat inventory" },
+        { id: "reservations", label: "Reservations" },
       ]
+      : isReservationOfficer
+        ? [{ id: "reservations", label: "Reservations" }]
       : isFinanceAdmin
         ? [{ id: "fares", label: "Fare management" }]
         : [];
+  const currentTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : tabs[0]?.id ?? activeTab;
   return (
     <>
       <AdminPortalHeader
-        activeTab={activeTab}
+        activeTab={currentTab}
         onSignOut={() => void signOut()}
         onTabSelect={setActiveTab}
         tabs={tabs}
@@ -471,7 +478,7 @@ export function AdminIdentityConsole() {
             Your account is authenticated but is not authorized to use this administration portal.
           </p>
         )}
-        {activeTab === "identity" && isSuperAdmin && (
+        {currentTab === "identity" && isSuperAdmin && (
           <>
             <div className="admin-title-row">
               <div>
@@ -670,14 +677,17 @@ export function AdminIdentityConsole() {
           )}
           </>
         )}
-        {activeTab === "master-data" && (isSuperAdmin || isRailwayAdmin) && (
+        {currentTab === "master-data" && (isSuperAdmin || isRailwayAdmin) && (
           <AdminMasterDataConsole />
         )}
-        {activeTab === "fares" && (isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && (
+        {currentTab === "fares" && (isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && (
           <AdminFareConsole roles={user.roles} />
         )}
-        {activeTab === "inventory" && (isSuperAdmin || isRailwayAdmin) && (
+        {currentTab === "inventory" && (isSuperAdmin || isRailwayAdmin) && (
           <AdminInventoryConsole />
+        )}
+        {currentTab === "reservations" && (isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
+          <AdminReservationConsole roles={user.roles} />
         )}
       </main>
     </>

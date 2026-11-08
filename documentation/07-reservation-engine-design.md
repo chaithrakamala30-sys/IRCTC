@@ -66,3 +66,39 @@ Cancellation decision, allocation release, reservation transition, refund obliga
 ## Required sequence scenarios
 
 Seven sequence diagrams are provided in [booking-lifecycle.mmd](diagrams/booking-lifecycle.mmd), [inventory-allocation.mmd](diagrams/inventory-allocation.mmd), and [event-flow.mmd](diagrams/event-flow.mmd): successful booking, payment failure, duplicate request, concurrent seat claim, delayed webhook, cancellation/release, and waitlist promotion.
+
+## Implemented provisional allocation slice
+
+The Phase 7 implementation is an additive layer over the dated inventory in migration V9. Migration V10 adds reservation requests and passengers, links each request to a set of existing active holds, stores allocation records and state/audit history, and extends the existing segment-claim owner to support an allocation. It does not create a second availability ledger.
+
+The implemented reservation state path is:
+
+`REQUESTED -> ALLOCATED_PENDING_BOOKING -> CONFIRMED`
+
+`REQUESTED` may also become `FAILED` or `RELEASED`. A provisional allocation may become `EXPIRED` or `RELEASED`. `CONFIRMED` is only reachable through the booking integration service method; this slice does not issue tickets, create payment intents, or expose a public confirmation endpoint. An allocation is not a booking or ticket.
+
+### Request and allocation behavior
+
+- A passenger submits one to four passenger names, optional soft berth preferences, one distinct active inventory hold per passenger, and an idempotency key.
+- The backend validates ownership, run date, route stop order, coach class, hold state, and segment coverage. Requests are rate-limited per account.
+- Allocation takes the same per-run PostgreSQL advisory lock used by inventory mutations, locks all linked holds, ranks deterministic passenger-to-hold assignments using the currently published policy version, and transfers every segment claim in a single transaction.
+- A unique claim key on `(inventory_berth_id, segment_index)` remains the final overlap guard. A failed transfer or group assignment rolls back as a whole; no partial group allocation is returned.
+- Berth preferences and same-coach seating are preferences, not guarantees. Results report `SATISFIED`, `ALTERNATIVE`, or `NO_PREFERENCE` as applicable. Policy versions are drafted, approved by a different user, and published through separately authorized operations.
+- Hold and provisional-allocation expiry checks use PostgreSQL time. The expiry worker is idempotent and uses `FOR UPDATE SKIP LOCKED`.
+- Direct hold release is prevented while an unallocated reservation request owns that hold; release the request instead.
+
+### API surface
+
+Passenger endpoints:
+
+- `POST /api/v1/passenger/reservations/requests`
+- `GET /api/v1/passenger/reservations/requests/{reservationId}`
+- `GET /api/v1/passenger/reservations/requests/{reservationId}/allocations`
+- `POST /api/v1/passenger/reservations/requests/{reservationId}/allocate`
+- `POST /api/v1/passenger/reservations/requests/{reservationId}/release`
+
+Administrative endpoints provide request and aggregate reads, allocation failure/audit views, authorized release, and allocation-policy list/draft/approve/publish operations. Operations summaries expose counts only. The dedicated passenger pages at `/mobile` and `/laptop` share the reservation workflow while retaining their separate device-specific layouts.
+
+### Current boundaries
+
+This phase does not implement fare payment, ticket/PNR issuance, confirmed-seat retention, cancellation/refunds, RAC, waitlist, promotion, or disruption handling. Booking integration must confirm a provisional allocation transactionally before its expiry; if no booking service is available, the allocation expires or is released. Do not represent a provisional allocation as a successful booking.

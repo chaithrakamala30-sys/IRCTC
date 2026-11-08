@@ -5,6 +5,7 @@ import in.railconnect.core.identity.IdentityException;
 import in.railconnect.core.fare.FareException;
 import in.railconnect.core.masterdata.MasterDataException;
 import in.railconnect.core.inventory.InventoryException;
+import in.railconnect.core.reservation.ReservationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -99,6 +100,16 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(InventoryException.class)
     public ResponseEntity<ApiEnvelope<Void>> handleInventoryException(InventoryException exception) {
+        return failure(
+                exception.status(),
+                exception.code(),
+                exception.getMessage(),
+                List.of()
+        );
+    }
+
+    @ExceptionHandler(ReservationException.class)
+    public ResponseEntity<ApiEnvelope<Void>> handleReservationException(ReservationException exception) {
         return failure(
                 exception.status(),
                 exception.code(),

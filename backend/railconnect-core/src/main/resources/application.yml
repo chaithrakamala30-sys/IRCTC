@@ -83,6 +83,10 @@ railconnect:
     maximum-days: ${RAILCONNECT_SEARCH_MAX_DAYS:365}
   fares:
     quote-validity: ${RAILCONNECT_FARE_QUOTE_VALIDITY:PT10M}
+  reservations:
+    maximum-passengers-per-request: ${RAILCONNECT_RESERVATION_MAX_PASSENGERS:4}
+    requests-per-minute: ${RAILCONNECT_RESERVATION_REQUESTS_PER_MINUTE:10}
+    expiration-sweep-ms: ${RAILCONNECT_RESERVATION_EXPIRATION_SWEEP_MS:30000}
   redis:
     enabled: ${RAILCONNECT_REDIS_ENABLED:false}
   supabase:

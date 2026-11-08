@@ -1277,6 +1277,97 @@
   padding: 12px 14px;
 }
 
+.reservation-passengers {
+  border-top: 1px solid #e2eaf2;
+  margin-top: 20px;
+  padding-top: 16px;
+}
+
+.reservation-passengers h3,
+.reservation-result h3 {
+  color: #172d48;
+  margin: 0 0 12px;
+}
+
+.reservation-passenger-row {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  margin-bottom: 12px;
+}
+
+.reservation-passenger-row label {
+  color: #263b56;
+  display: grid;
+  font-size: 0.83rem;
+  font-weight: 750;
+  gap: 7px;
+}
+
+.reservation-passenger-row input,
+.reservation-passenger-row select {
+  border: 1px solid #c9d5e3;
+  border-radius: 9px;
+  color: #172d48;
+  min-height: 44px;
+  padding: 0 11px;
+  width: 100%;
+}
+
+.reservation-group-choice {
+  align-items: center;
+  color: #263b56;
+  display: flex;
+  font-size: 0.86rem;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.reservation-group-choice input {
+  min-height: 18px;
+  width: 18px;
+}
+
+.reservation-holds-list {
+  display: grid;
+  gap: 10px;
+}
+
+.reservation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.reservation-result {
+  background: #f6f9fc;
+  border: 1px solid #dce5ef;
+  border-radius: 12px;
+  margin-top: 18px;
+  padding: 16px;
+}
+
+.reservation-result p {
+  color: #263b56;
+  margin: 8px 0;
+}
+
+.reservation-result ul {
+  color: #263b56;
+  display: grid;
+  gap: 7px;
+  padding-left: 20px;
+}
+
+.reservation-disclaimer {
+  border-top: 1px solid #dce5ef;
+  font-size: 0.82rem;
+  margin-top: 14px !important;
+  padding-top: 12px;
+}
+
 .passenger-fare-section {
   background: #fff;
   border: 1px solid #dce5ef;
@@ -1765,6 +1856,14 @@
   .passenger-inventory-hold {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .reservation-passenger-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reservation-actions > button {
+    width: 100%;
   }
 
   .passenger-fare-heading,

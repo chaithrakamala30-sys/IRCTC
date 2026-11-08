@@ -103,6 +103,50 @@ class DatabaseMigrationIT {
                 )
                 """,
                 Integer.class);
+        Integer reservationTableCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name IN (
+                    'reservation_allocation_policies', 'reservation_requests',
+                    'reservation_passengers', 'reservation_request_holds',
+                    'reservation_allocations', 'reservation_allocation_segments',
+                    'reservation_state_history', 'reservation_audit_log',
+                    'reservation_policy_audit_log', 'reservation_request_rate_limits'
+                  )
+                """,
+                Integer.class);
+        Integer reservationPermissionCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM permissions
+                WHERE permission_code LIKE 'reservations:%'
+                """,
+                Integer.class);
+        Integer reservationTriggerCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM pg_trigger
+                WHERE NOT tgisinternal
+                  AND tgname IN (
+                    'reservation_allocation_policy_transition_guard',
+                    'reservation_passengers_immutable',
+                    'reservation_request_holds_immutable',
+                    'reservation_allocation_segment_range_guard',
+                    'reservation_allocation_segments_immutable',
+                    'reservation_request_state_transition_guard',
+                    'reservation_allocation_state_transition_guard',
+                    'reservation_state_history_append_only',
+                    'reservation_audit_append_only',
+                    'reservation_policy_audit_append_only'
+                  )
+                """,
+                Integer.class);
+        Integer publishedReservationPolicyCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM reservation_allocation_policies
+                WHERE status = 'PUBLISHED' AND version_number = 1
+                """,
+                Integer.class);
         Integer inventorySnapshotTriggerCount = jdbcTemplate.queryForObject(
                 """
                 SELECT COUNT(*) FROM pg_trigger
@@ -131,5 +175,9 @@ class DatabaseMigrationIT {
         assertThat(inventoryTableCount).isEqualTo(13);
         assertThat(inventoryPermissionCount).isEqualTo(5);
         assertThat(inventorySnapshotTriggerCount).isEqualTo(5);
+        assertThat(reservationTableCount).isEqualTo(10);
+        assertThat(reservationPermissionCount).isEqualTo(11);
+        assertThat(reservationTriggerCount).isEqualTo(10);
+        assertThat(publishedReservationPolicyCount).isEqualTo(1);
     }
 }

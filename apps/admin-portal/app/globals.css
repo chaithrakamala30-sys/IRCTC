@@ -235,6 +235,33 @@
   font-size: 0.88rem;
 }
 
+.admin-reservation-stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin-top: 16px;
+}
+
+.admin-reservation-stats > div {
+  background: #f4f7fb;
+  border: 1px solid #dce5ef;
+  border-radius: 12px;
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+}
+
+.admin-reservation-stats span {
+  color: #52657b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.admin-reservation-stats strong {
+  color: #172d48;
+  font-size: 1.35rem;
+}
+
 .admin-panel code {
   display: block;
   max-width: 380px;

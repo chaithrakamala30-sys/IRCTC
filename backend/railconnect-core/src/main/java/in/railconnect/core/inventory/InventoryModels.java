@@ -33,7 +33,8 @@ public final class InventoryModels {
             @NotNull UUID fromStationId,
             @NotNull UUID toStationId,
             @NotBlank @Size(max = 32) String coachClassCode,
-            @Size(max = 24) String preferredBerthType
+            @Pattern(regexp = "LOWER_BERTH|MIDDLE_BERTH|UPPER_BERTH|SIDE_LOWER_BERTH|SIDE_UPPER_BERTH")
+            String preferredBerthType
     ) {
     }
 

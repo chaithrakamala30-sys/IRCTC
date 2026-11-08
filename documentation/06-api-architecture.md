@@ -98,6 +98,20 @@ The implemented staff API is under `/api/v1/admin/master-data`; it uses the repo
 
 Use the [Phase 3 master-data guide](phase-3-master-data.md) for permissions, lifecycle rules, request behavior, and limitations. These endpoints do not implement train search, inventory, booking, or payment.
 
+## Implemented Phase 7 reservation API
+
+The provisional reservation API uses the standard `ApiEnvelope` contract and the V10 schema. Passenger endpoints require the passenger role and corresponding `reservations:own:*` permissions. The create request requires an `Idempotency-Key`, one to four passenger records, and the same number of distinct active inventory hold IDs.
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/api/v1/passenger/reservations/requests` | Create an idempotent request linked to owned holds |
+| `GET` | `/api/v1/passenger/reservations/requests/{reservationId}` | Read an owned request and its passengers/state history |
+| `GET` | `/api/v1/passenger/reservations/requests/{reservationId}/allocations` | Read allocation outcomes for an owned request |
+| `POST` | `/api/v1/passenger/reservations/requests/{reservationId}/allocate` | Atomically transfer all linked segment claims |
+| `POST` | `/api/v1/passenger/reservations/requests/{reservationId}/release` | Release a request and its holds or provisional allocations |
+
+Administrative reads and release use `/api/v1/admin/reservations` and `/api/v1/admin/allocations`. Allocation policy operations use `/api/v1/admin/allocations/policies`, with policy changes recorded in the append-only `/api/v1/admin/allocations/policies/audit` feed and separate read, manage, approve, and publish permissions. Operations summaries expose aggregate counts only. See [reservation engine design](07-reservation-engine-design.md) for the state machine, atomicity guarantees, and boundaries; an allocated provisional request is not a ticket.
+
 ## API evolution and operational contract
 
 Add backward-compatible optional response fields; do not silently change enum meaning. Deprecate with telemetry and a documented sunset; introduce `/v2` for incompatible contract changes. Use OpenAPI-generated clients only after schema review. Track request IDs across app/log/outbox/provider event while excluding PII. Define `Retry-After` for throttles and typed retryability in internal errors.

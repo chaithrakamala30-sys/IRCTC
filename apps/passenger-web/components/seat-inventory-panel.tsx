@@ -29,11 +29,26 @@ type Hold = {
   status: string;
   expiresAt: string;
 };
+type PassengerDraft = { displayName: string; preferredBerthType: string };
+type Reservation = {
+  reservationRequestId: string;
+  status: string;
+  groupSeatingResult: string;
+  expiresAt: string | null;
+  passengers: {
+    displayName: string;
+    coachNumber: string | null;
+    berthNumber: string | null;
+    preferenceResult: string | null;
+  }[];
+};
 
 function message(error: unknown): string {
   return error instanceof ApiRequestError
     ? error.message
-    : "Seat inventory could not be loaded. Please try again.";
+    : error instanceof Error
+      ? error.message
+      : "Seat inventory or reservation actions could not be completed. Please try again.";
 }
 
 export function SeatInventoryPanel({
@@ -52,7 +67,13 @@ export function SeatInventoryPanel({
   const [run, setRun] = useState<TrainRun | null>(null);
   const [selectedClass, setSelectedClass] = useState(classes[0]?.code ?? "");
   const [availability, setAvailability] = useState<ClassAvailability | null>(null);
-  const [hold, setHold] = useState<Hold | null>(null);
+  const [holds, setHolds] = useState<Hold[]>([]);
+  const [passengers, setPassengers] = useState<PassengerDraft[]>([
+    { displayName: "", preferredBerthType: "" },
+  ]);
+  const [groupSeatingRequested, setGroupSeatingRequested] = useState(false);
+  const [reservation, setReservation] = useState<Reservation | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState("");
   const [loading, setLoading] = useState(true);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -135,8 +156,10 @@ export function SeatInventoryPanel({
           coachClassCode: selectedClass,
         }),
       });
-      setHold(response.data);
-      setNotice("Temporary seat hold created. This is not a reservation or ticket.");
+      const createdHold = response.data;
+      if (!createdHold) throw new Error("The server did not return the created hold.");
+      setHolds((current) => [...current, createdHold]);
+      setNotice("Temporary seat hold created. It is not a reservation or ticket.");
       await loadAvailability();
     } catch (caught) {
       setError(message(caught));
@@ -146,16 +169,120 @@ export function SeatInventoryPanel({
   }
 
   async function releaseHold() {
-    if (!hold) return;
     setSaving(true);
     setError("");
     setNotice("");
     try {
-      await apiFetch<Hold>(`/api/v1/passenger/inventory/holds/${encodeURIComponent(hold.inventoryHoldId)}`, {
+      for (const hold of holds) {
+        await apiFetch<Hold>(
+          `/api/v1/passenger/inventory/holds/${encodeURIComponent(hold.inventoryHoldId)}`,
+          { method: "DELETE" },
+        );
+        setHolds((current) => current.filter((item) => item.inventoryHoldId !== hold.inventoryHoldId));
+      }
+      setNotice("Temporary holds released.");
+      await loadAvailability();
+    } catch (caught) {
+      setError(message(caught));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function releaseSingleHold(holdId: string) {
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      await apiFetch<Hold>(`/api/v1/passenger/inventory/holds/${encodeURIComponent(holdId)}`, {
         method: "DELETE",
       });
-      setHold(null);
+      setHolds((current) => current.filter((hold) => hold.inventoryHoldId !== holdId));
       setNotice("Temporary hold released.");
+      await loadAvailability();
+    } catch (caught) {
+      setError(message(caught));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function createReservation() {
+    if (!run || holds.length !== passengers.length) return;
+    setSaving(true);
+    setError("");
+    setNotice("");
+    const requestKey = idempotencyKey || crypto.randomUUID();
+    setIdempotencyKey(requestKey);
+    try {
+      const response = await apiFetch<Reservation>("/api/v1/passenger/reservations/requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": requestKey,
+        },
+        body: JSON.stringify({
+          trainRunId: run.trainRunId,
+          journeyDate,
+          fromStationId,
+          toStationId,
+          coachClassCode: selectedClass,
+          groupSeatingRequested,
+          passengers,
+          inventoryHoldIds: holds.map((hold) => hold.inventoryHoldId),
+        }),
+      });
+      if (!response.data) throw new Error("The server did not return the reservation request.");
+      setReservation(response.data);
+      setIdempotencyKey("");
+      setNotice("Reservation request created. No berth is allocated until you continue.");
+    } catch (caught) {
+      setError(message(caught));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function allocateReservation() {
+    if (!reservation) return;
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await apiFetch<Reservation>(
+        `/api/v1/passenger/reservations/requests/${encodeURIComponent(reservation.reservationRequestId)}/allocate`,
+        { method: "POST" },
+      );
+      if (!response.data) throw new Error("The server did not return the allocation result.");
+      setReservation(response.data);
+      setNotice(response.data.status === "ALLOCATED_PENDING_BOOKING"
+        ? "Provisional berths allocated. Complete booking before the displayed expiry; this is not a ticket."
+        : "The request was processed. Review its current status below.");
+      await loadAvailability();
+    } catch (caught) {
+      setError(message(caught));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function releaseReservation() {
+    if (!reservation) return;
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await apiFetch<Reservation>(
+        `/api/v1/passenger/reservations/requests/${encodeURIComponent(reservation.reservationRequestId)}/release`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reasonCode: "PASSENGER_CANCELLED" }),
+        },
+      );
+      if (!response.data) throw new Error("The server did not return the release result.");
+      setReservation(response.data);
+      setNotice("Reservation request released.");
       await loadAvailability();
     } catch (caught) {
       setError(message(caught));
@@ -188,7 +315,11 @@ export function SeatInventoryPanel({
           <div className="passenger-inventory-controls">
             <label>
               Coach class
-              <select onChange={(event) => setSelectedClass(event.target.value)} value={selectedClass}>
+              <select
+                disabled={holds.length > 0 || reservation !== null}
+                onChange={(event) => setSelectedClass(event.target.value)}
+                value={selectedClass}
+              >
                 {classes.map((coachClass) => (
                   <option key={coachClass.code} value={coachClass.code}>
                     {coachClass.code} — {coachClass.name}
@@ -217,21 +348,150 @@ export function SeatInventoryPanel({
             </div>
           )}
           {notice && <p className="passenger-inventory-notice" role="status">{notice}</p>}
-          {hold && (
-            <div className="passenger-inventory-hold">
-              <p>
-                Temporary hold: <strong>{hold.coachNumber} · {hold.berthNumber}</strong>
-                {" "}({hold.coachClassCode}) until {new Date(hold.expiresAt).toLocaleTimeString()}.
-              </p>
-              <button className="button button--secondary" disabled={saving} onClick={() => void releaseHold()} type="button">
-                Release hold
+          <div className="reservation-passengers">
+            <h3>Passengers</h3>
+            {passengers.map((passenger, index) => (
+              <div className="reservation-passenger-row" key={`reservation-passenger-${index}`}>
+                <label>
+                  Passenger {index + 1} name
+                  <input
+                    autoComplete="name"
+                    maxLength={120}
+                    onChange={(event) => setPassengers((current) => current.map((item, row) =>
+                      row === index ? { ...item, displayName: event.target.value } : item))}
+                    value={passenger.displayName}
+                  />
+                </label>
+                <label>
+                  Berth preference (optional)
+                  <select
+                    onChange={(event) => setPassengers((current) => current.map((item, row) =>
+                      row === index ? { ...item, preferredBerthType: event.target.value } : item))}
+                    value={passenger.preferredBerthType}
+                  >
+                    <option value="">No preference</option>
+                    <option value="LOWER_BERTH">Lower</option>
+                    <option value="MIDDLE_BERTH">Middle</option>
+                    <option value="UPPER_BERTH">Upper</option>
+                    <option value="SIDE_LOWER_BERTH">Side lower</option>
+                    <option value="SIDE_UPPER_BERTH">Side upper</option>
+                  </select>
+                </label>
+                {passengers.length > 1 && !reservation && (
+                  <button
+                    className="button button--secondary"
+                    disabled={saving || holds.length >= passengers.length}
+                    onClick={() => setPassengers((current) => current.filter((_, row) => row !== index))}
+                    type="button"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            {!reservation && passengers.length < 4 && (
+              <button
+                className="button button--secondary"
+                disabled={saving || holds.length >= passengers.length}
+                onClick={() => setPassengers((current) => [...current, { displayName: "", preferredBerthType: "" }])}
+                type="button"
+              >
+                Add passenger
               </button>
+            )}
+            {passengers.length > 1 && !reservation && (
+              <label className="reservation-group-choice">
+                <input
+                  checked={groupSeatingRequested}
+                  onChange={(event) => setGroupSeatingRequested(event.target.checked)}
+                  type="checkbox"
+                />
+                Request berths in the same coach (not guaranteed)
+              </label>
+            )}
+          </div>
+          <div className="reservation-holds-list" aria-live="polite">
+            {holds.map((hold) => (
+              <div className="passenger-inventory-hold" key={hold.inventoryHoldId}>
+                <p>
+                  Temporary hold: <strong>{hold.coachNumber} · {hold.berthNumber}</strong>
+                  {" "}({hold.coachClassCode}) until {new Date(hold.expiresAt).toLocaleTimeString()}.
+                </p>
+                {!reservation && (
+                  <button className="button button--secondary" disabled={saving}
+                    onClick={() => void releaseSingleHold(hold.inventoryHoldId)} type="button">
+                    Release hold
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          {!reservation && (
+            <div className="reservation-actions">
+              <button
+                className="button button--secondary"
+                disabled={saving || !availability || availability.available === 0 || holds.length >= passengers.length}
+                onClick={() => void createHold()}
+                type="button"
+              >
+                {saving ? "Working…" : `Hold berth (${holds.length}/${passengers.length})`}
+              </button>
+              <button
+                className="button button--primary"
+                disabled={saving || holds.length !== passengers.length
+                  || passengers.some((passenger) => passenger.displayName.trim().length === 0)}
+                onClick={() => void createReservation()}
+                type="button"
+              >
+                Create reservation request
+              </button>
+              {holds.length > 0 && (
+                <button className="button button--secondary" disabled={saving}
+                  onClick={() => void releaseHold()} type="button">
+                  Release all holds
+                </button>
+              )}
             </div>
           )}
-          {!hold && (
-            <button className="button button--primary" disabled={saving || !availability || availability.available === 0} onClick={() => void createHold()} type="button">
-              {saving ? "Working…" : "Hold one available berth"}
-            </button>
+          {reservation && (
+            <section className="reservation-result" aria-live="polite" aria-labelledby="reservation-result-title">
+              <h3 id="reservation-result-title">Reservation request</h3>
+              <p>Status: <strong>{reservation.status.replaceAll("_", " ")}</strong></p>
+              {reservation.expiresAt && (
+                <p>Allocation expiry: <strong>{new Date(reservation.expiresAt).toLocaleString()}</strong></p>
+              )}
+              {reservation.groupSeatingResult !== "NOT_REQUESTED" && (
+                <p>Group seating: {reservation.groupSeatingResult.replaceAll("_", " ")}</p>
+              )}
+              <ul>
+                {reservation.passengers.map((passenger, index) => (
+                  <li key={`${reservation.reservationRequestId}-${index}`}>
+                    {passenger.displayName}
+                    {passenger.coachNumber && passenger.berthNumber
+                      ? ` — ${passenger.coachNumber}, berth ${passenger.berthNumber}`
+                      : " — no berth allocated yet"}
+                    {passenger.preferenceResult
+                      ? ` · preference ${passenger.preferenceResult.toLowerCase()}`
+                      : ""}
+                  </li>
+                ))}
+              </ul>
+              {reservation.status === "REQUESTED" && (
+                <button className="button button--primary" disabled={saving}
+                  onClick={() => void allocateReservation()} type="button">
+                  {saving ? "Working…" : "Allocate provisional berths"}
+                </button>
+              )}
+              {["REQUESTED", "ALLOCATED_PENDING_BOOKING"].includes(reservation.status) && (
+                <button className="button button--secondary" disabled={saving}
+                  onClick={() => void releaseReservation()} type="button">
+                  Release request
+                </button>
+              )}
+              <p className="reservation-disclaimer">
+                A provisional allocation is not a confirmed booking or ticket.
+              </p>
+            </section>
           )}
         </>
       )}

@@ -5,7 +5,7 @@ export default function AdminHomePage() {
     <div className="admin-shell">
       <AdminIdentityConsole />
       <footer className="site-footer">
-        Staff access is server-authorized. Search, seat availability, and reservations are outside Phase 3.
+        Staff operations are server-authorized; reservation policy and release actions require separate permissions.
       </footer>
     </div>
   );

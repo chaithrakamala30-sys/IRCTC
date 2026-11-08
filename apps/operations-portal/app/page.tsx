@@ -44,6 +44,7 @@ type Audit = {
   occurredAt: string;
   details: string;
 };
+type ReservationCount = { status: string; count: number };
 
 function errorText(error: unknown): string {
   return error instanceof ApiRequestError ? error.message : "The request could not be completed.";
@@ -57,6 +58,8 @@ export default function OperationsHomePage() {
   const [berths, setBerths] = useState<Berth[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [audit, setAudit] = useState<Audit[]>([]);
+  const [reservationCounts, setReservationCounts] = useState<ReservationCount[]>([]);
+  const [reservationSummaryError, setReservationSummaryError] = useState("");
   const [fromStationId, setFromStationId] = useState("");
   const [toStationId, setToStationId] = useState("");
   const [error, setError] = useState("");
@@ -126,6 +129,28 @@ export default function OperationsHomePage() {
   useEffect(() => {
     if (selectedRun) void refreshBerths().catch((caught: unknown) => setError(errorText(caught)));
   }, [refreshBerths, selectedRun]);
+
+  useEffect(() => {
+    if (!selectedRun || !user?.roles.some((role) => ["OPERATIONS_MANAGER", "SUPER_ADMIN"].includes(role))) {
+      setReservationCounts([]);
+      setReservationSummaryError("");
+      return;
+    }
+    let active = true;
+    setReservationCounts([]);
+    setReservationSummaryError("");
+    const query = new URLSearchParams({ trainRunId: selectedRun.run.trainRunId });
+    void apiFetch<ReservationCount[]>(`/api/v1/operations/allocations/summary?${query}`)
+      .then((response) => {
+        if (active) setReservationCounts(response.data ?? []);
+      })
+      .catch((caught: unknown) => {
+        if (active) setReservationSummaryError(errorText(caught));
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedRun, user]);
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -250,7 +275,7 @@ export default function OperationsHomePage() {
         <div className="ops-title">
           <p className="eyebrow">Railway operations</p>
           <h1>Train-run seat inventory</h1>
-          <p>Manage dated inventory snapshots and operational berth blocks. No reservations, payments, or ticket allocation are performed here.</p>
+          <p>Manage dated inventory snapshots and operational berth blocks. Reservation data here is limited to aggregate allocation counts.</p>
         </div>
         {error && <p className="ops-alert ops-alert--error" role="alert">{error}</p>}
         {notice && <p className="ops-alert ops-alert--success" role="status">{notice}</p>}
@@ -304,6 +329,25 @@ export default function OperationsHomePage() {
             </section>
             {selectedRun && (
               <>
+                {user.roles.some((role) => ["OPERATIONS_MANAGER", "SUPER_ADMIN"].includes(role)) && (
+                  <section className="ops-panel" aria-labelledby="reservation-summary-title">
+                    <h2 id="reservation-summary-title">Reservation allocation counts</h2>
+                    <p>Aggregate status totals only; passenger names and booking details are not exposed in operations.</p>
+                    {reservationSummaryError && (
+                      <p className="ops-alert ops-alert--error" role="alert">{reservationSummaryError}</p>
+                    )}
+                    {!reservationSummaryError && reservationCounts.length === 0 && (
+                      <p>No reservation allocations are recorded for this run.</p>
+                    )}
+                    <div className="ops-count-grid">
+                      {reservationCounts.map((item) => (
+                        <div className="ops-count-card" key={item.status}>
+                          <span>{item.status.replaceAll("_", " ")}</span><strong>{item.count}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
                 <section className="ops-panel">
                   <div className="ops-panel-heading">
                     <div><h2>{selectedRun.run.trainNumber} · {selectedRun.run.serviceDate}</h2><p>Selected run snapshot and journey segment controls</p></div>
