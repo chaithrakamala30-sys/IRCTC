@@ -1235,7 +1235,15 @@
   }
 
   .sort-control {
+    align-items: center;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: auto minmax(0, 1fr);
     width: 100%;
+  }
+
+  .sort-control select {
+    min-height: 44px;
   }
 
   .results-layout {
@@ -1407,6 +1415,15 @@
 }
 
 @media (max-width: 390px) {
+  .sort-control {
+    gap: 8px;
+  }
+
+  .sort-control select {
+    font-size: 0.8rem;
+    padding: 9px;
+  }
+
   .station-fields {
     gap: 7px;
     grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr);
