@@ -61,6 +61,8 @@ type Booking = {
   passengers: { displayName: string; coachNumber: string; berthNumber: string }[];
 };
 
+const TERMINAL_RESERVATION_STATUSES = new Set(["RELEASED", "FAILED", "EXPIRED"]);
+
 function isHoldExpired(expiresAt: string): boolean {
   const value = new Date(expiresAt).getTime();
   return Number.isFinite(value) && value <= Date.now();
@@ -122,6 +124,15 @@ export function SeatInventoryPanel({
   const reservationStorageKey = run
     ? `railconnect:reservation-request:${run.trainRunId}:${journeyDate}:${fromStationId}:${toStationId}`
     : null;
+
+  function resetReservationForm() {
+    setReservation(null);
+    setBooking(null);
+    setIdempotencyKey("");
+    setBookingIdempotencyKey("");
+    setGroupSeatingRequested(false);
+    setPassengers([{ displayName: "", preferredBerthType: "" }]);
+  }
 
   const loadHolds = useCallback(async () => {
     try {
@@ -224,15 +235,15 @@ export function SeatInventoryPanel({
       .then((response) => {
         if (!response.data) throw new Error("The server did not return the saved reservation request.");
         if (!active) return;
-        if (["RELEASED", "FAILED", "EXPIRED"].includes(response.data.status)) {
+        if (TERMINAL_RESERVATION_STATUSES.has(response.data.status)) {
           try {
             window.localStorage.removeItem(reservationStorageKey);
           } catch {
             setError("The saved reservation request is no longer active, but its browser entry could not be cleared.");
             return;
           }
-          setReservation(null);
-          setNotice("The previous reservation request is no longer active. You can hold a berth again.");
+          resetReservationForm();
+          setNotice("");
           void loadHolds();
           return;
         }
@@ -512,9 +523,9 @@ export function SeatInventoryPanel({
         setError("Reservation request released, but its browser entry could not be cleared. Refresh after clearing site storage.");
         return;
       }
-      setReservation(null);
+      resetReservationForm();
       setHolds([]);
-      setNotice("Reservation request released. You can hold a berth again.");
+      setNotice("");
       await loadHolds();
       await loadAvailability();
     } catch (caught) {
