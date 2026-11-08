@@ -891,7 +891,7 @@ public class FareService {
                     .addValue("distanceKm", distanceKm)
                     .addValue("totalAmount", quote.totalAmount())
                     .addValue("snapshot", objectMapper.writeValueAsString(quote))
-                    .addValue("expiresAt", quote.expiresAt()));
+                    .addValue("expiresAt", java.sql.Timestamp.from(quote.expiresAt())));
         } catch (JsonProcessingException exception) {
             throw new FareException(HttpStatus.INTERNAL_SERVER_ERROR, "FARE_QUOTE_SERIALIZATION_FAILED",
                     "The fare quote could not be persisted");
