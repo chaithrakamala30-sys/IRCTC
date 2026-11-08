@@ -43,7 +43,7 @@ Set these Vercel environment variables for the passenger and admin projects, the
 | Variable | Value |
 |---|---|
 | `RAILCONNECT_API_ORIGIN` | `https://irctc-wb68.onrender.com` |
-| `NEXT_PUBLIC_API_BASE_URL` | The origin of that specific Vercel project, with no trailing slash; for example, `https://irctc-rho.vercel.app` for the passenger project |
+| `NEXT_PUBLIC_API_BASE_URL` | Optional. The origin of that specific Vercel project, with no trailing slash; for example, `https://irctc-rho.vercel.app` for the passenger project. If omitted, the shared client uses same-origin `/api/*` URLs. |
 
 Set the following in Render's backend environment:
 
@@ -57,7 +57,7 @@ Keep the Supabase database variables in Render's secret settings; do not put dat
 
 Supabase Auth owns passwords and email verification. The backend creates corresponding rows in `railconnect.users` using the same Supabase Auth UUID and stores profile and role data there; password hashes are not stored in the application table.
 
-The website's generic network error can mean the API base URL was missing or malformed, the API is offline/unreachable, or the Vercel proxy/Render connection failed. Check the browser Network panel for `/api/v1/auth/csrf` and verify the backend's health endpoint before retrying registration.
+The website's generic network error can mean the Vercel proxy is not deployed/configured, the API is offline/unreachable, or the API returned an invalid response. Check the browser Network panel for `/api/v1/auth/csrf` and verify the backend's health endpoint before retrying registration. The API client uses same-origin paths by default to keep session cookies first-party; do not hardcode a direct cross-site Render URL in the browser client.
 
 ## Supabase switch
 

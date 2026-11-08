@@ -7,28 +7,45 @@ describe("apiFetch", () => {
     vi.unstubAllGlobals();
   });
 
-  it("fails explicitly when the API base URL is not configured", async () => {
+  it("uses the same-origin API proxy when no base URL is configured", async () => {
     vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: { status: "UP" },
+            error: null,
+            timestamp: "2026-11-05T00:00:00Z",
+            requestId: "test-request",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
 
-    await expect(apiFetch("api/v1/health")).rejects.toThrow(
-      "NEXT_PUBLIC_API_BASE_URL must be configured",
+    await apiFetch("api/v1/health");
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/v1/health",
+      expect.any(Object),
     );
   });
 
   it("rejects malformed API base URLs", async () => {
     vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "not a URL");
 
-    await expect(apiFetch("api/v1/health")).rejects.toThrow(
-      "NEXT_PUBLIC_API_BASE_URL must be a valid absolute URL",
-    );
+    await expect(apiFetch("api/v1/health")).rejects.toMatchObject({
+      code: "API_CONFIGURATION_INVALID",
+    });
   });
 
   it("rejects non-http API base URL protocols", async () => {
     vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "javascript:alert(1)");
 
-    await expect(apiFetch("api/v1/health")).rejects.toThrow(
-      "NEXT_PUBLIC_API_BASE_URL must use HTTP or HTTPS",
-    );
+    await expect(apiFetch("api/v1/health")).rejects.toMatchObject({
+      code: "API_CONFIGURATION_INVALID",
+    });
   });
 
   it("returns a valid success envelope", async () => {
@@ -58,6 +75,19 @@ describe("apiFetch", () => {
     expect(new Headers(requestInit?.headers).get("Accept")).toBe(
       "application/json",
     );
+  });
+
+  it("reports an unreachable API without a generic request error", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "https://api.example.test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+    );
+
+    await expect(apiFetch("api/v1/health")).rejects.toMatchObject({
+      code: "API_UNREACHABLE",
+      message: "RailConnect's server could not be reached. Please try again later.",
+    });
   });
 
   it("surfaces API errors with status and request ID", async () => {

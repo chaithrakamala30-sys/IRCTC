@@ -107,15 +107,26 @@ class IdentityFlowIT {
                 .andExpect(jsonPath("$.data.email").value(email))
                 .andReturn();
         var sessionCookie = Objects.requireNonNull(loginResult.getResponse().getCookie("RCSESSION"));
-        assertThat(jdbcTemplate.queryForObject(
-                "SELECT PRINCIPAL_NAME FROM SPRING_SESSION WHERE SESSION_ID = ?",
-                String.class,
-                sessionCookie.getValue()
-        )).isEqualTo(jdbcTemplate.queryForObject(
+        String principalName = jdbcTemplate.queryForObject(
                 "SELECT user_id::text FROM users WHERE email = ?",
                 String.class,
                 email
-        ));
+        );
+        String internalSessionId = jdbcTemplate.queryForObject(
+                "SELECT SESSION_ID FROM SPRING_SESSION WHERE PRINCIPAL_NAME = ?",
+                String.class,
+                principalName
+        );
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT PRINCIPAL_NAME FROM SPRING_SESSION WHERE SESSION_ID = ?",
+                String.class,
+                internalSessionId
+        )).isEqualTo(principalName);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM user_sessions WHERE session_id = ?",
+                Integer.class,
+                internalSessionId
+        )).isEqualTo(1);
 
         mockMvc.perform(get("/api/v1/auth/me").cookie(sessionCookie))
                 .andExpect(status().isOk())
@@ -138,6 +149,95 @@ class IdentityFlowIT {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/auth/me").cookie(sessionCookie))
                 .andExpect(status().isUnauthorized());
+        MvcResult secondLoginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value(email))
+                .andReturn();
+        var secondSessionCookie = Objects.requireNonNull(
+                secondLoginResult.getResponse().getCookie("RCSESSION"));
+        mockMvc.perform(get("/api/v1/auth/me").cookie(secondSessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value(email));
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .cookie(secondSessionCookie)
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfToken))
+                .andExpect(status().isOk());
+        MvcResult thirdLoginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value(email))
+                .andReturn();
+        var thirdSessionCookie = Objects.requireNonNull(
+                thirdLoginResult.getResponse().getCookie("RCSESSION"));
+        mockMvc.perform(get("/api/v1/auth/me").cookie(thirdSessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value(email));
+    }
+
+    @Test
+    void confirmedPassengerLoginLinksAnExistingUnlinkedProfileByEmail() throws Exception {
+        String suffix = UUID.randomUUID().toString().replace("-", "");
+        String email = "linked-" + suffix + "@example.test";
+        String mobile = "+1555" + String.format(
+                Locale.ROOT,
+                "%010d",
+                Math.abs(UUID.randomUUID().getLeastSignificantBits() % 10_000_000_000L));
+        String password = "SecureRail!Password2026";
+        UUID profileId = UUID.randomUUID();
+        UUID authUserId = UUID.nameUUIDFromBytes(email.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        UUID staleAuthUserId = UUID.randomUUID();
+        stubSupabaseUser(email, password, "Existing Passenger", mobile);
+        jdbcTemplate.update(
+                """
+                        INSERT INTO users (
+                            user_id, auth_user_id, full_name, email, mobile_number, password_hash,
+                            terms_version, privacy_version
+                        ) VALUES (?, ?, 'Existing Passenger', ?, ?, NULL, 'legacy', 'legacy')
+                        """,
+                profileId,
+                staleAuthUserId,
+                email,
+                mobile
+        );
+        jdbcTemplate.update(
+                "INSERT INTO user_roles (user_id, role_code) VALUES (?, 'PASSENGER')",
+                profileId
+        );
+
+        MvcResult csrfResult = mockMvc.perform(get("/api/v1/auth/csrf"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode csrfBody = objectMapper.readTree(csrfResult.getResponse().getContentAsString());
+        String csrfToken = csrfBody.path("data").path("token").asText();
+        var csrfCookie = csrfResult.getResponse().getCookie("XSRF-TOKEN");
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"identifier":"%s","password":"%s"}
+                                """.formatted(email, password)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value(email));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT auth_user_id FROM users WHERE user_id = ?",
+                UUID.class,
+                profileId
+        )).isEqualTo(authUserId);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM user_roles WHERE user_id = ? AND role_code = 'PASSENGER'",
+                Integer.class,
+                profileId
+        )).isEqualTo(1);
     }
 
     @Test
@@ -185,12 +285,22 @@ class IdentityFlowIT {
                 .andReturn();
         var sessionCookie = Objects.requireNonNull(loginResult.getResponse().getCookie("RCSESSION"));
 
+        String internalSessionId = jdbcTemplate.queryForObject(
+                """
+                        SELECT us.session_id
+                        FROM user_sessions us
+                        JOIN users u ON u.user_id = us.user_id
+                        WHERE u.email = ? AND us.revoked_at IS NULL
+                        """,
+                String.class,
+                email
+        );
         assertThat(jdbcTemplate.update(
                 """
                         UPDATE user_sessions SET revoked_at = CURRENT_TIMESTAMP
                         WHERE session_id = ? AND revoked_at IS NULL
                         """,
-                sessionCookie.getValue()
+                internalSessionId
         )).isEqualTo(1);
         mockMvc.perform(get("/api/v1/auth/me").cookie(sessionCookie))
                 .andExpect(status().isUnauthorized())

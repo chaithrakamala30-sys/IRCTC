@@ -34,22 +34,26 @@ let csrfToken: string | null = null;
 let csrfTokenRequest: Promise<string> | null = null;
 
 function getApiBaseUrl(): string {
-  const configuredUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!configuredUrl) {
-    throw new Error(
-      "NEXT_PUBLIC_API_BASE_URL must be configured before making API requests.",
-    );
-  }
+  const configuredUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  if (!configuredUrl) return "";
 
   let url: URL;
   try {
     url = new URL(configuredUrl);
   } catch {
-    throw new Error("NEXT_PUBLIC_API_BASE_URL must be a valid absolute URL.");
+    throw new ApiRequestError(
+      "This website's API address is invalid. Please contact the site administrator.",
+      0,
+      "API_CONFIGURATION_INVALID",
+    );
   }
 
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error("NEXT_PUBLIC_API_BASE_URL must use HTTP or HTTPS.");
+    throw new ApiRequestError(
+      "This website's API address is invalid. Please contact the site administrator.",
+      0,
+      "API_CONFIGURATION_INVALID",
+    );
   }
 
   return url.toString().replace(/\/$/, "");
@@ -61,6 +65,9 @@ export async function apiFetch<T>(
 ): Promise<ApiEnvelope<T>> {
   const baseUrl = getApiBaseUrl();
   const normalizedPath = path.replace(/^\/+/, "");
+  const requestUrl = baseUrl
+    ? `${baseUrl}/${normalizedPath}`
+    : `/${normalizedPath}`;
   const method = (init.method ?? "GET").toUpperCase();
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
@@ -74,11 +81,20 @@ export async function apiFetch<T>(
     }
     headers.set("X-XSRF-TOKEN", csrfToken);
   }
-  const response = await fetch(`${baseUrl}/${normalizedPath}`, {
-    ...init,
-    credentials: "include",
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(requestUrl, {
+      ...init,
+      credentials: "include",
+      headers,
+    });
+  } catch {
+    throw new ApiRequestError(
+      "RailConnect's server could not be reached. Please try again later.",
+      0,
+      "API_UNREACHABLE",
+    );
+  }
 
   let body: unknown;
   try {
@@ -113,10 +129,25 @@ export async function apiFetch<T>(
 }
 
 async function fetchCsrfToken(baseUrl: string): Promise<string> {
-  const response = await fetch(`${baseUrl}/api/v1/auth/csrf`, {
-    credentials: "include",
-    headers: { Accept: "application/json" },
-  });
+  let response: Response;
+  try {
+    const csrfUrl = baseUrl
+      ? `${baseUrl}/api/v1/auth/csrf`
+      : "/api/v1/auth/csrf";
+    response = await fetch(
+      csrfUrl,
+      {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+      },
+    );
+  } catch {
+    throw new ApiRequestError(
+      "RailConnect's server could not be reached. Please try again later.",
+      0,
+      "API_UNREACHABLE",
+    );
+  }
   let body: unknown;
   try {
     body = await response.json();

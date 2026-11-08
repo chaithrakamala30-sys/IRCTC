@@ -188,6 +188,12 @@ public class IdentityService {
                     "AUTH_LOGIN", "FAILURE", null, null, identifierHash, servletRequest);
             throw invalidCredentials();
         }
+        if (!email.equals(normalizeEmail(authUser.email()))) {
+            loginThrottleService.recordFailure(identifierHash);
+            auditService.record(
+                    "AUTH_LOGIN", "FAILURE", null, null, identifierHash, servletRequest);
+            throw invalidCredentials();
+        }
 
         RailConnectPrincipal principal;
         try {
@@ -196,12 +202,15 @@ public class IdentityService {
             if (!"PASSENGER".equals(authUser.metadata().get("railconnect_account_type"))) {
                 throw invalidCredentials();
             }
-            persistPassengerProfile(
+            ensurePassengerProfile(
                     authUser,
                     String.valueOf(authUser.metadata().getOrDefault("full_name", "")),
                     String.valueOf(authUser.metadata().getOrDefault("mobile_number", "")),
                     String.valueOf(authUser.metadata().getOrDefault("terms_version", TERMS_VERSION)),
-                    String.valueOf(authUser.metadata().getOrDefault("privacy_version", PRIVACY_VERSION))
+                    String.valueOf(authUser.metadata().getOrDefault("privacy_version", PRIVACY_VERSION)),
+                    email,
+                    identifierHash,
+                    servletRequest
             );
             principal = userDetailsService.loadUserByAuthUserId(authUser.id());
         }
@@ -351,6 +360,15 @@ public class IdentityService {
             String mobileNumber,
             String termsVersion,
             String privacyVersion
+    ) {
+    }
+
+    private record ExistingPassengerProfile(
+            UUID userId,
+            UUID authUserId,
+            String status,
+            boolean hasPassengerRole,
+            boolean passengerOnly
     ) {
     }
 
@@ -643,6 +661,77 @@ public class IdentityService {
                 "INSERT INTO user_roles (user_id, role_code, assigned_by) VALUES (?, 'PASSENGER', ?)",
                 authUser.id(),
                 authUser.id()
+        );
+    }
+
+    private void ensurePassengerProfile(
+            SupabaseAuthClient.SupabaseUser authUser,
+            String fullName,
+            String mobile,
+            String termsVersion,
+            String privacyVersion,
+            String email,
+            String identifierHash,
+            HttpServletRequest request
+    ) {
+        List<ExistingPassengerProfile> profiles = jdbcTemplate.query(
+                """
+                        SELECT u.user_id, u.auth_user_id, u.status,
+                               EXISTS (
+                                   SELECT 1 FROM user_roles ur
+                                   WHERE ur.user_id = u.user_id AND ur.role_code = 'PASSENGER'
+                               ) AS has_passenger_role,
+                               NOT EXISTS (
+                                   SELECT 1 FROM user_roles ur
+                                   WHERE ur.user_id = u.user_id AND ur.role_code <> 'PASSENGER'
+                               ) AS passenger_only
+                        FROM users u
+                        WHERE lower(u.email) = ?
+                        """,
+                (result, rowNumber) -> new ExistingPassengerProfile(
+                        result.getObject("user_id", UUID.class),
+                        result.getObject("auth_user_id", UUID.class),
+                        result.getString("status"),
+                        result.getBoolean("has_passenger_role"),
+                        result.getBoolean("passenger_only")
+                ),
+                email
+        );
+        if (profiles.isEmpty()) {
+            persistPassengerProfile(authUser, fullName, mobile, termsVersion, privacyVersion);
+            return;
+        }
+        if (profiles.size() != 1 || authUser.emailConfirmedAt() == null) {
+            throw invalidCredentials();
+        }
+
+        ExistingPassengerProfile profile = profiles.get(0);
+        if (!"ACTIVE".equals(profile.status())
+                || !profile.hasPassengerRole()
+                || !profile.passengerOnly()) {
+            throw invalidCredentials();
+        }
+        int linked = jdbcTemplate.update(
+                """
+                        UPDATE users
+                        SET auth_user_id = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE user_id = ? AND auth_user_id IS NOT DISTINCT FROM ? AND lower(email) = ?
+                        """,
+                authUser.id(),
+                profile.userId(),
+                profile.authUserId(),
+                email
+        );
+        if (linked != 1) {
+            throw invalidCredentials();
+        }
+        auditService.record(
+                "AUTH_ACCOUNT_LINKED",
+                "SUCCESS",
+                profile.userId(),
+                profile.userId(),
+                identifierHash,
+                request
         );
     }
 
