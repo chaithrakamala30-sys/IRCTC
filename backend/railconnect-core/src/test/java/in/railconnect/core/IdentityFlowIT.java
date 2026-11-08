@@ -107,6 +107,15 @@ class IdentityFlowIT {
                 .andExpect(jsonPath("$.data.email").value(email))
                 .andReturn();
         var sessionCookie = Objects.requireNonNull(loginResult.getResponse().getCookie("RCSESSION"));
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT PRINCIPAL_NAME FROM SPRING_SESSION WHERE SESSION_ID = ?",
+                String.class,
+                sessionCookie.getValue()
+        )).isEqualTo(jdbcTemplate.queryForObject(
+                "SELECT user_id::text FROM users WHERE email = ?",
+                String.class,
+                email
+        ));
 
         mockMvc.perform(get("/api/v1/auth/me").cookie(sessionCookie))
                 .andExpect(status().isOk())
