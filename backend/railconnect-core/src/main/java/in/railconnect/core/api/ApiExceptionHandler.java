@@ -120,7 +120,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiEnvelope<Void>> handleUnexpected(Exception exception) {
         LOGGER.error("Unhandled request failure; exceptionType={}, requestId={}",
-                exception.getClass().getName(), RequestIds.current());
+                exception.getClass().getName(), RequestIds.current(), exception);
         return failure(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR",
                 "The request could not be completed", List.of());
     }
