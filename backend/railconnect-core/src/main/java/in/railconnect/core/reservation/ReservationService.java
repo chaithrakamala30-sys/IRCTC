@@ -286,7 +286,7 @@ public class ReservationService {
         int safePage = Math.max(page, 0);
         int safeSize = boundedPageSize(size);
         String normalizedStatus = normalizeStatusFilter(status);
-        String predicate = normalizedStatus == null ? "" : " AND request.status = ?";
+        String predicate = normalizedStatus == null ? "" : " AND request.status = ? ";
         List<Object> parameters = new ArrayList<>();
         if (normalizedStatus != null) {
             parameters.add(normalizedStatus);
