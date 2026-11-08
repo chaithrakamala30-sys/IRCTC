@@ -228,6 +228,7 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
               code: coachClass.code,
               name: coachClass.name,
             }))}
+            device={device}
             fromStationId={detail.route.find((stop) => stop.selectedOrigin)?.stationId ?? detail.journey.origin.stationId}
             journeyDate={detail.journey.journeyDate}
             toStationId={detail.route.find((stop) => stop.selectedDestination)?.stationId ?? detail.journey.destination.stationId}

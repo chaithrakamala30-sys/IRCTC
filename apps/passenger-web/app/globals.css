@@ -1174,6 +1174,62 @@
   max-width: 80ch;
 }
 
+.passenger-inventory-auth-status {
+  color: #52657b;
+  font-size: 0.86rem;
+  margin: 0 0 14px;
+}
+
+.passenger-inventory-signin {
+  background: #f6f9fc;
+  border: 1px solid #dce5ef;
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+}
+
+.passenger-inventory-signin h3 {
+  color: #172d48;
+  margin: 0 0 4px;
+}
+
+.passenger-inventory-signin p {
+  color: #52657b;
+  font-size: 0.86rem;
+  margin: 0;
+}
+
+.passenger-inventory-signin-form {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+}
+
+.passenger-inventory-signin-form label {
+  color: #263b56;
+  display: grid;
+  font-size: 0.83rem;
+  font-weight: 750;
+  gap: 7px;
+}
+
+.passenger-inventory-signin-form input {
+  border: 1px solid #c9d5e3;
+  border-radius: 9px;
+  color: #172d48;
+  min-height: 44px;
+  padding: 0 11px;
+  width: 100%;
+}
+
+.passenger-inventory-signin-register a {
+  color: #124e92;
+  font-weight: 750;
+}
+
 .passenger-inventory-controls {
   align-items: end;
   display: flex;
@@ -1847,6 +1903,14 @@
 
   .passenger-inventory-controls label {
     min-width: 0;
+  }
+
+  .passenger-inventory-signin-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .passenger-inventory-signin-form button {
+    width: 100%;
   }
 
   .passenger-inventory-result > div {

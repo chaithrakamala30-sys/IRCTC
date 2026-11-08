@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { ApiRequestError, apiFetch } from "@railconnect/api";
 
 type CoachClassOption = { code: string; name: string };
@@ -52,12 +53,14 @@ function message(error: unknown): string {
 }
 
 export function SeatInventoryPanel({
+  device,
   trainId,
   journeyDate,
   fromStationId,
   toStationId,
   classes,
 }: {
+  device: "mobile" | "laptop";
   trainId: string;
   journeyDate: string;
   fromStationId: string;
@@ -79,7 +82,29 @@ export function SeatInventoryPanel({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [authStatus, setAuthStatus] = useState<"checking" | "signed-in" | "signed-out">("checking");
+  const [signInBusy, setSignInBusy] = useState(false);
+  const [signInError, setSignInError] = useState("");
   const availabilityRequest = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+    void apiFetch<unknown>("/api/v1/auth/me")
+      .then(() => {
+        if (active) setAuthStatus("signed-in");
+      })
+      .catch((caught: unknown) => {
+        if (active) {
+          setAuthStatus("signed-out");
+          if (!(caught instanceof ApiRequestError && caught.status === 401)) {
+            setSignInError(message(caught));
+          }
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -136,6 +161,30 @@ export function SeatInventoryPanel({
   useEffect(() => {
     void loadAvailability();
   }, [loadAvailability]);
+
+  async function signIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setSignInBusy(true);
+    setSignInError("");
+    try {
+      await apiFetch<unknown>("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: form.get("email"),
+          password: form.get("password"),
+        }),
+      });
+      setAuthStatus("signed-in");
+      setNotice("Signed in. You can now hold an available berth.");
+      await loadAvailability();
+    } catch (caught) {
+      setSignInError(message(caught));
+    } finally {
+      setSignInBusy(false);
+    }
+  }
 
   async function createHold() {
     if (!run || !selectedClass) return;
@@ -303,6 +352,34 @@ export function SeatInventoryPanel({
       <p className="passenger-inventory-intro">
         Availability is for this exact train run and journey segment. A temporary hold expires automatically and is not a booking.
       </p>
+      {authStatus === "checking" && (
+        <p className="passenger-inventory-auth-status" role="status">Checking passenger sign-in…</p>
+      )}
+      {authStatus === "signed-out" && (
+        <section className="passenger-inventory-signin" aria-labelledby="inventory-signin-title">
+          <div>
+            <h3 id="inventory-signin-title">Sign in to hold a berth</h3>
+            <p>You can view availability without an account. Sign in to hold a berth or create a reservation request.</p>
+          </div>
+          <form className="passenger-inventory-signin-form" onSubmit={signIn}>
+            <label>
+              Email address
+              <input autoComplete="email" name="email" required type="email" />
+            </label>
+            <label>
+              Password
+              <input autoComplete="current-password" name="password" required type="password" />
+            </label>
+            <button className="button button--primary" disabled={signInBusy} type="submit">
+              {signInBusy ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+          {signInError && <p className="search-error" role="alert">{signInError}</p>}
+          <p className="passenger-inventory-signin-register">
+            New to RailConnect? <Link href={`/${device}/register`}>Create an account</Link>
+          </p>
+        </section>
+      )}
       {loading && <p role="status">Checking inventory for this service date…</p>}
       {!loading && !run && !error && (
         <p className="passenger-inventory-empty" role="status">
@@ -347,6 +424,8 @@ export function SeatInventoryPanel({
               </span>
             </div>
           )}
+          {authStatus === "signed-in" && (
+            <>
           {notice && <p className="passenger-inventory-notice" role="status">{notice}</p>}
           <div className="reservation-passengers">
             <h3>Passengers</h3>
@@ -492,6 +571,8 @@ export function SeatInventoryPanel({
                 A provisional allocation is not a confirmed booking or ticket.
               </p>
             </section>
+          )}
+            </>
           )}
         </>
       )}
