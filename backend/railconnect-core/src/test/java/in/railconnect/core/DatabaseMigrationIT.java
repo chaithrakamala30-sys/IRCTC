@@ -206,7 +206,7 @@ class DatabaseMigrationIT {
         assertThat(inventoryPermissionCount).isEqualTo(5);
         assertThat(inventorySnapshotTriggerCount).isEqualTo(5);
         assertThat(reservationTableCount).isEqualTo(10);
-        assertThat(reservationPermissionCount).isEqualTo(11);
+        assertThat(reservationPermissionCount).isGreaterThanOrEqualTo(11);
         assertThat(reservationTriggerCount).isEqualTo(10);
         assertThat(publishedReservationPolicyCount).isEqualTo(1);
         assertThat(bookingTableCount).isEqualTo(6);

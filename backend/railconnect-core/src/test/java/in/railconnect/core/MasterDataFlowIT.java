@@ -347,7 +347,12 @@ class MasterDataFlowIT {
                         assertThat(exception.code()).isEqualTo("NO_BERTH_AVAILABLE"));
         inventoryService.releaseHold(firstHold.inventoryHoldId(), inventoryOwner.userId());
         jdbcTemplate.update(
-                "UPDATE inventory_holds SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE inventory_hold_id = ?",
+                """
+                UPDATE inventory_holds
+                SET created_at = CURRENT_TIMESTAMP - INTERVAL '2 minutes',
+                    expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute'
+                WHERE inventory_hold_id = ?
+                """,
                 secondHold.inventoryHoldId());
         assertThat(inventoryService.holds(inventoryOwner.userId()))
                 .filteredOn(hold -> hold.inventoryHoldId().equals(secondHold.inventoryHoldId()))
