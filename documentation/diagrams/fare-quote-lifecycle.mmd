@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> Draft: admin creates rule version
+    Draft --> Submitted: author submits
+    Submitted --> Approved: different user approves
+    Approved --> Published: non-author publishes
+    Published --> Retired: authorized retirement
+    Published --> QuoteActive: matching journey and date
+    QuoteActive --> QuoteExpired: expiry timestamp reached
+    QuoteExpired --> [*]: refresh creates new quote ID
+
+    note right of QuoteActive
+      Persisted itemized INR snapshot
+      No booking, seat, or payment
+    end note

@@ -81,6 +81,8 @@ server:
 railconnect:
   search:
     maximum-days: ${RAILCONNECT_SEARCH_MAX_DAYS:365}
+  fares:
+    quote-validity: ${RAILCONNECT_FARE_QUOTE_VALIDITY:PT10M}
   redis:
     enabled: ${RAILCONNECT_REDIS_ENABLED:false}
   supabase:

@@ -1,6 +1,6 @@
 # PostgreSQL database design
 
-This document combines the logical design with the implemented PostgreSQL schema. Flyway migrations V1–V5 provide the identity and Phase 3 railway master-data tables. Reservation, inventory, payment, and financial invariants remain future design and are not implemented. PostgreSQL is the data-integrity authority; migrations are append-only and must be validated on the selected PostgreSQL version before deployment.
+This document combines the logical design with the implemented PostgreSQL schema. Flyway migrations V1–V8 provide identity, railway master data, passenger search indexes, the Phase 4 schedule-range audit action, and Phase 5 fare rules and quotes. Reservation, inventory, payment, and financial-ledger invariants remain future design and are not implemented. PostgreSQL is the data-integrity authority; migrations are append-only and must be validated on the selected PostgreSQL version before deployment.
 
 ## ER overview
 
@@ -15,7 +15,8 @@ See [domain-relationships.mmd](diagrams/domain-relationships.mmd). Use generated
 | Future dated operations | `train_runs`, `run_stops`, `run_status_events`, `disruptions`, `operational_announcements` |
 | Operations | `train_runs`, `run_stops`, `run_status_events`, `disruptions`, `operational_announcements` |
 | Inventory | `run_coaches`, `run_seats`, `journey_inventory`, `quota_inventory`, `inventory_holds`, `seat_allocations`, `inventory_events` |
-| Rules/fare | `rule_sets`, `rule_versions`, `fare_rules`, `cancellation_rules`, `quota_rules`, `fare_quotes` |
+| Implemented fare engine (V8) | `fare_passenger_categories`, `fare_rules`, `fare_rule_versions`, `fare_rule_version_authors`, `fare_rule_distance_slabs`, `fare_rule_components`, `fare_rule_passenger_adjustments`, `fare_rule_audit_events`, `fare_quotes` |
+| Future booking rules | `rule_sets`, `rule_versions`, `cancellation_rules`, `quota_rules` |
 | Booking | `reservations`, `reservation_segments`, `reservation_passengers`, `waitlist_entries`, `rac_entries`, `tickets`, `pnr_records`, `chart_snapshots` |
 | Finance | `payment_attempts`, `payment_provider_events`, `financial_ledger_entries`, `refunds`, `reconciliation_batches`, `reconciliation_items` |
 | Platform | `idempotency_records`, `outbox_events`, `job_runs`, `audit_events`, `support_cases`, `notification_deliveries` |
@@ -25,6 +26,12 @@ Primary keys: UUID; use opaque random public references for PNR/ticket IDs. Fore
 ### Implemented V5 master-data constraints
 
 V5 keeps station snapshots in `station_versions`, route stops in immutable route-version rows, and versioned schedules, layouts, and compositions in their corresponding version tables. `master_data_audit_logs` is written transactionally alongside admin changes. Status checks, foreign keys, unique stop/coach positions, effective-date checks, JSON object/array checks, and physical-accommodation constraints are defined in the migration. Station versions and audit entries are append-only through the admin services. The migration test asserts the critical V5 tables and permission catalogue exist; it must execute against PostgreSQL, not H2.
+
+### Implemented V8 fare-engine constraints
+
+V8 stores versioned rule scopes, effective dates, priority, pricing model, slabs, optional charge/tax/discount components, passenger adjustments, maker/editor identities, append-only lifecycle audit events, and immutable expiring quote snapshots. Money uses PostgreSQL `numeric`; the quote snapshot includes passenger-level itemization and does not include passenger names or ages. Database triggers prevent content edits after submission and update/delete of audit and quote snapshots. Application publication uses a transaction-scoped advisory lock before checking effective-window conflicts. Fare permissions are separate read/manage/approve/publish authorities.
+
+Only the generic `ADULT` passenger category is seeded; no price, tax, or discount is seeded. The V8 migration and its PostgreSQL-backed rule/quote integration scenario have not yet been executed locally because Docker and `RAILCONNECT_DB_URL` are unavailable. The migration test must be run in PostgreSQL CI before relying on these constraints.
 
 ## Critical constraints and indexes
 

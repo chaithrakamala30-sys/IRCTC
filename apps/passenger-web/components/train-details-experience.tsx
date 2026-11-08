@@ -6,6 +6,34 @@ import { ApiRequestError, apiFetch } from "../lib/api";
 import type { TrainDetail } from "./train-search-types";
 
 type DeviceExperience = "mobile" | "laptop";
+type PassengerCategory = {
+  passengerCategoryId: string;
+  categoryCode: string;
+  categoryName: string;
+  minimumAge: number | null;
+  maximumAge: number | null;
+  active: boolean;
+};
+type FarePassenger = { categoryCode: string; categoryName: string; items: { code: string; label: string; type: string; amount: string }[]; totalAmount: string };
+type FareQuote = {
+  fareQuoteId: string;
+  currency: string;
+  status: string;
+  distanceKm: string;
+  trainNumber: string;
+  trainName: string;
+  originName: string;
+  destinationName: string;
+  journeyDate: string;
+  coachClassCode: string;
+  coachClassName: string;
+  passengers: FarePassenger[];
+  totalAmount: string;
+  createdAt: string;
+  expiresAt: string;
+  fareRuleVersionNumber: number;
+  quoteOnlyNotice: string;
+};
 
 function localTime(value: string | null, timezone: string): string {
   if (!value) return "—";
@@ -32,6 +60,33 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
   const [backLink, setBackLink] = useState(`/${device}`);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [fareError, setFareError] = useState("");
+  const [fareLoading, setFareLoading] = useState(false);
+  const [fareClasses, setFareClasses] = useState<PassengerCategory[]>([]);
+  const [selectedClass, setSelectedClass] = useState("");
+  const [passengers, setPassengers] = useState([{ categoryCode: "ADULT", age: "" }]);
+  const [fareQuote, setFareQuote] = useState<FareQuote | null>(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  useEffect(() => {
+    let active = true;
+    void apiFetch<PassengerCategory[]>("/api/v1/public/fares/passenger-categories")
+      .then((response) => {
+        if (active) setFareClasses(response.data ?? []);
+      })
+      .catch((caught: unknown) => {
+        if (active) setFareError(showError(caught));
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!fareQuote) return;
+    const timer = window.setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [fareQuote]);
 
   useEffect(() => {
     let active = true;
@@ -47,7 +102,10 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
       const request = new URLSearchParams({ fromStationId, toStationId, journeyDate });
       void apiFetch<TrainDetail>(`/api/v1/public/trains/${encodeURIComponent(trainId)}?${request}`)
         .then((response) => {
-          if (active) setDetail(response.data);
+          if (active) {
+            setDetail(response.data);
+            setSelectedClass(response.data?.journey.coachClasses[0]?.code ?? "");
+          }
         })
         .catch((caught: unknown) => {
           if (active) setError(showError(caught));
@@ -63,6 +121,40 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
       active = false;
     };
   }, [device]);
+
+  async function createFareQuote() {
+    if (!detail) return;
+    setFareError("");
+    setFareLoading(true);
+    setFareQuote(null);
+    try {
+      const response = await apiFetch<FareQuote>("/api/v1/public/fares/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trainId: detail.journey.trainId,
+          fromStationId: detail.route.find((stop) => stop.selectedOrigin)?.stationId,
+          toStationId: detail.route.find((stop) => stop.selectedDestination)?.stationId,
+          journeyDate: detail.journey.journeyDate,
+          coachClassCode: selectedClass,
+          passengers: passengers.map((passenger) => ({
+            categoryCode: passenger.categoryCode,
+            age: passenger.age === "" ? null : Number(passenger.age),
+          })),
+        }),
+      });
+      setFareQuote(response.data ?? null);
+      setCurrentTime(Date.now());
+    } catch (caught) {
+      setFareError(showError(caught));
+    } finally {
+      setFareLoading(false);
+    }
+  }
+
+  const quoteExpired = fareQuote ? new Date(fareQuote.expiresAt).getTime() <= currentTime : false;
+  const quoteMoney = (value: string) =>
+    new Intl.NumberFormat(undefined, { style: "currency", currency: fareQuote?.currency ?? "INR" }).format(Number(value));
 
   return (
     <main className={`train-details-page train-details-page--${device}`} id="main-content">
@@ -138,9 +230,96 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
             </ol>
           </section>
 
+          <section aria-labelledby="fare-quote-title" className="passenger-fare-section">
+            <div className="passenger-fare-heading">
+              <div>
+                <p className="eyebrow">Indicative fare</p>
+                <h2 id="fare-quote-title">Get an itemized fare quote</h2>
+              </div>
+              <span>Quote only · no booking or payment</span>
+            </div>
+            <p className="passenger-fare-intro">
+              The backend calculates this from currently published fare rules. If no approved rule covers this journey and class, a quote is not available.
+            </p>
+            {fareError && <p className="search-error" role="alert">{fareError}</p>}
+            <div className="passenger-fare-controls">
+              <label>
+                Coach class
+                <select onChange={(event) => setSelectedClass(event.target.value)} value={selectedClass}>
+                  {detail.journey.coachClasses.map((coachClass) => (
+                    <option key={coachClass.code} value={coachClass.code}>{coachClass.code} — {coachClass.name}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="fare-passenger-list">
+                {passengers.map((passenger, index) => {
+                  const category = fareClasses.find((item) => item.categoryCode === passenger.categoryCode);
+                  const ageRequired = category != null
+                    && (category.minimumAge !== null || category.maximumAge !== null);
+                  return (
+                    <div className="fare-passenger-row" key={`passenger-${index}`}>
+                      <label>
+                        Passenger {index + 1} category
+                        <select
+                          onChange={(event) => setPassengers((items) => items.map((item, row) =>
+                            row === index ? { ...item, categoryCode: event.target.value, age: "" } : item))}
+                          value={passenger.categoryCode}
+                        >
+                          {fareClasses.map((item) => <option key={item.passengerCategoryId} value={item.categoryCode}>{item.categoryName}</option>)}
+                        </select>
+                      </label>
+                      {ageRequired && (
+                        <label>
+                          Age
+                          <input
+                            max="120"
+                            min="0"
+                            onChange={(event) => setPassengers((items) => items.map((item, row) =>
+                              row === index ? { ...item, age: event.target.value } : item))}
+                            required
+                            type="number"
+                            value={passenger.age}
+                          />
+                        </label>
+                      )}
+                      {passengers.length > 1 && <button className="fare-remove-passenger" onClick={() => setPassengers((items) => items.filter((_, row) => row !== index))} type="button">Remove</button>}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="passenger-fare-actions">
+                <button className="button button--secondary" disabled={passengers.length >= 20 || fareClasses.length === 0} onClick={() => setPassengers((items) => [...items, { categoryCode: fareClasses[0]?.categoryCode ?? "ADULT", age: "" }])} type="button">Add passenger</button>
+                <button className="button button--primary" disabled={fareLoading || !selectedClass || fareClasses.length === 0} onClick={() => void createFareQuote()} type="button">
+                  {fareLoading ? "Calculating…" : fareQuote ? "Refresh quote" : "Get fare quote"}
+                </button>
+              </div>
+            </div>
+            {fareQuote && (
+              <div aria-live="polite" className="passenger-fare-result" role="status">
+                <div className="passenger-fare-result-heading">
+                  <div><h3>{fareQuote.coachClassCode} · {fareQuote.distanceKm} km</h3><p>Fare rule version {fareQuote.fareRuleVersionNumber}</p></div>
+                  <span className={quoteExpired ? "fare-expiry is-expired" : "fare-expiry"}>
+                    {quoteExpired ? "Quote expired" : `Expires ${new Date(fareQuote.expiresAt).toLocaleTimeString()}`}
+                  </span>
+                </div>
+                {fareQuote.passengers.map((passenger, index) => (
+                  <article className="passenger-fare-person" key={`${passenger.categoryCode}-${index}`}>
+                    <h4>Passenger {index + 1} · {passenger.categoryName}</h4>
+                    <ul>{passenger.items.map((item, itemIndex) => (
+                      <li key={`${item.code}-${itemIndex}`}><span>{item.label}</span><strong>{quoteMoney(item.amount)}</strong></li>
+                    ))}</ul>
+                    <p className="passenger-fare-subtotal"><span>Passenger total</span><strong>{quoteMoney(passenger.totalAmount)}</strong></p>
+                  </article>
+                ))}
+                <p className="passenger-fare-total"><span>Total indicative fare</span><strong>{quoteMoney(fareQuote.totalAmount)}</strong></p>
+                <p className="passenger-fare-disclaimer">{fareQuote.quoteOnlyNotice}</p>
+              </div>
+            )}
+          </section>
+
           <p className="no-booking-note">
-            This page displays published timetable and configured coach-class information only.
-            It does not show fares, seat availability, reservations, or payment.
+            An indicative fare quote is not a reservation or ticket and does not guarantee a fare at a later time.
+            Seat availability, reservations, and payment are not provided.
           </p>
         </>
       )}

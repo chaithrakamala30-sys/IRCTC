@@ -809,6 +809,225 @@
   .master-data-title {
     align-items: flex-start;
   }
+}
+
+.fare-console {
+  border-top: 1px solid var(--color-border);
+  margin-top: 48px;
+  padding-top: 38px;
+}
+
+.fare-console-title {
+  margin-bottom: 20px;
+}
+
+.fare-form {
+  margin-top: 18px;
+}
+
+.fare-child-editor {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+  grid-column: 1 / -1;
+  margin: 4px 0;
+  min-width: 0;
+  padding: 14px;
+}
+
+.fare-child-editor legend {
+  color: #203047;
+  font-size: 0.88rem;
+  font-weight: 750;
+  padding: 0 5px;
+}
+
+.fare-child-editor > p {
+  color: var(--color-muted);
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.fare-child-row {
+  align-items: end;
+  border-bottom: 1px solid var(--color-border);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 4px 0 14px;
+}
+
+.fare-child-row label,
+.fare-category-form label {
+  color: #203047;
+  display: grid;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fare-child-row input,
+.fare-child-row select,
+.fare-category-form input {
+  background: white;
+  border: 1px solid #cbd6e4;
+  border-radius: 8px;
+  color: #182b42;
+  font: inherit;
+  min-height: 40px;
+  min-width: 0;
+  padding: 8px;
+  width: 100%;
+}
+
+.fare-child-row > button,
+.fare-child-editor > button,
+.fare-form-actions,
+.fare-category-form > button {
+  align-self: end;
+}
+
+.fare-checkbox {
+  align-items: center;
+  display: flex !important;
+  gap: 8px !important;
+  min-height: 40px;
+}
+
+.fare-checkbox input {
+  accent-color: #1056b5;
+  height: 17px;
+  min-height: 17px;
+  width: 17px;
+}
+
+.fare-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  grid-column: 1 / -1;
+}
+
+.fare-table {
+  min-width: 920px;
+}
+
+.fare-actions {
+  min-width: 200px;
+}
+
+.fare-audit {
+  border-top: 1px solid var(--color-border);
+  margin-top: 18px;
+  padding-top: 15px;
+}
+
+.fare-audit ul,
+.fare-quote-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fare-audit li {
+  border-bottom: 1px solid var(--color-border);
+  display: grid;
+  font-size: 0.86rem;
+  gap: 5px;
+  overflow-wrap: anywhere;
+  padding: 11px 0;
+}
+
+.fare-audit code {
+  color: var(--color-muted);
+}
+
+.fare-quote-card {
+  background: #f5f8fc;
+  border: 1px solid #d6e0ec;
+  border-radius: 12px;
+  margin-top: 18px;
+  padding: 17px;
+}
+
+.fare-quote-card h3 {
+  margin: 0 0 8px;
+}
+
+.fare-quote-card > p,
+.fare-quote-card > div > p {
+  color: var(--color-muted);
+  font-size: 0.86rem;
+}
+
+.fare-quote-card li {
+  align-items: baseline;
+  border-bottom: 1px solid #dfe6ef;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 7px 0;
+}
+
+.fare-total {
+  border-top: 2px solid #b9c9dc;
+  color: #17243a !important;
+  display: flex;
+  font-size: 1rem !important;
+  justify-content: space-between;
+  padding-top: 12px;
+}
+
+.fare-category-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.fare-category-list span {
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.86rem;
+  padding: 8px 0;
+}
+
+.fare-category-form {
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .fare-console {
+    margin-top: 32px;
+    padding-top: 28px;
+  }
+
+  .fare-console-title {
+    align-items: flex-start;
+  }
+
+  .fare-child-editor,
+  .fare-form-actions {
+    grid-column: auto;
+  }
+
+  .fare-child-row {
+    grid-template-columns: 1fr;
+  }
+
+  .fare-form-actions {
+    display: grid;
+  }
+
+  .fare-form-actions .button {
+    text-align: center;
+    width: 100%;
+  }
+
+  .fare-audit .admin-panel-heading {
+    align-items: flex-start;
+  }
 
   .master-data-title > .button {
     width: 100%;

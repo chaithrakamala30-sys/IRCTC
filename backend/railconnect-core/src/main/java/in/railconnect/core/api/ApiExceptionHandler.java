@@ -2,6 +2,7 @@ package in.railconnect.core.api;
 
 import jakarta.validation.ConstraintViolationException;
 import in.railconnect.core.identity.IdentityException;
+import in.railconnect.core.fare.FareException;
 import in.railconnect.core.masterdata.MasterDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +78,16 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(MasterDataException.class)
     public ResponseEntity<ApiEnvelope<Void>> handleMasterDataException(MasterDataException exception) {
+        return failure(
+                exception.status(),
+                exception.code(),
+                exception.getMessage(),
+                List.of()
+        );
+    }
+
+    @ExceptionHandler(FareException.class)
+    public ResponseEntity<ApiEnvelope<Void>> handleFareException(FareException exception) {
         return failure(
                 exception.status(),
                 exception.code(),

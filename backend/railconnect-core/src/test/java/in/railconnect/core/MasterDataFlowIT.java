@@ -1,5 +1,6 @@
 package in.railconnect.core;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import in.railconnect.core.masterdata.MasterDataException;
 import in.railconnect.core.masterdata.MasterDataModels.AccommodationInput;
 import in.railconnect.core.masterdata.MasterDataModels.CoachClassRequest;
@@ -19,6 +20,12 @@ import in.railconnect.core.masterdata.MasterDataModels.StationStatusRequest;
 import in.railconnect.core.masterdata.MasterDataModels.StationVerificationRequest;
 import in.railconnect.core.masterdata.MasterDataModels.TrainRequest;
 import in.railconnect.core.masterdata.MasterDataService;
+import in.railconnect.core.fare.FareException;
+import in.railconnect.core.fare.FareModels.FareQuoteRequest;
+import in.railconnect.core.fare.FareModels.FareRuleVersionRequest;
+import in.railconnect.core.fare.FareModels.PassengerRequest;
+import in.railconnect.core.fare.FareService;
+import in.railconnect.core.identity.RailConnectPrincipal;
 import in.railconnect.core.search.PublicTrainSearchService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -26,7 +33,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -38,10 +47,13 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Collection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -56,10 +68,16 @@ class MasterDataFlowIT {
     private PublicTrainSearchService publicTrainSearchService;
 
     @Autowired
+    private FareService fareService;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     @Transactional
@@ -349,6 +367,100 @@ class MasterDataFlowIT {
                 schedule.scheduleId()
         );
         assertThat(previousScheduleEnd).isEqualTo(serviceMonday.plusDays(6));
+        Integer effectiveRangeAuditEntries = jdbcTemplate.queryForObject(
+                """
+                        SELECT COUNT(*) FROM master_data_audit_logs
+                        WHERE entity_id = ? AND action = 'EFFECTIVE_RANGE_CLOSED'
+                        """,
+                Integer.class,
+                schedule.scheduleId()
+        );
+        assertThat(effectiveRangeAuditEntries).isEqualTo(1);
+
+        FareQuoteRequest quoteRequest = new FareQuoteRequest(
+                train.trainId(),
+                intermediate.stationId(),
+                destination.stationId(),
+                serviceMonday.plusDays(1),
+                coachClass.code(),
+                List.of(new PassengerRequest("ADULT", null))
+        );
+        assertThatThrownBy(() -> fareService.quote(quoteRequest, null))
+                .isInstanceOfSatisfying(FareException.class, exception ->
+                        assertThat(exception.code()).isEqualTo("FARE_CONFIGURATION_UNAVAILABLE"));
+
+        RailConnectPrincipal fareAuthor = createFareActor("author");
+        RailConnectPrincipal fareChecker = createFareActor("checker");
+        FareRuleVersionRequest fareRule = new FareRuleVersionRequest(
+                "Integration fare " + UUID.randomUUID(),
+                "Configured only for integration test",
+                train.trainId(),
+                category.id(),
+                coachClass.id(),
+                "DISTANCE_RATE",
+                BigDecimal.ZERO,
+                new BigDecimal("2.0000"),
+                10,
+                serviceMonday,
+                null,
+                List.of(),
+                List.of(),
+                List.of()
+        );
+        var fareVersion = fareService.createRule(fareRule, fareAuthor);
+        fareVersion = fareService.submit(fareVersion.fareRuleVersionId(), fareAuthor);
+        assertThat(fareVersion.status()).isEqualTo("SUBMITTED");
+        UUID fareVersionId = fareVersion.fareRuleVersionId();
+
+        assertThatThrownBy(() -> fareService.approve(fareVersionId, fareAuthor))
+                .isInstanceOfSatisfying(FareException.class, exception ->
+                        assertThat(exception.code()).isEqualTo("FARE_RULE_MAKER_CHECKER_REQUIRED"));
+        fareVersion = fareService.approve(fareVersionId, fareChecker);
+        assertThat(fareVersion.status()).isEqualTo("APPROVED");
+        fareVersion = fareService.publish(fareVersionId, fareChecker);
+        assertThat(fareVersion.status()).isEqualTo("PUBLISHED");
+
+        var quote = fareService.quote(quoteRequest, fareAuthor);
+        assertThat(quote.status()).isEqualTo("ACTIVE");
+        assertThat(quote.distanceKm()).isEqualByComparingTo("60.00");
+        assertThat(quote.totalAmount()).isEqualByComparingTo("120.00");
+        assertThat(fareService.quote(quote.fareQuoteId(), fareAuthor).totalAmount())
+                .isEqualByComparingTo("120.00");
+        assertThatThrownBy(() -> fareService.quote(quote.fareQuoteId(), fareChecker))
+                .isInstanceOfSatisfying(FareException.class, exception ->
+                        assertThat(exception.code()).isEqualTo("FARE_QUOTE_NOT_FOUND"));
+        mockMvc.perform(get("/api/v1/public/fares/quotes/{quoteId}", quote.fareQuoteId()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("FARE_QUOTE_NOT_FOUND"));
+        mockMvc.perform(get("/api/v1/admin/fares/rules"))
+                .andExpect(status().isUnauthorized());
+        var anonymousQuoteResult = mockMvc.perform(post("/api/v1/public/fares/quotes")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(quoteRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data.totalAmount").value(120.00))
+                .andReturn();
+        UUID anonymousQuoteId = UUID.fromString(objectMapper.readTree(
+                anonymousQuoteResult.getResponse().getContentAsString())
+                .path("data").path("fareQuoteId").asText());
+        mockMvc.perform(get("/api/v1/public/fares/quotes/{quoteId}", anonymousQuoteId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data.totalAmount").value(120.00));
+        Integer fareAuditEntries = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM fare_rule_audit_events WHERE fare_rule_version_id = ?",
+                Integer.class,
+                fareVersionId
+        );
+        Integer persistedQuoteCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM fare_quotes WHERE fare_quote_id = ? AND total_amount = 120.00",
+                Integer.class,
+                quote.fareQuoteId()
+        );
+        assertThat(fareAuditEntries).isEqualTo(4);
+        assertThat(persistedQuoteCount).isEqualTo(1);
 
         Integer stationVersions = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM station_versions WHERE station_id = ?",
@@ -392,5 +504,31 @@ class MasterDataFlowIT {
 
     private String uniqueCode(String prefix) {
         return (prefix + UUID.randomUUID().toString().replace("-", "")).substring(0, 20).toUpperCase();
+    }
+
+    private RailConnectPrincipal createFareActor(String label) {
+        UUID userId = UUID.randomUUID();
+        String unique = UUID.randomUUID().toString();
+        String email = "fare-" + label + "-" + unique + "@example.test";
+        jdbcTemplate.update("""
+                INSERT INTO users (
+                    user_id, full_name, email, mobile_number, password_hash,
+                    terms_version, privacy_version
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                userId,
+                "Fare " + label + " " + unique.substring(0, 8),
+                email,
+                "+1" + unique.replace("-", "").substring(0, 10),
+                "test-password-hash",
+                "test-terms",
+                "test-privacy");
+        Collection<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("fares:rules:read"),
+                new SimpleGrantedAuthority("fares:rules:manage"),
+                new SimpleGrantedAuthority("fares:rules:approve"),
+                new SimpleGrantedAuthority("fares:rules:publish"));
+        return new RailConnectPrincipal(
+                userId, email, "Fare " + label, "ACTIVE", false, authorities);
     }
 }

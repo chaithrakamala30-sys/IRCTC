@@ -1135,6 +1135,182 @@
   margin: 14px 0 0;
 }
 
+.passenger-fare-section {
+  background: #fff;
+  border: 1px solid #dce5ef;
+  border-radius: 18px;
+  margin-top: 18px;
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.passenger-fare-heading,
+.passenger-fare-result-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.passenger-fare-heading h2 {
+  font-size: 1.45rem;
+  margin: 6px 0;
+}
+
+.passenger-fare-heading > span {
+  background: #edf4ff;
+  border-radius: 999px;
+  color: #124e92;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 750;
+  padding: 8px 11px;
+}
+
+.passenger-fare-intro {
+  color: #52657b;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  margin: 8px 0 18px;
+  max-width: 80ch;
+}
+
+.passenger-fare-controls {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.passenger-fare-controls label {
+  color: #263b56;
+  display: grid;
+  font-size: 0.83rem;
+  font-weight: 750;
+  gap: 7px;
+  min-width: 0;
+}
+
+.passenger-fare-controls select,
+.passenger-fare-controls input {
+  background: #fff;
+  border: 1px solid #bdcad9;
+  border-radius: 9px;
+  color: #17243a;
+  font: inherit;
+  min-height: 44px;
+  min-width: 0;
+  padding: 9px 11px;
+  width: 100%;
+}
+
+.fare-passenger-list {
+  display: grid;
+  gap: 10px;
+}
+
+.fare-passenger-row {
+  align-items: end;
+  background: #f7f9fc;
+  border: 1px solid #e1e8f0;
+  border-radius: 10px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(180px, 1fr) minmax(100px, 0.4fr) auto;
+  padding: 12px;
+}
+
+.fare-remove-passenger {
+  background: transparent;
+  border: 0;
+  color: #8c2525;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-height: 42px;
+}
+
+.passenger-fare-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.passenger-fare-result {
+  background: #f6f9fd;
+  border: 1px solid #d6e0ec;
+  border-radius: 13px;
+  margin-top: 20px;
+  padding: 17px;
+}
+
+.passenger-fare-result-heading h3,
+.passenger-fare-result-heading p {
+  margin: 0 0 6px;
+}
+
+.passenger-fare-result-heading p {
+  color: #52657b;
+  font-size: 0.8rem;
+}
+
+.fare-expiry {
+  color: #35465e;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.fare-expiry.is-expired {
+  color: #8c2525;
+}
+
+.passenger-fare-person {
+  border-top: 1px solid #dce5ef;
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.passenger-fare-person h4 {
+  margin: 0 0 8px;
+}
+
+.passenger-fare-person ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.passenger-fare-person li,
+.passenger-fare-subtotal,
+.passenger-fare-total {
+  align-items: baseline;
+  border-bottom: 1px solid #e0e7f0;
+  display: flex;
+  font-size: 0.87rem;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.passenger-fare-subtotal {
+  border-bottom: 0;
+  font-size: 0.82rem;
+}
+
+.passenger-fare-total {
+  border-top: 2px solid #bdcad9;
+  font-size: 1rem;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.passenger-fare-disclaimer {
+  color: #52657b;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  margin: 12px 0 0;
+}
+
 @media (max-width: 1024px) {
   .results-layout {
     grid-template-columns: minmax(205px, 235px) minmax(0, 1fr);
@@ -1411,6 +1587,41 @@
   .route-stop-distance {
     align-self: start;
     font-size: 0.69rem;
+  }
+
+  .passenger-fare-section {
+    border-radius: 15px;
+    padding: 16px 13px;
+  }
+
+  .passenger-fare-heading,
+  .passenger-fare-result-heading {
+    flex-direction: column;
+  }
+
+  .passenger-fare-heading > span {
+    white-space: normal;
+  }
+
+  .fare-passenger-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fare-remove-passenger {
+    justify-self: start;
+  }
+
+  .passenger-fare-actions {
+    display: grid;
+  }
+
+  .passenger-fare-actions .button {
+    text-align: center;
+    width: 100%;
+  }
+
+  .passenger-fare-result {
+    padding: 13px;
   }
 }
 

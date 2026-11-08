@@ -12,6 +12,7 @@
 | Passenger production build | PASS | `npm run build:passenger`, exit code 0; Next.js generated mobile, laptop, and train-detail routes |
 | Backend compilation and unit tests | PASS | Maven `test`, exit code 0; 21 tests, 0 failures, 0 errors, 0 skips |
 | Backend package and integration-test phase | PASS WITH SKIPS | Maven `verify`, exit code 0; package built; 12 integration tests were skipped because the PostgreSQL JDBC URL was not configured |
+| PostgreSQL CI integration | BLOCKED | GitHub Actions run for commit `2fd65f5` failed the master-data flow because `EFFECTIVE_RANGE_CLOSED` was not allowed by the V5 audit-action check. Append-only V7 adds the action to the constraint and the integration test now asserts its audit row; PostgreSQL CI must pass before this verification is complete. |
 | Journey-time unit coverage | PASS | 3 tests cover overnight offsets, DST overlap, and DST gap behavior |
 | Browser rendering smoke check | PARTIAL | `/mobile` at 390 px and `/laptop` at 1440 px rendered; measured page width equaled viewport width for both. No end-to-end search with persisted results was possible. |
 | PostgreSQL integration and V6 migration | UNVERIFIED | `RAILCONNECT_DB_URL` was not configured and Docker was unavailable. The DB-backed `MasterDataFlowIT` therefore was not executed. |
@@ -40,3 +41,9 @@ Before production use:
 4. Exercise keyboard and touch search flows and route details in real mobile and laptop browser viewports with the API available.
 
 No paid infrastructure, external railway provider, or production database was used or activated by these checks.
+
+## Checklist follow-up
+
+The PostgreSQL-backed CI fixture reached successful station autocomplete, an intermediate-stop search, an overnight result, coach-class filtering, route-detail assembly, and anonymous public search responses before it failed while recording a future schedule version's effective-range change. The failure exposed that V5's audit-action constraint did not permit the new action. Append-only V7 fixes the schema rule, and the integration test now asserts the range-closure audit row. The migration and test still require a successful PostgreSQL CI run before schedule-version replacement is verified.
+
+The currently configured hosted API was also checked directly: its public search configuration and filter endpoints returned `401 UNAUTHENTICATED` during this verification. This does not meet the public-passenger API expectation. The latest source's CI MockMvc flow returned public search and station autocomplete successfully, so the deployed service appears not to be serving the current public-search security configuration; deployment readiness must be checked after backend validation succeeds.

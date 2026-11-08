@@ -440,9 +440,13 @@ export function AdminIdentityConsole() {
     ? [
       { id: "identity", label: "Identity administration" },
       { id: "master-data", label: "Railway master data" },
+      { id: "fares", label: "Fare management" },
     ]
     : isRailwayAdmin
-      ? [{ id: "master-data", label: "Railway master data" }]
+      ? [
+        { id: "master-data", label: "Railway master data" },
+        { id: "fares", label: "Fare management" },
+      ]
       : isFinanceAdmin
         ? [{ id: "fares", label: "Fare management" }]
         : [];
@@ -663,12 +667,9 @@ export function AdminIdentityConsole() {
           </>
         )}
         {activeTab === "master-data" && (isSuperAdmin || isRailwayAdmin) && (
-          <>
-            <AdminMasterDataConsole />
-            {isSuperAdmin && <AdminFareConsole roles={user.roles} />}
-          </>
+          <AdminMasterDataConsole />
         )}
-        {activeTab === "fares" && (isSuperAdmin || isFinanceAdmin) && (
+        {activeTab === "fares" && (isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && (
           <AdminFareConsole roles={user.roles} />
         )}
       </main>

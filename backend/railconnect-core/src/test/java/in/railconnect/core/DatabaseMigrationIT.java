@@ -59,11 +59,38 @@ class DatabaseMigrationIT {
                 )
                 """,
                 Integer.class);
+        Integer fareTableCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name IN (
+                    'fare_passenger_categories', 'fare_rules', 'fare_rule_versions',
+                    'fare_rule_version_authors', 'fare_rule_distance_slabs', 'fare_rule_components',
+                    'fare_rule_passenger_adjustments', 'fare_rule_audit_events', 'fare_quotes'
+                  )
+                """,
+                Integer.class);
+        Integer farePermissionCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM permissions
+                WHERE permission_code IN (
+                    'fares:rules:read', 'fares:rules:manage',
+                    'fares:rules:approve', 'fares:rules:publish'
+                )
+                """,
+                Integer.class);
+        Integer basePassengerCategoryCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM fare_passenger_categories WHERE category_code = 'ADULT' AND active = TRUE",
+                Integer.class);
 
         assertThat(connectionResult).isEqualTo(1);
         assertThat(migrationCount).isGreaterThanOrEqualTo(1);
         assertThat(metadataTableCount).isEqualTo(1);
         assertThat(masterDataTableCount).isEqualTo(11);
         assertThat(masterDataPermissionCount).isEqualTo(8);
+        assertThat(fareTableCount).isEqualTo(9);
+        assertThat(farePermissionCount).isEqualTo(4);
+        assertThat(basePassengerCategoryCount).isEqualTo(1);
     }
 }
