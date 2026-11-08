@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
@@ -32,6 +33,7 @@ public class IdentityService {
     private static final String TERMS_VERSION = "phase2-2026-11";
     private static final String PRIVACY_VERSION = "phase2-2026-11";
     private static final String INVALID_CREDENTIALS = "Invalid email or password";
+    private static final Duration RECENT_AUTHENTICATION_WINDOW = Duration.ofMinutes(15);
     private static final List<String> COMMON_PASSWORDS = List.of(
             "password1234", "password123!", "qwerty123456", "letmein12345",
             "welcome12345", "admin123456", "iloveyou1234", "railconnect123"
@@ -774,7 +776,7 @@ public class IdentityService {
                 ? null
                 : session.getAttribute(AuthenticatedSessionFilter.AUTHENTICATED_AT);
         if (!(value instanceof Long authenticatedAt)
-                || Instant.now().toEpochMilli() - authenticatedAt > 5 * 60 * 1000L) {
+                || Instant.now().toEpochMilli() - authenticatedAt > RECENT_AUTHENTICATION_WINDOW.toMillis()) {
             throw new IdentityException(
                     HttpStatus.UNAUTHORIZED,
                     "REAUTHENTICATION_REQUIRED",

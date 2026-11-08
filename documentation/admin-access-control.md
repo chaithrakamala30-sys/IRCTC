@@ -15,7 +15,7 @@ The separate admin portal signs in by verifying email/password through Supabase 
 - Authentication-event and security-audit review.
 - Role and permission catalogue viewing.
 
-Provisioning, role changes, status changes, and administrator-initiated session revocation require reauthentication within five minutes. Sensitive operations are audited. The API prevents removal or deactivation of the final active Super Administrator.
+Provisioning, role changes, status changes, and administrator-initiated session revocation require reauthentication within 15 minutes. Sensitive operations are audited. The API prevents removal or deactivation of the final active Super Administrator.
 
 ## Scope limitations
 
