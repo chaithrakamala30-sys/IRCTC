@@ -35,13 +35,15 @@ Redis has no published host port and is not used as an inventory source. If disa
 ## Build images individually
 
 ```powershell
-docker build -f infrastructure/docker/backend.Dockerfile backend/railconnect-core
+docker build -f infrastructure/docker/backend.Dockerfile .
 docker build -f infrastructure/docker/frontend.Dockerfile `
   --build-arg APP_WORKSPACE=@railconnect/passenger-web `
   --build-arg APP_PATH=apps/passenger-web .
 ```
 
 Use matching workspace/path values for `admin-portal` and `operations-portal`.
+
+For Render, use the repository root as the build context (leave Root Directory blank or set it to `.`) and set Dockerfile Path to `infrastructure/docker/backend.Dockerfile`. The Dockerfile copies the backend module from that repository-root context.
 
 ## Security and operations notes
 
