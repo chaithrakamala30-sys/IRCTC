@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ApiRequestError, apiFetch } from "@railconnect/api";
+import { AdminMasterDataConsole } from "./admin-master-data-console";
 
 type AdminUser = {
   userId: string;
@@ -558,6 +559,7 @@ export function AdminIdentityConsole() {
           )}
         </>
       )}
+      <AdminMasterDataConsole />
     </main>
   );
 }

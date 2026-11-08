@@ -4,7 +4,7 @@
 
 Phase 2 implements passenger identity, browser sessions, initial role-based access control (RBAC), staff account management, and security audit records. Phase 2 does **not** make the railway booking product operational. There is no train inventory, search, reservation, payment, notification delivery, or railway-system integration.
 
-The backend includes a database-backed integration test, but it has not been run. Docker is unavailable in the current environment, V2 has not been applied to PostgreSQL, and no Supabase migration was attempted. Unit and frontend validation results are recorded in the [testing report](phase-2-testing-report.md). Do not begin Phase 3 until the outstanding validation and policy decisions are closed.
+Phase 2 database-backed integration tests remain environment-dependent; do not treat skipped tests as passes. Unit and frontend validation results are recorded in the [testing report](phase-2-testing-report.md). Phase 3 master-data work has since been authorized and is documented separately; this does not imply that Phase 2's remaining live verification is complete.
 
 ## User experiences
 

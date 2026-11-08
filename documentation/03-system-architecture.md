@@ -28,7 +28,7 @@ See [overall system](diagrams/system-context.mmd), [deployment](diagrams/deploym
 | Module | Owns | May depend on |
 |---|---|---|
 | identity-access | Users, credentials, sessions, MFA, roles, permission checks | shared kernel |
-| railway-catalog | Stations, train definitions, routes, stops, operating schedules, schedule versions | shared kernel |
+| railway-catalog | Stations, train definitions, versioned routes/stops/schedules, coach layouts/compositions (Phase 3 master data) | identity-access permissions, shared kernel |
 | operations | Dated runs, operational status, disruption, cancellation, announcements | railway-catalog |
 | inventory | Run inventory, coaches, seats, holds, allocations, quotas, waitlist/RAC | railway-catalog, operations |
 | fares-rules | Versioned fares, eligibility, quota and cancellation rule evaluation | railway-catalog |
@@ -39,6 +39,8 @@ See [overall system](diagrams/system-context.mmd), [deployment](diagrams/deploym
 | reporting-audit | Audit records, operational projections and reporting | read-only projections |
 
 Rules: modules expose application-service contracts/events; no cross-module table writes; avoid cyclic dependencies; shared kernel is small and contains value types only. One transaction may coordinate reservation/inventory/payment intent where required, but external provider calls never occur inside a DB transaction.
+
+The Phase 3 implementation remains within the existing Spring Boot modular monolith and PostgreSQL/Flyway deployment. Staff master-data APIs are protected by permissions and write audit/version records transactionally. The operations portal is a separate frontend workspace; the responsive master-data screens currently live in the authenticated admin portal.
 
 ## Technology choices and tradeoffs
 

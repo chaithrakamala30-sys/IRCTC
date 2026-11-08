@@ -1,6 +1,6 @@
 # Implementation roadmap — Phases 1–20
 
-This is a dependency-ordered proposal. Phases 1 and 2 were explicitly approved. Phase 1 is complete; Phase 2 identity and access-control implementation is present, with database-backed validation still pending. Phase 3 and later phases are not authorized. Each phase has its own acceptance gate. Real inventory, real payments, and external railway integrations remain off until their separate gates pass.
+This is a dependency-ordered proposal. Phases 1, 2, and 3 were explicitly approved. Phase 1 is complete; Phase 2 identity/access and Phase 3 master-data implementation are present. Flyway V5 has been applied and verified on Supabase; database-backed application integration tests remain pending. Later phases still require their own approval and acceptance gates. Real inventory, real payments, and external railway integrations remain off.
 
 ## Phase summary
 
@@ -8,9 +8,9 @@ This is a dependency-ordered proposal. Phases 1 and 2 were explicitly approved. 
 |---|---|---|
 | 1 | Repository, build, local development, CI baseline | Phase 0 approval |
 | 2 | Identity, sessions, RBAC, audit foundation | 1 |
-| 3 | Station/train catalogue | 1, 2 |
-| 4 | Routes, schedules, dated train runs, operations baseline | 3 |
-| 5 | Classes, coach layouts, physical inventory model | 4 |
+| 3 | Railway master data: stations, trains, versioned routes/schedules, coach layouts/compositions | 1, 2 |
+| 4 | Dated train runs, run snapshots, operations baseline | 3 |
+| 5 | Run-specific physical inventory model | 4 |
 | 6 | Versioned fares, quotas, policy/rule evaluation | 3, 5 |
 | 7 | Admin inventory imports and database integrity | 5, 6 |
 | 8 | Search and segment availability | 4, 6, 7 |
@@ -39,23 +39,23 @@ This is a dependency-ordered proposal. Phases 1 and 2 were explicitly approved. 
 - **Scope/files:** implemented identity module, persistent browser sessions, passenger registration/login/profile pages, separate mobile/laptop webpages, and admin identity console.
 - **Database/API:** V2 migration defines users, role/permission grants, sessions, throttles, authentication events, audit logs, recovery/MFA groundwork, and Spring Session JDBC tables. Authentication, profile, session, MFA-placeholder, and admin identity endpoints are documented in [identity API reference](identity-api-reference.md).
 - **Security:** Supabase Auth email/password credentials, CSRF tokens, application session-ID rotation and revocation, request throttles, recent-authentication checks for sensitive staff changes, and bootstrap-only initial Super Administrator. Password recovery and MFA delivery/enrollment remain unavailable.
-- **Tests/exit:** Java unit tests and frontend tests/builds pass. Database-backed flow tests are authored but not executed; Docker is unavailable in the current environment and V2 has not been applied. Phase 2 is therefore implemented but not fully validated. See [Phase 2 testing report](phase-2-testing-report.md); do not proceed to Phase 3 until database-backed validation and the remaining acceptance decisions are completed.
+- **Tests/exit:** Java unit tests and frontend tests/builds pass. Database-backed flow tests remain environment-dependent; skipped tests are not passes. Phase 2 is implemented but not fully validated. See [Phase 2 testing report](phase-2-testing-report.md).
 
-### Phase 3 — Station and train catalogue
-- **Scope/files:** railway-catalog domain/services/repositories, admin draft/review/publish flows.
-- **Database/API:** station, train, provenance tables; `/stations`, `/admin/stations`, `/admin/trains`.
-- **Security:** admin scope and audit; validated imports and no untrusted raw HTML.
-- **Tests/exit:** unique code/number, effective status, duplicate import, approval and audit; data owner/provenance specified.
+### Phase 3 — Railway master data
+- **Scope/files:** authenticated admin CRUD and lifecycle controls for stations, train definitions, route versions/stops, schedules/weekdays/exceptions, coach classes/types/configurations, physical layouts, and train compositions.
+- **Database/API:** append-only Flyway V5 schema, station snapshot versions, route/schedule/layout/composition versions, server-side permissions, transactional audit, and `/api/v1/admin/master-data` endpoints.
+- **Security:** separate read/manage/publish/audit permissions, recent authentication on mutations, station-code verification before activation, bounded paging, and no hard deletes.
+- **Tests/exit:** unit tests cover core validation; PostgreSQL-backed migration/API tests are required in CI. See [Phase 3 master-data guide](phase-3-master-data.md) for precise status and unverified items. Search, dated runs, inventory, availability, bookings, payments, imports, and real data are out of scope.
 
-### Phase 4 — Routes, schedules, and train runs
-- **Scope/files:** route versioning, ordered stops, timezone and run generator, operations baseline.
-- **Database/API:** route_versions, train_stops, schedules, runs, run_stops/status; schedule/run endpoints.
-- **Security:** only approved staff publish; immutable history of route snapshots.
-- **Tests/exit:** stop-order, overnight offsets, local date/time conversion, DST boundary, route edit does not mutate prior run.
+### Phase 4 — Dated train runs and operations
+- **Scope/files:** run generator, immutable run snapshots, run status, and operations baseline.
+- **Database/API:** `train_runs`, `run_stops`, status/disruption events, and dated run endpoints; consumes published Phase 3 route/schedule versions.
+- **Security:** only authorized staff manage run-level operations; immutable historical route snapshots.
+- **Tests/exit:** overnight offsets, local date/time conversion, DST boundary, and route/schedule edits do not mutate existing runs.
 
-### Phase 5 — Classes, coaches, and seat model
-- **Scope/files:** class/coach templates, berth/seat type metadata, run-specific snapshots.
-- **Database/API:** class, coach template, coach seat, run coach/seat tables; admin layout endpoints.
+### Phase 5 — Run-specific physical inventory
+- **Scope/files:** run-specific coach/seat snapshots, physical inventory states, and seat/berth identifiers.
+- **Database/API:** run coach/seat tables and inventory endpoints; consumes published Phase 3 coach layouts/compositions.
 - **Security:** no public access to internal seat maps beyond approved availability; imports audited.
 - **Tests/exit:** duplicate seat IDs, mismatched class/coach, effective layout version and immutable run snapshot verified.
 

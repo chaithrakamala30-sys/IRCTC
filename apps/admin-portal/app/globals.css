@@ -297,6 +297,23 @@
   color: #9c2922;
 }
 
+.admin-status--draft,
+.admin-status--inactive,
+.admin-status--superseded {
+  background: #fff7e7;
+  color: #7a4d05;
+}
+
+.admin-status--published {
+  background: #e8f1fc;
+  color: #104c91;
+}
+
+.admin-status--retired {
+  background: #edf0f4;
+  color: #566579;
+}
+
 .admin-row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -379,6 +396,282 @@
   line-height: 1.5;
 }
 
+.master-data-console {
+  border-top: 1px solid var(--color-border);
+  margin-top: 48px;
+  padding-top: 38px;
+}
+
+.master-data-title {
+  margin-bottom: 20px;
+}
+
+.master-data-tabs {
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  gap: 7px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.master-data-tab {
+  background: #f2f6fb;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #35465e;
+  cursor: pointer;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 9px 13px;
+}
+
+.master-data-tab.is-active {
+  background: #e8f1fc;
+  border-color: #b8d0ee;
+  color: #104c91;
+}
+
+.master-data-stats {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.master-data-stat {
+  margin-top: 0;
+  min-height: 140px;
+}
+
+.master-data-stat p,
+.master-data-stat span {
+  color: var(--color-muted);
+  display: block;
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.master-data-stat strong {
+  display: block;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+  margin: 12px 0 4px;
+}
+
+.master-data-note {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
+.master-data-note h2,
+.master-data-columns h2 {
+  font-size: 1.15rem;
+  margin: 0 0 8px;
+}
+
+.master-data-note p,
+.master-data-columns > .admin-panel > p {
+  color: var(--color-muted);
+  font-size: 0.87rem;
+  line-height: 1.55;
+  margin: 0 0 14px;
+}
+
+.master-data-columns {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.master-data-columns > .admin-panel {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.master-data-form {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.master-data-form label,
+.master-data-select {
+  color: #203047;
+  display: grid;
+  font-size: 0.83rem;
+  font-weight: 700;
+  gap: 6px;
+  min-width: 0;
+}
+
+.master-data-form input,
+.master-data-form select,
+.master-data-select select,
+.admin-panel-heading > input {
+  background: white;
+  border: 1px solid #cbd6e4;
+  border-radius: 8px;
+  color: #182b42;
+  font: inherit;
+  min-height: 42px;
+  min-width: 0;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.master-data-form input:focus,
+.master-data-form select:focus,
+.master-data-select select:focus {
+  border-color: #256dc1;
+  box-shadow: 0 0 0 3px rgb(37 109 193 / 15%);
+  outline: 0;
+}
+
+.master-data-form > button,
+.master-data-form-wide,
+.master-data-days,
+.master-data-coach-options {
+  grid-column: 1 / -1;
+}
+
+.master-data-columns .admin-panel-heading {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.master-data-columns .admin-panel-heading > input {
+  max-width: 220px;
+}
+
+.master-data-mini-forms {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.master-data-mini-forms .master-data-form {
+  align-content: start;
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+}
+
+.master-data-mini-forms h3 {
+  font-size: 0.95rem;
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.master-data-days,
+.master-data-coach-options {
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 0;
+  padding: 12px;
+}
+
+.master-data-route-stops {
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  display: grid;
+  gap: 12px;
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px;
+}
+
+.master-data-route-stop {
+  border-bottom: 1px solid var(--color-border);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 4px 0 12px;
+}
+
+.master-data-route-stop-heading {
+  align-items: center;
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: space-between;
+}
+
+.master-data-route-stops legend {
+  color: #203047;
+  font-size: 0.82rem;
+  font-weight: 750;
+  padding: 0 5px;
+}
+
+.master-data-days legend,
+.master-data-coach-options legend {
+  color: #203047;
+  font-size: 0.82rem;
+  font-weight: 750;
+  padding: 0 5px;
+}
+
+.master-data-days label,
+.master-data-coach-options label {
+  align-items: center;
+  display: flex;
+  font-weight: 600;
+  gap: 7px;
+}
+
+.master-data-days input,
+.master-data-coach-options input {
+  accent-color: #1056b5;
+  height: 16px;
+  min-height: 16px;
+  width: 16px;
+}
+
+.master-data-wide-panel {
+  grid-column: 1 / -1;
+}
+
+.master-data-coach-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.master-data-coach-list li {
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.master-data-coach-list span,
+.master-data-composition-summary {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.master-data-composition-summary {
+  border-top: 1px solid var(--color-border);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+
+.master-data-composition-summary ol {
+  color: #203047;
+  display: grid;
+  gap: 6px;
+  padding-left: 22px;
+}
+
 @media (max-width: 760px) {
   .admin-auth-card,
   .admin-panel {
@@ -394,5 +687,43 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .master-data-console {
+    margin-top: 32px;
+    padding-top: 28px;
+  }
+
+  .master-data-stats,
+  .master-data-columns,
+  .master-data-mini-forms,
+  .master-data-form {
+    grid-template-columns: 1fr;
+  }
+
+  .master-data-note,
+  .master-data-wide-panel,
+  .master-data-form > button,
+  .master-data-form-wide,
+  .master-data-days,
+  .master-data-coach-options,
+  .master-data-route-stops {
+    grid-column: auto;
+  }
+
+  .master-data-route-stop {
+    grid-template-columns: 1fr;
+  }
+
+  .master-data-route-stop-heading {
+    grid-column: auto;
+  }
+
+  .master-data-columns .admin-panel-heading > input {
+    max-width: none;
+  }
+
+  .master-data-title {
+    align-items: flex-start;
   }
 }

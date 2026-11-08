@@ -84,6 +84,20 @@ Content-Type: application/json
 
 The API response distinguishes `HELD` / `PAYMENT_PENDING`, confirmed, RAC, waitlisted, expired, and rejected outcomes. It returns no final ticket/PNR until the relevant state transition commits. The server stores a canonical payload hash with the key; identical retries return the original resource, mismatched key reuse returns 409.
 
+## Implemented Phase 3 master-data API
+
+The implemented staff API is under `/api/v1/admin/master-data`; it uses the repository's `ApiEnvelope` JSON response rather than the illustrative RFC 9457 shape above. It is authenticated and each handler uses server-side `@PreAuthorize` permission checks. Mutations also require recent authentication.
+
+| Resource | Implemented operations |
+|---|---|
+| Stations | `GET /stations`, `GET /stations/{id}`, `POST /stations`, `PUT /stations/{id}`, `PATCH /stations/{id}/status`, `PATCH /stations/{id}/verification`, `GET /stations/{id}/versions` |
+| Lookups and trains | `GET/POST /categories`, `GET/POST /train-types`, `GET /trains`, `GET /trains/{id}`, `POST /trains`, `PUT /trains/{id}`, `PATCH /trains/{id}/status` |
+| Routes and schedules | `GET /routes`, `GET /route-versions/{id}`, `POST /routes`, `POST /routes/{id}/versions`, `POST /route-versions/{id}/publish`, `GET/POST /schedules`, `GET /schedules/{id}`, `POST /schedules/{id}/publish` |
+| Coaches and composition | `GET/POST /coach-classes`, `GET/POST /coach-types`, `GET/POST /coach-configurations`, `GET /coach-configurations/{id}`, `POST /coach-configurations/{id}/layouts`, `POST /coach-configurations/{id}/layouts/publish`, `GET/POST /coaches`, `GET/PUT /trains/{id}/composition`, `POST /trains/{id}/composition/versions/{versionId}/publish` |
+| Oversight | `GET /dashboard`, `GET /audit` |
+
+Use the [Phase 3 master-data guide](phase-3-master-data.md) for permissions, lifecycle rules, request behavior, and limitations. These endpoints do not implement train search, inventory, booking, or payment.
+
 ## API evolution and operational contract
 
 Add backward-compatible optional response fields; do not silently change enum meaning. Deprecate with telemetry and a documented sunset; introduce `/v2` for incompatible contract changes. Use OpenAPI-generated clients only after schema review. Track request IDs across app/log/outbox/provider event while excluding PII. Define `Retry-After` for throttles and typed retryability in internal errors.

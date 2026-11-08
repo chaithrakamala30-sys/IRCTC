@@ -36,6 +36,8 @@
 
 The ER relationship diagram is in [domain-relationships.mmd](diagrams/domain-relationships.mmd).
 
+The first implemented catalogue slice is described in [Phase 3 master data](phase-3-master-data.md). Its concrete tables are `stations`/`station_versions`, `trains`, `train_routes`/`train_route_versions`/`train_route_stops`, `train_schedules` and child day/exception rows, plus coach configuration/layout and composition version tables. It does not create dated `train_runs` or inventory records.
+
 ## Permanent route vs dated run
 
 A permanent route describes intended service topology. It must not itself be mutated to represent a particular date's delay, cancellation, or temporary rerouting. A schedule creates a run for a specific local operating date using the schedule's timezone and frozen route version. The run snapshots stop sequence and planned instants, allowing later route edits to affect only future runs. A disruption creates an auditable operational revision for the selected run and its impacted passengers.

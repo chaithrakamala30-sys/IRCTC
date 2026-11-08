@@ -9,10 +9,10 @@ The passenger UI has two distinct webpages: `/mobile` and `/laptop`. The root ro
 - npm workspaces: three standalone Next.js apps and the shared `@railconnect/ui` component package.
 - Strict TypeScript configuration, Tailwind design tokens, accessible typography/focus/error patterns, reusable button/card/input/dialog/loading/navigation components.
 - Passenger loading/error/not-found states and device-aware route selector.
-- Separate admin and operations starter pages with no mock records or enabled actions.
+- Separate admin and operations application workspaces; the admin workspace has since been extended under the approved Phase 3 scope.
 - Spring Boot 3.5 / Java 17 service with Spring Security stateless defaults, validation, JPA, Flyway, PostgreSQL, optional Redis, Actuator, Prometheus registry, and springdoc.
 - Standard JSON response/error envelope, request IDs, 1 MiB request-body limit (including streamed bodies), security response handlers, health/readiness/liveness, system info, CORS allowlist, structured logs.
-- One minimal Flyway metadata table; no railway-domain schema.
+- At Phase 1 completion, one minimal Flyway metadata table and no railway-domain schema. Phase 3 later adds the append-only V5 master-data schema.
 - Docker Compose with persistent local PostgreSQL, optional Redis profile, non-root runtime containers, health checks, and localhost-only published ports.
 - CI validation workflows; no deployment workflow and no hosted service provisioning.
 
@@ -68,4 +68,4 @@ The configured Supabase project connection succeeded over TLS. After isolating a
 
 ## Phase boundary
 
-Phase 1 is complete. Phase 2 identity/RBAC implementation was explicitly approved and is documented in the Phase 2 guides. Its database-backed verification is still pending; do not proceed to Phase 3. Do not load real passenger data, add fake availability, enable payment, or deploy a production service.
+Phase 1 is complete. Phase 2 identity/RBAC implementation and Phase 3 master-data work have since been authorized and are documented in their respective guides. Phase 2 database-backed verification and Phase 3 PostgreSQL migration validation remain separate acceptance items. Do not load real passenger data, add fake availability, enable payment, or deploy a production service.

@@ -9,13 +9,13 @@ export default function AdminHomePage() {
         <PortalNavigation
           items={[
             { href: "/", label: "Identity administration" },
-            { href: "#accounts", label: "Accounts" },
+            { href: "#master-data", label: "Railway master data" },
           ]}
         />
       </header>
       <AdminIdentityConsole />
       <footer className="site-footer">
-        Staff access is server-authorized. Railway operations and reservations remain disabled.
+        Staff access is server-authorized. Search, seat availability, and reservations are outside Phase 3.
       </footer>
     </div>
   );

@@ -1,6 +1,6 @@
 # PostgreSQL database design
 
-This is a logical design, not an executed migration. PostgreSQL is the authority for reservation, inventory, and financial invariants. Use Flyway for ordered, reviewed migrations; validate the syntax and lock behavior on the selected PostgreSQL version before implementation.
+This document combines the logical design with the implemented PostgreSQL schema. Flyway migrations V1–V5 provide the identity and Phase 3 railway master-data tables. Reservation, inventory, payment, and financial invariants remain future design and are not implemented. PostgreSQL is the data-integrity authority; migrations are append-only and must be validated on the selected PostgreSQL version before deployment.
 
 ## ER overview
 
@@ -11,7 +11,8 @@ See [domain-relationships.mmd](diagrams/domain-relationships.mmd). Use generated
 | Area | Tables and principal relationships |
 |---|---|
 | Identity | `users`, `credentials`, `user_mfa_factors`, `sessions`, `roles`, `permissions`, `user_role_assignments`, `role_permissions`, `admin_scope_assignments` |
-| Catalogue | `stations`, `trains`, `route_versions`, `train_stops`, `operating_schedules`, `train_classes`, `coach_templates`, `coach_template_seats` |
+| Implemented master data (V5) | `railway_zones`, `railway_divisions`, `stations`, `station_facilities`, `station_versions`, `train_categories`, `train_types`, `trains`, `train_routes`, `train_route_versions`, `train_route_stops`, `train_schedules`, `train_schedule_days`, `train_schedule_exceptions`, `coach_classes`, `coach_types`, `coach_configurations`, `coaches`, `accommodation_layouts`, `physical_accommodations`, `train_compositions`, `train_composition_versions`, `train_composition_coaches`, `master_data_audit_logs` |
+| Future dated operations | `train_runs`, `run_stops`, `run_status_events`, `disruptions`, `operational_announcements` |
 | Operations | `train_runs`, `run_stops`, `run_status_events`, `disruptions`, `operational_announcements` |
 | Inventory | `run_coaches`, `run_seats`, `journey_inventory`, `quota_inventory`, `inventory_holds`, `seat_allocations`, `inventory_events` |
 | Rules/fare | `rule_sets`, `rule_versions`, `fare_rules`, `cancellation_rules`, `quota_rules`, `fare_quotes` |
@@ -20,6 +21,10 @@ See [domain-relationships.mmd](diagrams/domain-relationships.mmd). Use generated
 | Platform | `idempotency_records`, `outbox_events`, `job_runs`, `audit_events`, `support_cases`, `notification_deliveries` |
 
 Primary keys: UUID; use opaque random public references for PNR/ticket IDs. Foreign keys are non-null where lifecycle requires an owner. Unique constraints include station code, train number, route-version sequence, run/date/train identity, `(run_id, coach_code)`, `(run_id, seat_code)`, `(reservation_id, passenger_ordinal)`, provider event ID, `(scope, idempotency_key)`, and rule-version number per ruleset.
+
+### Implemented V5 master-data constraints
+
+V5 keeps station snapshots in `station_versions`, route stops in immutable route-version rows, and versioned schedules, layouts, and compositions in their corresponding version tables. `master_data_audit_logs` is written transactionally alongside admin changes. Status checks, foreign keys, unique stop/coach positions, effective-date checks, JSON object/array checks, and physical-accommodation constraints are defined in the migration. Station versions and audit entries are append-only through the admin services. The migration test asserts the critical V5 tables and permission catalogue exist; it must execute against PostgreSQL, not H2.
 
 ## Critical constraints and indexes
 

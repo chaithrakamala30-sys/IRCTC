@@ -65,6 +65,10 @@ class ApiEndpointsIT {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.code").value("UNAUTHENTICATED"));
 
+        mockMvc.perform(get("/api/v1/admin/master-data/dashboard"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHENTICATED"));
+
         mockMvc.perform(post("/api/v1/auth/logout"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.success").value(false));
