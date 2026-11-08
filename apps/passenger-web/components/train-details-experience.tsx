@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
+import { formatLocalTime } from "../lib/time-format";
 import type { TrainDetail } from "./train-search-types";
 
 type DeviceExperience = "mobile" | "laptop";
@@ -34,15 +35,6 @@ type FareQuote = {
   fareRuleVersionNumber: number;
   quoteOnlyNotice: string;
 };
-
-function localTime(value: string | null, timezone: string): string {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: timezone,
-  }).format(new Date(value));
-}
 
 function showError(error: unknown): string {
   return error instanceof ApiRequestError
@@ -171,10 +163,10 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
             </div>
             <div className="train-detail-summary">
               <span>{detail.journey.origin.stationName} ({detail.journey.origin.stationCode})</span>
-              <strong>{localTime(detail.journey.departureAt, detail.journey.origin.timezone)}</strong>
+              <strong>{formatLocalTime(detail.journey.departureAt, detail.journey.origin.timezone)}</strong>
               <span aria-hidden="true">to</span>
               <span>{detail.journey.destination.stationName} ({detail.journey.destination.stationCode})</span>
-              <strong>{localTime(detail.journey.arrivalAt, detail.journey.destination.timezone)}</strong>
+              <strong>{formatLocalTime(detail.journey.arrivalAt, detail.journey.destination.timezone)}</strong>
               <small>{detail.journey.journeyDate} · arrives {detail.journey.arrivalDate}</small>
             </div>
           </section>
@@ -219,9 +211,9 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
                     {stop.haltMinutes > 0 && <small>Halt: {stop.haltMinutes} minutes</small>}
                   </div>
                   <div className="route-stop-times">
-                    <span>Arrive <strong>{localTime(stop.arrivalTime, stop.timezone)}</strong></span>
+                    <span>Arrive <strong>{formatLocalTime(stop.arrivalTime, stop.timezone)}</strong></span>
                     <small>{stop.arrivalDate ?? "—"}{stop.arrivalDayOffset > 0 ? ` · day +${stop.arrivalDayOffset}` : ""}</small>
-                    <span>Depart <strong>{localTime(stop.departureTime, stop.timezone)}</strong></span>
+                    <span>Depart <strong>{formatLocalTime(stop.departureTime, stop.timezone)}</strong></span>
                     <small>{stop.departureDate ?? "—"}{stop.departureDayOffset > 0 ? ` · day +${stop.departureDayOffset}` : ""}</small>
                   </div>
                   <span className="route-stop-distance">{stop.distanceFromSourceKm.toLocaleString()} km</span>
