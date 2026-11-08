@@ -909,7 +909,8 @@ public class FareService {
                   AND other.category_id IS NOT DISTINCT FROM :categoryId
                   AND other.coach_class_id IS NOT DISTINCT FROM :classId
                   AND (other.effective_to IS NULL OR other.effective_to >= :effectiveFrom)
-                  AND (:effectiveTo IS NULL OR other.effective_from <= :effectiveTo)
+                  AND (CAST(:effectiveTo AS date) IS NULL
+                       OR other.effective_from <= CAST(:effectiveTo AS date))
                 """, new MapSqlParameterSource()
                 .addValue("versionId", state.versionId())
                 .addValue("priority", state.priority())
