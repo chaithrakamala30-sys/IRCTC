@@ -158,22 +158,24 @@ public class InventoryService {
                     stop.stopSequence(), stop.arrivalTime(), stop.departureTime(), stop.arrivalDayOffset(),
                     stop.departureDayOffset(), stop.distanceFromSourceKm()
             );
-            if (i < stops.size() - 1) {
-                Stop next = stops.get(i + 1);
-                double distance = next.distanceFromSourceKm() - stop.distanceFromSourceKm();
-                if (distance <= 0) {
-                    throw failure(HttpStatus.CONFLICT, "ROUTE_DISTANCE_INVALID", "Route stop distances must increase");
-                }
-                jdbc.update(
-                        """
-                                INSERT INTO inventory_run_segments(
-                                    train_run_id, segment_index, from_stop_index, to_stop_index,
-                                    from_station_id, to_station_id, distance_km
-                                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                                """,
-                        runId, i, i, i + 1, stop.stationId(), next.stationId(), distance
-                );
+        }
+
+        for (int i = 0; i < stops.size() - 1; i++) {
+            Stop stop = stops.get(i);
+            Stop next = stops.get(i + 1);
+            double distance = next.distanceFromSourceKm() - stop.distanceFromSourceKm();
+            if (distance <= 0) {
+                throw failure(HttpStatus.CONFLICT, "ROUTE_DISTANCE_INVALID", "Route stop distances must increase");
             }
+            jdbc.update(
+                    """
+                            INSERT INTO inventory_run_segments(
+                                train_run_id, segment_index, from_stop_index, to_stop_index,
+                                from_station_id, to_station_id, distance_km
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                            """,
+                    runId, i, i, i + 1, stop.stationId(), next.stationId(), distance
+            );
         }
 
         for (CoachSource coach : coaches) {
