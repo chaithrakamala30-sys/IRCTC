@@ -366,6 +366,7 @@ public final class MasterDataModels {
             UUID actorUserId,
             String entityType,
             UUID entityId,
+            String entityName,
             String action,
             String previousValue,
             String newValue,

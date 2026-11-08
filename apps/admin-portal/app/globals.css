@@ -711,6 +711,24 @@
     grid-column: auto;
   }
 
+  .master-data-release-controls {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .master-data-release-controls p {
+    margin-bottom: 4px;
+    overflow-wrap: anywhere;
+  }
+
+  .master-data-release-controls .button {
+    max-width: 100%;
+    text-align: center;
+    white-space: normal;
+    width: 100%;
+  }
+
   .master-data-route-stop {
     grid-template-columns: 1fr;
   }

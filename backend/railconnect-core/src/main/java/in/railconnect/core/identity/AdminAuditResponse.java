@@ -6,7 +6,9 @@ import java.util.UUID;
 public record AdminAuditResponse(
         UUID auditId,
         UUID actorUserId,
+        String actorName,
         UUID targetUserId,
+        String targetName,
         String eventType,
         String outcome,
         String correlationId,

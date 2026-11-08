@@ -273,16 +273,21 @@ public class AdminIdentityService {
         );
         List<AdminAuditResponse> items = jdbcTemplate.query(
                 """
-                        SELECT audit_id, actor_user_id, target_user_id, event_type, outcome,
-                            correlation_id, occurred_at
-                        FROM security_audit_logs
-                        ORDER BY occurred_at DESC, audit_id
+                        SELECT audit.audit_id, audit.actor_user_id, actor.full_name AS actor_name,
+                            audit.target_user_id, target.full_name AS target_name,
+                            audit.event_type, audit.outcome, audit.correlation_id, audit.occurred_at
+                        FROM security_audit_logs audit
+                        LEFT JOIN users actor ON actor.user_id = audit.actor_user_id
+                        LEFT JOIN users target ON target.user_id = audit.target_user_id
+                        ORDER BY audit.occurred_at DESC, audit.audit_id
                         LIMIT ? OFFSET ?
                         """,
                 (result, rowNumber) -> new AdminAuditResponse(
                         result.getObject("audit_id", UUID.class),
                         result.getObject("actor_user_id", UUID.class),
+                        result.getString("actor_name"),
                         result.getObject("target_user_id", UUID.class),
+                        result.getString("target_name"),
                         result.getString("event_type"),
                         result.getString("outcome"),
                         result.getString("correlation_id"),

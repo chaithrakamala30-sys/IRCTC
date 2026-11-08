@@ -201,8 +201,11 @@ class MasterDataFlowIT {
                 "SELECT COUNT(*) FROM master_data_audit_logs",
                 Integer.class
         );
+        var stationAuditEntry = masterDataService.audit("STATION", origin.stationId(), 0, 10)
+                .items().get(0);
         assertThat(stationVersions).isEqualTo(3);
         assertThat(auditRecords).isGreaterThanOrEqualTo(10);
+        assertThat(stationAuditEntry.entityName()).contains(origin.stationName());
     }
 
     private Station createStation(String label) {

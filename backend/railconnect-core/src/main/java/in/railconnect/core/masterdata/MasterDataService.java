@@ -1136,8 +1136,67 @@ public class MasterDataService {
         pageParameters.add(size);
         pageParameters.add(page * size);
         List<AuditEntry> items = jdbcTemplate.query(
-                "SELECT * FROM master_data_audit_logs" + where
-                        + " ORDER BY occurred_at DESC LIMIT ? OFFSET ?",
+                """
+                        SELECT audit.*,
+                               CASE audit.entity_type
+                                   WHEN 'STATION' THEN (
+                                       SELECT station_code || ' · ' || station_name
+                                       FROM stations WHERE station_id = audit.entity_id
+                                   )
+                                   WHEN 'TRAIN' THEN (
+                                       SELECT train_number || ' · ' || train_name
+                                       FROM trains WHERE train_id = audit.entity_id
+                                   )
+                                   WHEN 'TRAIN_CATEGORY' THEN (
+                                       SELECT category_code || ' · ' || category_name
+                                       FROM train_categories WHERE category_id = audit.entity_id
+                                   )
+                                   WHEN 'TRAIN_TYPE' THEN (
+                                       SELECT type_code || ' · ' || type_name
+                                       FROM train_types WHERE train_type_id = audit.entity_id
+                                   )
+                                   WHEN 'ROUTE' THEN (
+                                       SELECT route_name FROM train_routes WHERE route_id = audit.entity_id
+                                   )
+                                   WHEN 'ROUTE_VERSION' THEN (
+                                       SELECT route_name || ' · v' || version_number
+                                       FROM train_route_versions
+                                       JOIN train_routes USING (route_id)
+                                       WHERE route_version_id = audit.entity_id
+                                   )
+                                   WHEN 'SCHEDULE' THEN (
+                                       SELECT train_number || ' · ' || train_name || ' · schedule v' || version_number
+                                       FROM train_schedules
+                                       JOIN trains USING (train_id)
+                                       WHERE schedule_id = audit.entity_id
+                                   )
+                                   WHEN 'COACH_CLASS' THEN (
+                                       SELECT class_code || ' · ' || class_name
+                                       FROM coach_classes WHERE coach_class_id = audit.entity_id
+                                   )
+                                   WHEN 'COACH_TYPE' THEN (
+                                       SELECT type_code || ' · ' || type_name
+                                       FROM coach_types WHERE coach_type_id = audit.entity_id
+                                   )
+                                   WHEN 'COACH_CONFIGURATION' THEN (
+                                       SELECT configuration_code || ' · ' || configuration_name
+                                       FROM coach_configurations WHERE configuration_id = audit.entity_id
+                                   )
+                                   WHEN 'COACH' THEN (
+                                       SELECT coach_code FROM coaches WHERE coach_id = audit.entity_id
+                                   )
+                                   WHEN 'COMPOSITION' THEN (
+                                       SELECT train_number || ' · ' || train_name || ' · composition v' || version_number
+                                       FROM train_composition_versions
+                                       JOIN train_compositions USING (composition_id)
+                                       JOIN trains USING (train_id)
+                                       WHERE composition_version_id = audit.entity_id
+                                   )
+                                   ELSE NULL
+                               END AS entity_name
+                        FROM master_data_audit_logs audit
+                        """ + where
+                        + " ORDER BY audit.occurred_at DESC LIMIT ? OFFSET ?",
                 auditRowMapper(),
                 pageParameters.toArray()
         );
@@ -1632,6 +1691,7 @@ public class MasterDataService {
                 result.getObject("actor_user_id", UUID.class),
                 result.getString("entity_type"),
                 result.getObject("entity_id", UUID.class),
+                result.getString("entity_name"),
                 result.getString("action"),
                 result.getString("previous_value"),
                 result.getString("new_value"),
@@ -1644,6 +1704,16 @@ public class MasterDataService {
     private void validateStation(StationRequest request) {
         if ((request.latitude() == null) != (request.longitude() == null)) {
             throw badRequest("INVALID_COORDINATES", "Latitude and longitude must both be provided or both be empty");
+        }
+        if (request.latitude() != null && request.longitude() != null) {
+            if (request.latitude().compareTo(new java.math.BigDecimal("-90.0")) < 0
+                    || request.latitude().compareTo(new java.math.BigDecimal("90.0")) > 0) {
+                throw badRequest("INVALID_COORDINATES", "Latitude must be between -90 and 90 degrees");
+            }
+            if (request.longitude().compareTo(new java.math.BigDecimal("-180.0")) < 0
+                    || request.longitude().compareTo(new java.math.BigDecimal("180.0")) > 0) {
+                throw badRequest("INVALID_COORDINATES", "Longitude must be between -180 and 180 degrees");
+            }
         }
         if (request.zoneId() != null) {
             Integer activeZone = jdbcTemplate.queryForObject(

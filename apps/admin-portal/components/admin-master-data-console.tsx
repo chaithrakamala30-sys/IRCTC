@@ -149,6 +149,7 @@ type AuditEntry = {
   actorUserId: string | null;
   entityType: string;
   entityId: string;
+  entityName: string | null;
   action: string;
   changeReason: string | null;
   occurredAt: string;
@@ -262,6 +263,57 @@ export function AdminMasterDataConsole() {
       : stations;
   }, [stationSearch, stations]);
 
+  function parseCoordinate(rawValue: string | null, axis: "latitude" | "longitude") {
+    const text = rawValue?.trim() ?? "";
+    if (text === "") {
+      return null;
+    }
+
+    const formattedCoordinate = text.match(/^(\d+(?:\.\d+)?)\s*°\s*([NSEW])$/i);
+    let numericValue: number;
+    if (formattedCoordinate) {
+      const direction = formattedCoordinate[2].toUpperCase();
+      const validDirections = axis === "latitude" ? ["N", "S"] : ["E", "W"];
+      if (!validDirections.includes(direction)) {
+        throw new Error(`${axis === "latitude" ? "Latitude" : "Longitude"} must end with ${validDirections.join(" or ")}.`);
+      }
+
+      numericValue = Number(formattedCoordinate[1]);
+      if (direction === "S" || direction === "W") {
+        numericValue *= -1;
+      }
+    } else if (/^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(text)) {
+      numericValue = Number(text);
+    } else {
+      throw new Error(`Enter ${axis} as decimal degrees with a direction, such as ${axis === "latitude" ? "12.8634° N" : "77.5946° E"}.`);
+    }
+
+    if (!Number.isFinite(numericValue)) {
+      throw new Error(`${axis === "latitude" ? "Latitude" : "Longitude"} must be a valid decimal number.`);
+    }
+
+    if (axis === "latitude" && (numericValue < -90 || numericValue > 90)) {
+      throw new Error("Latitude must be between -90 and 90.");
+    }
+
+    if (axis === "longitude" && (numericValue < -180 || numericValue > 180)) {
+      throw new Error("Longitude must be between -180 and 180.");
+    }
+
+    return numericValue;
+  }
+
+  function formatCoordinate(value: number | null, axis: "latitude" | "longitude") {
+    if (value === null) {
+      return "";
+    }
+
+    const direction = axis === "latitude"
+      ? value < 0 ? "S" : "N"
+      : value < 0 ? "W" : "E";
+    return `${Math.abs(value)}° ${direction}`;
+  }
+
   async function submit(
     event: FormEvent<HTMLFormElement>,
     action: (form: FormData) => Promise<void>,
@@ -278,7 +330,7 @@ export function AdminMasterDataConsole() {
       setNotice(successMessage);
       await loadData();
     } catch (caught) {
-      setError(caught instanceof ApiRequestError ? caught.message : "The master-data change could not be saved.");
+      setError(caught instanceof ApiRequestError ? caught.message : caught instanceof Error ? caught.message : "The master-data change could not be saved.");
     } finally {
       setBusy(false);
     }
@@ -287,8 +339,8 @@ export function AdminMasterDataConsole() {
   async function createStation(event: FormEvent<HTMLFormElement>) {
     await submit(event, async (form) => {
       const stationId = editingStation?.stationId;
-      const latitude = String(form.get("latitude") ?? "");
-      const longitude = String(form.get("longitude") ?? "");
+      const latitude = parseCoordinate(String(form.get("latitude") ?? ""), "latitude");
+      const longitude = parseCoordinate(String(form.get("longitude") ?? ""), "longitude");
       await apiFetch<Station>(stationId
         ? `${masterDataPath}/stations/${stationId}`
         : `${masterDataPath}/stations`, {
@@ -303,8 +355,8 @@ export function AdminMasterDataConsole() {
           state: form.get("state"),
           country: form.get("country"),
           timezone: form.get("timezone"),
-          latitude: latitude ? Number(latitude) : null,
-          longitude: longitude ? Number(longitude) : null,
+          latitude,
+          longitude,
           address: form.get("address") || null,
           zoneId: editingStation?.zoneId ?? null,
           divisionId: editingStation?.divisionId ?? null,
@@ -682,7 +734,7 @@ export function AdminMasterDataConsole() {
               <p>{label}</p><strong>{count ?? 0}</strong><span>{detail}</span>
             </article>
           ))}
-          <div className="admin-panel master-data-note">
+          <div className="admin-panel master-data-note master-data-release-controls">
             <h2>Version and release controls</h2>
             <p>New routes, schedules, layouts, and compositions start as drafts. Publish is a separate permission-gated action. Booking and seat availability are not part of this phase.</p>
             <button className="button button--secondary" onClick={() => void loadAudit()} type="button">View master-data audit history</button>
@@ -690,7 +742,7 @@ export function AdminMasterDataConsole() {
           {showAudit && (
             <section aria-label="Master-data audit history" className="admin-panel master-data-note">
               <div className="admin-panel-heading">
-                <div><h2>Recent master-data changes</h2><p>Actor IDs and correlation IDs support operational investigation.</p></div>
+                <div><h2>Recent master-data changes</h2><p>Entity names are shown where available; hover to view the ID.</p></div>
                 <button className="button button--secondary" onClick={() => setShowAudit(false)} type="button">Close</button>
               </div>
               <div className="admin-table-wrap"><table className="admin-table">
@@ -698,7 +750,7 @@ export function AdminMasterDataConsole() {
                 <tbody>{auditEntries.map((entry) => (
                   <tr key={entry.auditId}>
                     <td>{new Date(entry.occurredAt).toLocaleString()}</td>
-                    <td>{entry.entityType} · {entry.entityId}</td>
+                    <td title={entry.entityId}>{entry.entityType} · {entry.entityName ?? entry.entityId}</td>
                     <td>{entry.action}</td>
                     <td>{entry.changeReason ?? "—"}</td>
                     <td>{entry.correlationId}</td>
@@ -714,7 +766,7 @@ export function AdminMasterDataConsole() {
         <div className="master-data-columns">
           <section className="admin-panel">
             <h2>{editingStation ? `Edit ${editingStation.stationCode}` : "Add station"}</h2>
-            <p>New station entries are saved as drafts. A changed station code must be verified before activation.</p>
+            <p>New station entries are saved as drafts. A changed station code must be verified before activation. Enter coordinates as decimal degrees with a direction, such as 12.8634° N.</p>
             <form className="master-data-form" key={editingStation?.stationId ?? "new-station"} onSubmit={(event) => void createStation(event)}>
               <label>Station code<input autoComplete="off" defaultValue={editingStation?.stationCode ?? ""} maxLength={20} name="stationCode" required /></label>
               <label>Station name<input defaultValue={editingStation?.stationName ?? ""} maxLength={160} name="stationName" required /></label>
@@ -723,8 +775,8 @@ export function AdminMasterDataConsole() {
               <label>State<input defaultValue={editingStation?.state ?? ""} maxLength={120} name="state" required /></label>
               <label>Country<input defaultValue={editingStation?.country ?? "India"} maxLength={80} name="country" required /></label>
               <label>Time zone<input defaultValue={editingStation?.timezone ?? "Asia/Kolkata"} maxLength={64} name="timezone" required /></label>
-              <label>Latitude<input defaultValue={editingStation?.latitude ?? ""} max="90" min="-90" name="latitude" step="0.000001" type="number" /></label>
-              <label>Longitude<input defaultValue={editingStation?.longitude ?? ""} max="180" min="-180" name="longitude" step="0.000001" type="number" /></label>
+              <label>Latitude<input autoComplete="off" defaultValue={formatCoordinate(editingStation?.latitude ?? null, "latitude")} name="latitude" placeholder="12.8634° N" type="text" /></label>
+              <label>Longitude<input autoComplete="off" defaultValue={formatCoordinate(editingStation?.longitude ?? null, "longitude")} name="longitude" placeholder="77.5946° E" type="text" /></label>
               <label>Station category<input defaultValue={editingStation?.stationCategory ?? ""} maxLength={40} name="stationCategory" /></label>
               <label className="master-data-form-wide">Address<input defaultValue={editingStation?.address ?? ""} maxLength={1000} name="address" /></label>
               <button className="button button--primary" disabled={busy} type="submit">{editingStation ? "Save station changes" : "Save station draft"}</button>

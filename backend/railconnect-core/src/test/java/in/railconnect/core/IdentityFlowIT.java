@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import in.railconnect.core.identity.AdminIdentityService;
 import in.railconnect.core.identity.SupabaseAuthClient;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -46,9 +47,41 @@ class IdentityFlowIT {
     @Autowired
     private JdbcTemplate jdbcTemplate;
     @Autowired
+    private AdminIdentityService adminIdentityService;
+    @Autowired
     private PasswordEncoder passwordEncoder;
     @MockitoBean
     private SupabaseAuthClient supabaseAuthClient;
+
+    @Test
+    void securityAuditEventsIncludeActorAndTargetNames() {
+        UUID actorId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        insertAuditTestUser(actorId, "Audit Actor");
+        insertAuditTestUser(targetId, "Audit Target");
+        UUID auditId = UUID.randomUUID();
+        jdbcTemplate.update(
+                """
+                        INSERT INTO security_audit_logs (
+                            audit_id, actor_user_id, target_user_id, event_type, outcome, correlation_id
+                        ) VALUES (?, ?, ?, 'TEST_AUDIT_EVENT', 'SUCCESS', ?)
+                        """,
+                auditId,
+                actorId,
+                targetId,
+                UUID.randomUUID().toString()
+        );
+
+        var auditPage = adminIdentityService.auditLogs(0, 100);
+
+        assertThat(auditPage.items())
+                .filteredOn(entry -> auditId.equals(entry.auditId()))
+                .singleElement()
+                .satisfies(entry -> {
+                    assertThat(entry.actorName()).isEqualTo("Audit Actor");
+                    assertThat(entry.targetName()).isEqualTo("Audit Target");
+                });
+    }
 
     @Test
     void registrationLoginProfileSessionAndLogoutUseCookieAuthentication() throws Exception {
@@ -454,5 +487,21 @@ class IdentityFlowIT {
         );
         when(supabaseAuthClient.signUp(eq(email), eq(password), anyMap())).thenReturn(user);
         when(supabaseAuthClient.authenticate(eq(email), eq(password))).thenReturn(user);
+    }
+
+    private void insertAuditTestUser(UUID userId, String name) {
+        String suffix = UUID.randomUUID().toString().replace("-", "");
+        jdbcTemplate.update(
+                """
+                        INSERT INTO users (
+                            user_id, full_name, email, mobile_number, password_hash,
+                            terms_version, privacy_version
+                        ) VALUES (?, ?, ?, ?, NULL, 'test', 'test')
+                        """,
+                userId,
+                name,
+                "audit-" + suffix + "@example.test",
+                "+1555" + suffix.substring(0, 10)
+        );
     }
 }

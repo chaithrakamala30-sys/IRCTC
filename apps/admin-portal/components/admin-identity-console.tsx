@@ -29,7 +29,9 @@ type Permission = { permissionCode: string; description: string };
 type AuditEntry = {
   auditId: string;
   actorUserId: string | null;
+  actorName: string | null;
   targetUserId: string | null;
+  targetName: string | null;
   eventType: string;
   outcome: string;
   correlationId: string;
@@ -515,8 +517,11 @@ export function AdminIdentityConsole() {
                     <tr key={entry.auditId}>
                       <td>{new Date(entry.occurredAt).toLocaleString()}</td>
                       <td>{entry.eventType}</td><td>{entry.outcome}</td>
-                      <td>{entry.actorUserId ?? "System"}</td><td>{entry.targetUserId ?? "—"}</td>
-                      <td>{entry.correlationId}</td>
+                      <td>{entry.actorName ?? (entry.actorUserId ? "Unknown user" : "System")}</td>
+                      <td>{entry.targetName ?? "—"}</td>
+                      <td title={`Correlation ID: ${entry.correlationId}`}>
+                        Security event · {new Date(entry.occurredAt).toLocaleString()}
+                      </td>
                     </tr>
                   ))}</tbody>
                 </table>
