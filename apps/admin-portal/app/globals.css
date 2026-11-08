@@ -26,6 +26,43 @@
   color: #1056b5;
 }
 
+.admin-portal-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.admin-portal-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #e3edfb;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 9px 12px;
+}
+
+.admin-portal-tab:hover,
+.admin-portal-tab.is-active {
+  background: #fff;
+  color: #104c91;
+}
+
+.admin-header-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.admin-header-actions > span {
+  color: #e3edfb;
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
 .admin-main {
   margin: 0 auto;
   max-width: 1200px;
@@ -76,10 +113,23 @@
 
 @media (max-width: 760px) {
   .admin-header {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
     gap: 12px;
     padding: 14px 18px;
+  }
+
+  .admin-portal-tabs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .admin-portal-tab {
+    padding: 8px;
+  }
+
+  .admin-header-actions {
+    justify-content: space-between;
   }
 
   .admin-main {

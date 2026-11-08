@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ApiRequestError, apiFetch } from "@railconnect/api";
+import { Brand } from "@railconnect/ui";
 import { AdminMasterDataConsole } from "./admin-master-data-console";
+import { AdminFareConsole } from "./admin-fare-console";
 
 type AdminUser = {
   userId: string;
@@ -53,6 +55,54 @@ type AdminSession = {
   current: boolean;
 };
 
+type AdminTab = "identity" | "master-data" | "fares";
+
+type AdminTabItem = {
+  id: AdminTab;
+  label: string;
+};
+
+function AdminPortalHeader({
+  user,
+  tabs = [],
+  activeTab,
+  onTabSelect,
+  onSignOut,
+}: {
+  user?: CurrentUser | null;
+  tabs?: AdminTabItem[];
+  activeTab?: AdminTab;
+  onTabSelect?: (tab: AdminTab) => void;
+  onSignOut?: () => void;
+}) {
+  return (
+    <header className="admin-header">
+      <Brand href="/" />
+      {tabs.length > 0 && (
+        <nav aria-label="Administration sections" className="admin-portal-tabs">
+          {tabs.map((tab) => (
+            <button
+              aria-current={activeTab === tab.id ? "page" : undefined}
+              className={activeTab === tab.id ? "admin-portal-tab is-active" : "admin-portal-tab"}
+              key={tab.id}
+              onClick={() => onTabSelect?.(tab.id)}
+              type="button"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      )}
+      {user && onSignOut && (
+        <div className="admin-header-actions">
+          <span>{user.fullName}</span>
+          <button className="button button--secondary" onClick={onSignOut} type="button">Sign out</button>
+        </div>
+      )}
+    </header>
+  );
+}
+
 const staffRoles = [
   "RAILWAY_ADMIN",
   "STATION_MANAGER",
@@ -82,6 +132,7 @@ export function AdminIdentityConsole() {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState<Page<AdminUser> | null>(null);
+  const [activeTab, setActiveTab] = useState<AdminTab>("identity");
 
   const loadUsers = useCallback(async () => {
     const query = new URLSearchParams({ page: "0", size: "50" });
@@ -99,7 +150,17 @@ export function AdminIdentityConsole() {
     try {
       const current = await apiFetch<CurrentUser>("/api/v1/auth/me");
       setUser(current.data);
-      if (!current.data?.mustChangePassword) {
+      const currentRoles = current.data?.roles ?? [];
+      setActiveTab(
+        currentRoles.includes("SUPER_ADMIN")
+          ? "identity"
+          : currentRoles.includes("RAILWAY_ADMIN")
+            ? "master-data"
+            : currentRoles.includes("FINANCE_ADMIN")
+              ? "fares"
+              : "identity",
+      );
+      if (!current.data?.mustChangePassword && currentRoles.includes("SUPER_ADMIN")) {
         const [userPage, roleResponse, permissionResponse] = await Promise.all([
           apiFetch<Page<AdminUser>>("/api/v1/admin/users?page=0&size=50"),
           apiFetch<Role[]>("/api/v1/admin/roles"),
@@ -109,6 +170,11 @@ export function AdminIdentityConsole() {
         setUsers(userPage.data?.items ?? []);
         setRoles(roleResponse.data ?? []);
         setPermissions(permissionResponse.data ?? []);
+      } else {
+        setPage(null);
+        setUsers([]);
+        setRoles([]);
+        setPermissions([]);
       }
     } catch (caught) {
       setError(
@@ -171,6 +237,7 @@ export function AdminIdentityConsole() {
       setUser(null);
       setUsers([]);
       setPage(null);
+      setActiveTab("identity");
       setError("");
     } catch (caught) {
       setError(caught instanceof ApiRequestError ? caught.message : "Sign out could not be completed.");
@@ -309,71 +376,102 @@ export function AdminIdentityConsole() {
   }
 
   if (loading) {
-    return <main className="admin-main" role="status">Loading identity administration…</main>;
+    return (
+      <>
+        <AdminPortalHeader />
+        <main className="admin-main" role="status">Loading administration portal…</main>
+      </>
+    );
   }
 
   if (!user) {
     return (
-      <main className="admin-main admin-auth-main">
-        <section className="admin-auth-card">
-          <p className="eyebrow">Restricted access</p>
-          <h1>Administrator sign in</h1>
-          <p>Only provisioned staff accounts with server-side permissions can open this portal.</p>
-          {error && <p className="admin-alert admin-alert--error" role="alert">{error}</p>}
-          {notice && <p className="admin-alert admin-alert--success" role="status">{notice}</p>}
-          <form className="admin-form" onSubmit={signIn}>
-            <label>
-              Email address
-              <input autoComplete="email" name="identifier" required type="email" />
-            </label>
-            <label>
-              Password
-              <input autoComplete="current-password" name="password" required type="password" />
-            </label>
-            <button className="button button--primary" type="submit">Sign in</button>
-          </form>
-        </section>
-      </main>
+      <>
+        <AdminPortalHeader />
+        <main className="admin-main admin-auth-main">
+          <section className="admin-auth-card">
+            <p className="eyebrow">Restricted access</p>
+            <h1>Administrator sign in</h1>
+            <p>Only provisioned staff accounts with server-side permissions can open this portal.</p>
+            {error && <p className="admin-alert admin-alert--error" role="alert">{error}</p>}
+            {notice && <p className="admin-alert admin-alert--success" role="status">{notice}</p>}
+            <form className="admin-form" onSubmit={signIn}>
+              <label>
+                Email address
+                <input autoComplete="email" name="identifier" required type="email" />
+              </label>
+              <label>
+                Password
+                <input autoComplete="current-password" name="password" required type="password" />
+              </label>
+              <button className="button button--primary" type="submit">Sign in</button>
+            </form>
+          </section>
+        </main>
+      </>
     );
   }
 
   if (user.mustChangePassword) {
     return (
-      <main className="admin-main admin-auth-main">
-        <section className="admin-auth-card">
-          <p className="eyebrow">Required security step</p>
-          <h1>Change your temporary password</h1>
-          <p>Administrator features remain locked until you set a personal password.</p>
-          {error && <p className="admin-alert admin-alert--error" role="alert">{error}</p>}
-          <form className="admin-form" onSubmit={changeInitialPassword}>
-            <label>Temporary password<input autoComplete="current-password" name="currentPassword" required type="password" /></label>
-            <label>New password<input autoComplete="new-password" minLength={12} name="newPassword" required type="password" /></label>
-            <button className="button button--primary" type="submit">Change password</button>
-          </form>
-        </section>
-      </main>
+      <>
+        <AdminPortalHeader user={user} onSignOut={() => void signOut()} />
+        <main className="admin-main admin-auth-main">
+          <section className="admin-auth-card">
+            <p className="eyebrow">Required security step</p>
+            <h1>Change your temporary password</h1>
+            <p>Administrator features remain locked until you set a personal password.</p>
+            {error && <p className="admin-alert admin-alert--error" role="alert">{error}</p>}
+            <form className="admin-form" onSubmit={changeInitialPassword}>
+              <label>Temporary password<input autoComplete="current-password" name="currentPassword" required type="password" /></label>
+              <label>New password<input autoComplete="new-password" minLength={12} name="newPassword" required type="password" /></label>
+              <button className="button button--primary" type="submit">Change password</button>
+            </form>
+          </section>
+        </main>
+      </>
     );
   }
 
-  const hasUsersPermission = user.roles.includes("SUPER_ADMIN");
+  const isSuperAdmin = user.roles.includes("SUPER_ADMIN");
+  const isRailwayAdmin = user.roles.includes("RAILWAY_ADMIN");
+  const isFinanceAdmin = user.roles.includes("FINANCE_ADMIN");
+  const tabs: AdminTabItem[] = isSuperAdmin
+    ? [
+      { id: "identity", label: "Identity administration" },
+      { id: "master-data", label: "Railway master data" },
+    ]
+    : isRailwayAdmin
+      ? [{ id: "master-data", label: "Railway master data" }]
+      : isFinanceAdmin
+        ? [{ id: "fares", label: "Fare management" }]
+        : [];
   return (
-    <main className="admin-main">
-      <div className="admin-title-row">
-        <div>
-          <p className="eyebrow">Identity and access</p>
-          <h1>Administrator console</h1>
-          <p>Signed in as {user.fullName}. Changes to staff access require a recent sign-in.</p>
-        </div>
-        <button className="button button--secondary" onClick={() => void signOut()} type="button">Sign out</button>
-      </div>
-      {error && <p className="admin-alert admin-alert--error" role="alert">{error}</p>}
-      {notice && <p className="admin-alert admin-alert--success" role="status">{notice}</p>}
-      {!hasUsersPermission ? (
-        <p className="admin-alert admin-alert--warning" role="status">
-          Your account is authenticated but is not authorized to manage identity accounts.
-        </p>
-      ) : (
-        <>
+    <>
+      <AdminPortalHeader
+        activeTab={activeTab}
+        onSignOut={() => void signOut()}
+        onTabSelect={setActiveTab}
+        tabs={tabs}
+        user={user}
+      />
+      <main className="admin-main">
+        {error && <p className="admin-alert admin-alert--error" role="alert">{error}</p>}
+        {notice && <p className="admin-alert admin-alert--success" role="status">{notice}</p>}
+        {tabs.length === 0 && (
+          <p className="admin-alert admin-alert--warning" role="status">
+            Your account is authenticated but is not authorized to use this administration portal.
+          </p>
+        )}
+        {activeTab === "identity" && isSuperAdmin && (
+          <>
+            <div className="admin-title-row">
+              <div>
+                <p className="eyebrow">Identity and access</p>
+                <h1>Administrator console</h1>
+                <p>Signed in as {user.fullName}. Changes to staff access require a recent sign-in.</p>
+              </div>
+            </div>
           <section aria-labelledby="create-staff-title" className="admin-panel">
             <h2 id="create-staff-title">Provision staff account</h2>
             <p>Never use passenger registration for staff. Share the temporary password out of band.</p>
@@ -562,9 +660,18 @@ export function AdminIdentityConsole() {
               </div>
             </section>
           )}
-        </>
-      )}
-      <AdminMasterDataConsole />
-    </main>
+          </>
+        )}
+        {activeTab === "master-data" && (isSuperAdmin || isRailwayAdmin) && (
+          <>
+            <AdminMasterDataConsole />
+            {isSuperAdmin && <AdminFareConsole roles={user.roles} />}
+          </>
+        )}
+        {activeTab === "fares" && (isSuperAdmin || isFinanceAdmin) && (
+          <AdminFareConsole roles={user.roles} />
+        )}
+      </main>
+    </>
   );
 }
