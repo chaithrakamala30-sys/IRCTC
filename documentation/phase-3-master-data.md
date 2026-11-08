@@ -62,6 +62,8 @@ The separate Next.js admin portal includes responsive overview, station, train, 
 ## Validation and known limitations
 
 - Database writes and their station-version/audit records are transactional. SQL constraints remain the final integrity barrier.
+- Phase 3 checklist evidence: the PostgreSQL CI flow creates, verifies, and activates stations; publishes an ordered route; creates and publishes a weekday schedule; creates and publishes coach layout and composition data; and checks persisted composition JSON and audit records. This is service/database integration coverage, not a substitute for testing each admin UI action.
+- Individual UI edit/search/deactivation actions, overnight schedule behavior, and authenticated admin workflows at mobile and laptop viewports have not been independently exercised end to end.
 - Data is not an authoritative Indian Railways feed. Staff-entered data needs a verified source and operational review.
 - There is no multi-person approval workflow, bulk import, map integration, schedule-to-dated-run generator, inventory, seat availability, search, booking, payment, or passenger-facing timetable.
 - MFA and password recovery remain unavailable as documented in Phase 2.
@@ -75,11 +77,12 @@ Latest verification:
 | Check | Result | Evidence |
 |---|---|---|
 | Frontend lint, type-check, and production builds | PASS | `npm run check:frontend` completed with exit code 0 for admin, operations, and passenger apps. |
-| Backend compilation, unit tests, packaging | PASS | `mvn verify` completed with exit code 0; 16 unit tests passed, with 0 failures/errors. |
+| Backend compilation, unit tests, packaging | PASS | Clean Maven build completed with exit code 0; 18 unit tests passed, with 0 failures/errors. |
 | Supabase Flyway V5 migration | PASS | Applied 2026-11-08 to the configured `railconnect` schema on PostgreSQL 17.11 after confirming V1–V4 were successful and that a restorable backup was ready. Flyway recorded V5 as successful. |
 | Supabase schema and permission verification | PASS | Confirmed all 24 V5 tables, all 8 V5 permissions, and all 8 grants each for `SUPER_ADMIN` and `RAILWAY_ADMIN`. |
-| PostgreSQL migration/API/identity/master-data integration tests | UNVERIFIED | Earlier local Failsafe run discovered 10 integration tests and skipped all 10 because `RAILCONNECT_DB_URL` was not set in that run. The database-backed application flow test has not been run against the production database. |
-| Docker-backed local database availability | BLOCKED | Docker CLI is not installed in the local environment. |
-| Browser E2E | UNVERIFIED | Playwright is not installed (`npx --no-install playwright --version` could not resolve the package). |
+| PostgreSQL migration/API/identity/master-data integration tests | PASS in CI | Backend Actions run for commit `48eb97e` completed successfully with PostgreSQL service containers; 11 integration tests passed with 0 failures or skips. This uses an isolated CI database, not production Supabase. |
+| Docker-backed local database availability | BLOCKED locally | Docker is not installed locally; the GitHub Actions runner provided PostgreSQL service containers for integration tests. |
+| Admin browser E2E and detailed CRUD checklist | PARTIAL | The combined master-data service/database flow passes in PostgreSQL CI. No authenticated browser E2E has exercised each checklist action, including editing, searching, and deactivation. |
+| Admin mobile and desktop browser behavior | UNVERIFIED | Responsive layouts are implemented, but authenticated workflows have not been verified in mobile- and laptop-sized browsers. |
 
-The migration has been applied to Supabase, but application integration tests still need to run against an isolated PostgreSQL test database in CI. Do not run mutation-oriented integration tests against production.
+The migration has been applied to Supabase, and the PostgreSQL-backed application integration suite passes in CI. Do not run mutation-oriented integration tests against production. The detailed CRUD and responsive-browser checks remain outstanding.
