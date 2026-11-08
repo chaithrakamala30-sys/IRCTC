@@ -50,11 +50,18 @@ function isHoldExpired(expiresAt: string): boolean {
 }
 
 function message(error: unknown): string {
-  return error instanceof ApiRequestError
+  if (error instanceof ApiRequestError) {
+    if (error.status === 409) {
+      return "This temporary hold is already linked to an active reservation request. Release the reservation request before releasing the hold.";
+    }
+    if (error.status === 404) {
+      return "This temporary hold is no longer available. It may already have expired or been released.";
+    }
+    return error.message;
+  }
+  return error instanceof Error
     ? error.message
-    : error instanceof Error
-      ? error.message
-      : "Seat inventory or reservation actions could not be completed. Please try again.";
+    : "Seat inventory or reservation actions could not be completed. Please try again.";
 }
 
 export function SeatInventoryPanel({
