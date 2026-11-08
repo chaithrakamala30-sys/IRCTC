@@ -2,11 +2,11 @@
 
 ## Initial administrator
 
-The first Super Administrator is created only by the opt-in bootstrap runner after V2 has seeded roles and permissions. Required identity/password values are supplied through environment variables; the runner exits after creation. The initial password must be changed before accessing other protected API functions. There is no default or committed administrator credential.
+The first Super Administrator is created only by the opt-in bootstrap runner after Flyway has seeded roles and permissions. The runner creates a Supabase Auth identity and a linked `railconnect.users` profile/role using the same UUID. Required identity/password values are supplied through environment variables; the runner exits after creation. The initial password must be changed before accessing other protected API functions. There is no default or committed administrator credential.
 
 ## Admin identity console
 
-The separate admin portal provides a sign-in surface and identity-management screens. Backend permissions, not client-side route visibility, govern access to:
+The separate admin portal signs in by verifying email/password through Supabase Auth, then creates the existing RailConnect server session. Backend permissions, not client-side route visibility, govern access to:
 
 - Paginated account search and account details.
 - Staff account provisioning with temporary passwords and role grants.

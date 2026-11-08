@@ -2,49 +2,44 @@ package in.railconnect.core.identity;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 @Service
-public class IdentityUserDetailsService implements UserDetailsService {
+public class IdentityUserDetailsService {
     private final JdbcTemplate jdbcTemplate;
 
     public IdentityUserDetailsService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
-        String normalized = identifier.trim().toLowerCase(Locale.ROOT);
+    public RailConnectPrincipal loadUserByUserId(UUID userId) throws UsernameNotFoundException {
         List<UserRow> users = jdbcTemplate.query(
                 """
-                        SELECT user_id, email, password_hash, full_name, status, must_change_password
+                        SELECT user_id, email, full_name, status, must_change_password
                         FROM users
-                        WHERE email = ? OR mobile_number = ?
+                        WHERE user_id = ?
                         """,
                 (result, rowNumber) -> new UserRow(
                         result.getObject("user_id", UUID.class),
                         result.getString("email"),
-                        result.getString("password_hash"),
                         result.getString("full_name"),
                         result.getString("status"),
                         result.getBoolean("must_change_password")
                 ),
-                normalized,
-                normalized
+                userId
         );
         if (users.isEmpty()) {
-            throw new UsernameNotFoundException("Invalid credentials");
+            throw new UsernameNotFoundException("Account not found");
         }
+        return principal(users.get(0));
+    }
 
-        UserRow user = users.get(0);
+    private RailConnectPrincipal principal(UserRow user) {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("identity:self:read"));
         authorities.add(new SimpleGrantedAuthority("identity:self:update"));
@@ -72,7 +67,6 @@ public class IdentityUserDetailsService implements UserDetailsService {
         return new RailConnectPrincipal(
                 user.userId(),
                 user.email(),
-                user.passwordHash(),
                 user.fullName(),
                 user.status(),
                 user.mustChangePassword(),
@@ -83,7 +77,6 @@ public class IdentityUserDetailsService implements UserDetailsService {
     private record UserRow(
             UUID userId,
             String email,
-            String passwordHash,
             String fullName,
             String status,
             boolean mustChangePassword

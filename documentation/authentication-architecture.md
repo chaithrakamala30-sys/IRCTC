@@ -8,13 +8,16 @@ sequenceDiagram
     participant W as Next.js webpage
     participant A as Spring Boot API
     participant S as Spring Security
+    participant U as Supabase Auth
     participant D as PostgreSQL
     B->>W: Open mobile, laptop, or admin webpage
     W->>A: GET /api/v1/auth/csrf
     A-->>B: XSRF-TOKEN cookie and token envelope
     B->>A: POST /api/v1/auth/login + cookie + X-XSRF-TOKEN
-    A->>S: Authenticate normalized identifier and password
-    S->>D: Read user and role/permission grants
+    A->>U: Verify email/password
+    U-->>A: Supabase Auth user UUID and email status
+    A->>S: Create application session for matched profile
+    S->>D: Read profile and role/permission grants
     A->>D: Persist rotated session record and auth event
     A-->>B: RCSESSION HttpOnly cookie and identity envelope
     B->>A: Authenticated request with session cookie
@@ -26,7 +29,8 @@ sequenceDiagram
 ## Components and trust boundaries
 
 - Passenger and admin Next.js apps are browser clients. They call the API through the shared `@railconnect/api` workspace and never connect directly to PostgreSQL.
-- Spring Security protects the Spring Boot API. Authentication is cookie/session based; HTTP Basic and form login are disabled.
+- Supabase Auth owns email/password credentials and email confirmation. The backend verifies credentials through the Supabase Auth API; the browser never receives the service-role key.
+- Spring Security protects the Spring Boot API with the existing server-side cookie/session model. Supabase Auth user UUIDs are the primary keys for matching rows in `railconnect.users`; roles and application profile fields stay in PostgreSQL. HTTP Basic and form login are disabled.
 - PostgreSQL stores identity, role grants, throttles, audit events, and Spring Session state in the configured `railconnect` schema.
 - CORS accepts exact configured origins and credentials. Do not replace the allowlist with a wildcard.
 - Mutating requests use CSRF protection. The API helper first gets a CSRF token, then sends it in `X-XSRF-TOKEN`; the browser supplies cookies with credentials.

@@ -16,7 +16,7 @@ export default function PassengerPrivacyPage() {
       <h2>Data collected</h2>
       <p>
         The account stores your name, email address, international mobile
-        number, an Argon2id password hash, terms/privacy version acceptance,
+        number, Supabase Auth identity reference, terms/privacy version acceptance,
         account status, and timestamps. Email and mobile addresses are not
         verified in this phase.
       </p>

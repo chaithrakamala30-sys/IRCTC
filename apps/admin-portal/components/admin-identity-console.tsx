@@ -320,8 +320,8 @@ export function AdminIdentityConsole() {
           {notice && <p className="admin-alert admin-alert--success" role="status">{notice}</p>}
           <form className="admin-form" onSubmit={signIn}>
             <label>
-              Email or mobile number
-              <input autoComplete="username" name="identifier" required />
+              Email address
+              <input autoComplete="email" name="identifier" required type="email" />
             </label>
             <label>
               Password

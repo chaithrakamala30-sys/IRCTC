@@ -17,17 +17,18 @@ The root page selects a device experience by viewport width, and users can switc
 
 ## Implemented capabilities
 
-- Passenger registration with normalized email/mobile values, password policy checks, consent-version storage, duplicate-response uniformity, and registration throttling.
-- Email-or-mobile login with generic credential errors and identifier-based throttling.
+- Passenger registration through Supabase Auth with email/password credentials, email confirmation support, and a matching `railconnect.users` profile keyed by the Supabase Auth UUID. Phone number remains profile data.
+- Email/password login verified by Supabase Auth, followed by application session creation and role/permission loading from the profile database.
 - Cookie-backed persistent sessions, CSRF protection, session rotation on login, idle and absolute timeouts, current-session listing, and revocation.
-- Passenger profile name updates and password changes; email/mobile ownership verification is not implemented.
+- Passenger profile name updates and password changes; passwords are updated in Supabase Auth, while application user/session/role records remain in PostgreSQL.
 - Seeded passenger, super-admin, railway-admin, station-manager, reservation-officer, finance-admin, and customer-support roles, with permissions and optional resource scopes in the schema.
 - Super-Administrator account provisioning, status and role changes, session revocation, authentication-event review, and audit-log review.
 - One-time Super Administrator bootstrap guarded by a command-line property.
+- Staff provisioning creates the credential in Supabase Auth and the matching role-bearing profile in PostgreSQL.
 
 ## Explicitly unavailable
 
-- Email or SMS verification/delivery.
+- SMS verification/delivery and phone-number login.
 - Self-service password reset or recovery delivery.
 - TOTP/MFA enrollment, verification, disablement, or recovery-code use. The API returns an explicit not-implemented response; the schema tables are groundwork only.
 - Railway-specific permission checks and scope enforcement for future domain APIs that do not yet exist.

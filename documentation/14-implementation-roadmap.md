@@ -38,7 +38,7 @@ This is a dependency-ordered proposal. Phases 1 and 2 were explicitly approved. 
 ### Phase 2 — Identity and access control
 - **Scope/files:** implemented identity module, persistent browser sessions, passenger registration/login/profile pages, separate mobile/laptop webpages, and admin identity console.
 - **Database/API:** V2 migration defines users, role/permission grants, sessions, throttles, authentication events, audit logs, recovery/MFA groundwork, and Spring Session JDBC tables. Authentication, profile, session, MFA-placeholder, and admin identity endpoints are documented in [identity API reference](identity-api-reference.md).
-- **Security:** Argon2id password hashing, CSRF tokens, session-ID rotation, server-side session revocation, generic registration/login responses, request throttles, recent-authentication checks for sensitive staff changes, and bootstrap-only initial Super Administrator. Password recovery and MFA delivery/enrollment are explicitly unavailable.
+- **Security:** Supabase Auth email/password credentials, CSRF tokens, application session-ID rotation and revocation, request throttles, recent-authentication checks for sensitive staff changes, and bootstrap-only initial Super Administrator. Password recovery and MFA delivery/enrollment remain unavailable.
 - **Tests/exit:** Java unit tests and frontend tests/builds pass. Database-backed flow tests are authored but not executed; Docker is unavailable in the current environment and V2 has not been applied. Phase 2 is therefore implemented but not fully validated. See [Phase 2 testing report](phase-2-testing-report.md); do not proceed to Phase 3 until database-backed validation and the remaining acceptance decisions are completed.
 
 ### Phase 3 — Station and train catalogue

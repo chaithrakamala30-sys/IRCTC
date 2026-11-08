@@ -81,6 +81,10 @@ server:
 railconnect:
   redis:
     enabled: ${RAILCONNECT_REDIS_ENABLED:false}
+  supabase:
+    url: ${RAILCONNECT_SUPABASE_URL:}
+    anon-key: ${RAILCONNECT_SUPABASE_ANON_KEY:}
+    service-role-key: ${RAILCONNECT_SUPABASE_SERVICE_ROLE_KEY:}
   security:
     max-request-body-bytes: ${RAILCONNECT_MAX_REQUEST_BODY_BYTES:1048576}
     absolute-session-timeout: ${RAILCONNECT_ABSOLUTE_SESSION_TIMEOUT:8h}

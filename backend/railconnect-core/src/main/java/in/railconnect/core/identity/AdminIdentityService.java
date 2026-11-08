@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.session.Session;
 import org.springframework.session.SessionRepository;
 import org.springframework.stereotype.Service;
@@ -20,23 +19,20 @@ import java.util.UUID;
 public class AdminIdentityService {
     private static final int MAX_PAGE_SIZE = 100;
     private final JdbcTemplate jdbcTemplate;
-    private final PasswordEncoder passwordEncoder;
-    private final IdentityService identityService;
+    private final SupabaseAuthClient supabaseAuthClient;
     private final SecurityAuditService auditService;
     private final SessionRepository<? extends Session> sessionRepository;
     private final SuperAdminSafetyLock superAdminSafetyLock;
 
     public AdminIdentityService(
             JdbcTemplate jdbcTemplate,
-            PasswordEncoder passwordEncoder,
-            IdentityService identityService,
+            SupabaseAuthClient supabaseAuthClient,
             SecurityAuditService auditService,
             SessionRepository<? extends Session> sessionRepository,
             SuperAdminSafetyLock superAdminSafetyLock
     ) {
         this.jdbcTemplate = jdbcTemplate;
-        this.passwordEncoder = passwordEncoder;
-        this.identityService = identityService;
+        this.supabaseAuthClient = supabaseAuthClient;
         this.auditService = auditService;
         this.sessionRepository = sessionRepository;
         this.superAdminSafetyLock = superAdminSafetyLock;
@@ -158,29 +154,53 @@ public class AdminIdentityService {
                     "An account already uses this email address or mobile number");
         }
 
-        UUID userId = UUID.randomUUID();
+        SupabaseAuthClient.SupabaseUser authUser;
+        try {
+            authUser = supabaseAuthClient.createStaffUser(email, request.temporaryPassword(), java.util.Map.of(
+                    "railconnect_account_type", "STAFF",
+                    "full_name", request.fullName().trim().replaceAll("\\s+", " "),
+                    "mobile_number", mobile
+            ));
+        } catch (SupabaseAuthClient.SupabaseAuthException exception) {
+            if ("user_already_exists".equalsIgnoreCase(exception.code())
+                    || "email_exists".equalsIgnoreCase(exception.code())
+                    || "identity_already_exists".equalsIgnoreCase(exception.code())) {
+                throw new IdentityException(
+                        HttpStatus.CONFLICT,
+                        "ACCOUNT_CONFLICT",
+                        "An account already uses this email address");
+            }
+            throw IdentityService.authProviderUnavailable(exception);
+        } catch (org.springframework.web.client.RestClientException exception) {
+            throw IdentityService.authProviderUnavailable(exception);
+        }
+
+        UUID userId = authUser.id();
         try {
             jdbcTemplate.update(
                     """
                             INSERT INTO users (
-                                user_id, full_name, email, mobile_number, password_hash,
+                                user_id, full_name, email, mobile_number, password_hash, email_verified_at,
                                 must_change_password, terms_version, privacy_version
-                            ) VALUES (?, ?, ?, ?, ?, TRUE, 'staff-provisioned', 'staff-provisioned')
+                            ) VALUES (?, ?, ?, ?, NULL, CURRENT_TIMESTAMP, TRUE, 'staff-provisioned', 'staff-provisioned')
                             """,
                     userId,
                     request.fullName().trim().replaceAll("\\s+", " "),
                     email,
-                    mobile,
-                    passwordEncoder.encode(request.temporaryPassword())
+                    mobile
             );
-        } catch (DuplicateKeyException exception) {
-            throw new IdentityException(
-                    HttpStatus.CONFLICT, "ACCOUNT_CONFLICT",
-                    "An account already uses this email address or mobile number");
+            persistGrants(userId, actorUserId, request.roles());
+            auditService.record("STAFF_ACCOUNT_CREATED", "SUCCESS", actorUserId, userId, null, servletRequest);
+            return user(userId);
+        } catch (RuntimeException exception) {
+            IdentityService.deleteSupabaseUserAfterFailure(supabaseAuthClient, userId, exception);
+            if (exception instanceof DuplicateKeyException && exception.getSuppressed().length == 0) {
+                throw new IdentityException(
+                        HttpStatus.CONFLICT, "ACCOUNT_CONFLICT",
+                        "An account already uses this email address or mobile number");
+            }
+            throw exception;
         }
-        persistGrants(userId, actorUserId, request.roles());
-        auditService.record("STAFF_ACCOUNT_CREATED", "SUCCESS", actorUserId, userId, null, servletRequest);
-        return user(userId);
     }
 
     @Transactional

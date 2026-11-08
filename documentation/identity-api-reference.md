@@ -7,15 +7,15 @@ All responses use the standard JSON API envelope. Browser clients must first cal
 | Method and path | Access | Behavior |
 |---|---|---|
 | `GET /auth/csrf` | Public | Issue/read CSRF token |
-| `POST /auth/register` | Public + CSRF | Register passenger; uniform acknowledgement for new, duplicate, or throttled requests |
-| `POST /auth/login` | Public + CSRF | Authenticate email/mobile and password; sets session cookie |
+| `POST /auth/register` | Public + CSRF | Create credentials through Supabase Auth and a matching passenger profile/role in `railconnect.users` |
+| `POST /auth/login` | Public + CSRF | Verify email/password through Supabase Auth; loads application roles and sets the RailConnect session cookie |
 | `POST /auth/logout` | Authenticated + CSRF | Revoke current session |
 | `GET /auth/me` | Authenticated | Read current identity |
 | `GET /users/me` | Authenticated | Read own profile |
 | `PATCH /users/me` | Authenticated + CSRF | Update allowed own profile fields |
 | `GET /auth/sessions` | Authenticated | List own active sessions; public UUIDs only |
 | `DELETE /auth/sessions/{sessionId}` | Authenticated + CSRF | Revoke own session by public UUID |
-| `POST /auth/password/change` | Authenticated + CSRF | Change password; reauthentication is required afterwards |
+| `POST /auth/password/change` | Authenticated + CSRF | Verify and change the Supabase Auth password; application sessions are revoked |
 | `POST /auth/password/forgot` | Public + CSRF | Generic acknowledgement; no reset link/message is issued |
 
 ## MFA placeholders

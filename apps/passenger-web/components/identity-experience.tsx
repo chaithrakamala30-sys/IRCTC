@@ -143,8 +143,8 @@ export function PassengerIdentityExperience({
           <h1 id="identity-title">{registering ? "Create your account" : "Sign in"}</h1>
           <p className="identity-intro">
             {registering
-              ? "Use your own details. Email and mobile ownership are not verified in this phase."
-              : "Sign in with the email address or international mobile number on your account."}
+              ? "Create your account with email and password. Supabase will send an email confirmation if it is enabled for this project. Your phone number is saved to your profile."
+              : "Sign in with your account email and password."}
           </p>
 
           <form className="identity-form" onSubmit={submit}>
@@ -178,12 +178,12 @@ export function PassengerIdentityExperience({
               </>
             ) : (
               <label>
-                Email or mobile number
+                Email address
                 <input
-                  autoComplete="username"
+                  autoComplete="email"
                   name="identifier"
                   required
-                  type="text"
+                  type="email"
                 />
               </label>
             )}

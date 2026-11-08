@@ -1,7 +1,6 @@
 package in.railconnect.core.identity;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,18 +11,18 @@ import java.util.UUID;
 @Service
 public class SuperAdminBootstrapService {
     private final JdbcTemplate jdbcTemplate;
-    private final PasswordEncoder passwordEncoder;
+    private final SupabaseAuthClient supabaseAuthClient;
     private final SecurityAuditService auditService;
     private final SuperAdminSafetyLock superAdminSafetyLock;
 
     public SuperAdminBootstrapService(
             JdbcTemplate jdbcTemplate,
-            PasswordEncoder passwordEncoder,
+            SupabaseAuthClient supabaseAuthClient,
             SecurityAuditService auditService,
             SuperAdminSafetyLock superAdminSafetyLock
     ) {
         this.jdbcTemplate = jdbcTemplate;
-        this.passwordEncoder = passwordEncoder;
+        this.supabaseAuthClient = supabaseAuthClient;
         this.auditService = auditService;
         this.superAdminSafetyLock = superAdminSafetyLock;
     }
@@ -46,29 +45,48 @@ public class SuperAdminBootstrapService {
         if (!normalizedMobile.matches("^\\+[1-9][0-9]{7,14}$")) {
             throw new IllegalStateException("Bootstrap mobile number must use international E.164 format");
         }
-        UUID userId = UUID.randomUUID();
-        jdbcTemplate.update(
-                """
-                        INSERT INTO users (
-                            user_id, full_name, email, mobile_number, password_hash,
-                            must_change_password, terms_version, privacy_version
-                        ) VALUES (?, ?, ?, ?, ?, TRUE, 'staff-provisioned', 'staff-provisioned')
-                        """,
-                userId,
-                Normalizer.normalize(fullName, Normalizer.Form.NFC).trim().replaceAll("\\s+", " "),
-                normalizedEmail,
-                normalizedMobile,
-                passwordEncoder.encode(password)
-        );
-        jdbcTemplate.update(
-                """
-                        INSERT INTO user_roles (
-                            user_id, role_code, scope_type, scope_id, assigned_by
-                        ) VALUES (?, 'SUPER_ADMIN', 'GLOBAL', '*', ?)
-                        """,
-                userId,
-                userId
-        );
-        auditService.record("SUPER_ADMIN_BOOTSTRAPPED", "SUCCESS", userId, userId, null, null);
+        String normalizedName = Normalizer.normalize(fullName, Normalizer.Form.NFC)
+                .trim().replaceAll("\\s+", " ");
+        SupabaseAuthClient.SupabaseUser authUser;
+        try {
+            authUser = supabaseAuthClient.createStaffUser(normalizedEmail, password, java.util.Map.of(
+                    "railconnect_account_type", "STAFF",
+                    "full_name", normalizedName,
+                    "mobile_number", normalizedMobile
+            ));
+        } catch (SupabaseAuthClient.SupabaseAuthException exception) {
+            throw IdentityService.authProviderUnavailable(exception);
+        } catch (org.springframework.web.client.RestClientException exception) {
+            throw IdentityService.authProviderUnavailable(exception);
+        }
+
+        UUID userId = authUser.id();
+        try {
+            jdbcTemplate.update(
+                    """
+                            INSERT INTO users (
+                                user_id, full_name, email, mobile_number, password_hash, email_verified_at,
+                                must_change_password, terms_version, privacy_version
+                            ) VALUES (?, ?, ?, ?, NULL, CURRENT_TIMESTAMP, TRUE, 'staff-provisioned', 'staff-provisioned')
+                            """,
+                    userId,
+                    normalizedName,
+                    normalizedEmail,
+                    normalizedMobile
+            );
+            jdbcTemplate.update(
+                    """
+                            INSERT INTO user_roles (
+                                user_id, role_code, scope_type, scope_id, assigned_by
+                            ) VALUES (?, 'SUPER_ADMIN', 'GLOBAL', '*', ?)
+                            """,
+                    userId,
+                    userId
+            );
+            auditService.record("SUPER_ADMIN_BOOTSTRAPPED", "SUCCESS", userId, userId, null, null);
+        } catch (RuntimeException exception) {
+            IdentityService.deleteSupabaseUserAfterFailure(supabaseAuthClient, userId, exception);
+            throw exception;
+        }
     }
 }

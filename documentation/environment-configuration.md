@@ -13,6 +13,9 @@ Only `.env.example` is committed; it contains placeholder values and non-secret 
 | `RAILCONNECT_DB_URL` | Yes for direct backend | Local JDBC URL; use hosted PostgreSQL JDBC URL for Supabase. |
 | `RAILCONNECT_DB_USERNAME` | Yes | Supply via local environment/secret manager. |
 | `RAILCONNECT_DB_PASSWORD` | Yes | Supply via local environment/secret manager. |
+| `RAILCONNECT_SUPABASE_URL` | Yes for authentication | Supabase project URL, for example `https://<project-ref>.supabase.co`. |
+| `RAILCONNECT_SUPABASE_ANON_KEY` | Yes for authentication | Legacy anon/public API key used only by the backend to call Supabase Auth. |
+| `RAILCONNECT_SUPABASE_SERVICE_ROLE_KEY` | Yes for staff provisioning and password updates | Supabase service-role key. Store only in Render/backend secrets; never expose it to Vercel or the browser. |
 | `RAILCONNECT_DB_SCHEMA` | No | Application schema for datasource, Hibernate, and Flyway; defaults to the isolated `railconnect` schema. |
 | `RAILCONNECT_COMPOSE_DB_URL` | Compose | Container-network URL, normally `jdbc:postgresql://db:5432/railconnect`; use provider URL only when deliberately targeting a remote DB. |
 | `RAILCONNECT_DB_NAME` | Compose | Local PostgreSQL database name; default placeholder value is `railconnect`. |
@@ -42,7 +45,17 @@ Set these Vercel environment variables for the passenger and admin projects, the
 | `RAILCONNECT_API_ORIGIN` | `https://irctc-wb68.onrender.com` |
 | `NEXT_PUBLIC_API_BASE_URL` | The origin of that specific Vercel project, with no trailing slash; for example, `https://irctc-rho.vercel.app` for the passenger project |
 
-Set `RAILCONNECT_CORS_ALLOWED_ORIGINS` in Render to the exact browser-facing origins of the Vercel projects, comma-separated, and set `RAILCONNECT_SESSION_COOKIE_SECURE=true`. Keep the Supabase database variables in Render's secret settings; do not put database credentials in Vercel frontend variables.
+Set the following in Render's backend environment:
+
+- `RAILCONNECT_SUPABASE_URL` from Supabase **Project Settings → API**.
+- `RAILCONNECT_SUPABASE_ANON_KEY` from Supabase **Project API keys**.
+- `RAILCONNECT_SUPABASE_SERVICE_ROLE_KEY` from Supabase **Project API keys**; this privileged key must never be set in Vercel or exposed to the browser.
+- `RAILCONNECT_CORS_ALLOWED_ORIGINS` to the exact browser-facing Vercel origins, comma-separated.
+- `RAILCONNECT_SESSION_COOKIE_SECURE=true`.
+
+Keep the Supabase database variables in Render's secret settings; do not put database credentials or the service-role key in Vercel frontend variables. In Supabase **Authentication → URL Configuration**, set the Site URL to the passenger site and allow the deployed passenger/admin redirect origins. Enable email confirmation if users must verify their addresses before signing in.
+
+Supabase Auth owns passwords and email verification. The backend creates corresponding rows in `railconnect.users` using the same Supabase Auth UUID and stores profile and role data there; password hashes are not stored in the application table.
 
 The website's generic network error can mean the API base URL was missing or malformed, the API is offline/unreachable, or the Vercel proxy/Render connection failed. Check the browser Network panel for `/api/v1/auth/csrf` and verify the backend's health endpoint before retrying registration.
 

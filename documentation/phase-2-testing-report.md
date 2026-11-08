@@ -24,6 +24,7 @@
 | GitHub Actions | Not run for Phase 2; this workspace has no Git repository |
 | Browser interaction/responsive visual checks | Production static builds pass; authenticated browser flow not verified |
 | MFA and recovery delivery | Intentionally unavailable; documented as a phase limitation |
+| Supabase Auth account creation/sign-in | Implemented through the Auth API; live Render configuration and a verified signup/login have not yet been tested |
 
 ## Integration test coverage prepared
 

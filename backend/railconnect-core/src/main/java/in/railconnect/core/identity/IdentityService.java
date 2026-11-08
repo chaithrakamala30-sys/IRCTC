@@ -4,15 +4,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -23,24 +21,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class IdentityService {
     private static final String TERMS_VERSION = "phase2-2026-11";
     private static final String PRIVACY_VERSION = "phase2-2026-11";
-    private static final String INVALID_CREDENTIALS = "Invalid email/mobile number or password";
+    private static final String INVALID_CREDENTIALS = "Invalid email or password";
     private static final List<String> COMMON_PASSWORDS = List.of(
             "password1234", "password123!", "qwerty123456", "letmein12345",
             "welcome12345", "admin123456", "iloveyou1234", "railconnect123"
     );
 
     private final JdbcTemplate jdbcTemplate;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
+    private final SupabaseAuthClient supabaseAuthClient;
+    private final IdentityUserDetailsService userDetailsService;
     private final LoginThrottleService loginThrottleService;
     private final RegistrationThrottleService registrationThrottleService;
     private final SecurityHashing hashing;
@@ -51,8 +49,8 @@ public class IdentityService {
 
     public IdentityService(
             JdbcTemplate jdbcTemplate,
-            PasswordEncoder passwordEncoder,
-            AuthenticationManager authenticationManager,
+            SupabaseAuthClient supabaseAuthClient,
+            IdentityUserDetailsService userDetailsService,
             LoginThrottleService loginThrottleService,
             RegistrationThrottleService registrationThrottleService,
             SecurityHashing hashing,
@@ -60,8 +58,8 @@ public class IdentityService {
             SessionRepository<? extends Session> sessionRepository
     ) {
         this.jdbcTemplate = jdbcTemplate;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
+        this.supabaseAuthClient = supabaseAuthClient;
+        this.userDetailsService = userDetailsService;
         this.loginThrottleService = loginThrottleService;
         this.registrationThrottleService = registrationThrottleService;
         this.hashing = hashing;
@@ -93,7 +91,6 @@ public class IdentityService {
             return registrationResponse();
         }
         registrationThrottleService.recordAttempt(remoteAddressHash);
-        String passwordHash = passwordEncoder.encode(request.password());
 
         Integer duplicateCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM users WHERE email = ? OR mobile_number = ?",
@@ -106,34 +103,44 @@ public class IdentityService {
             return registrationResponse();
         }
 
-        UUID userId = UUID.randomUUID();
-        int inserted = jdbcTemplate.update(
-                """
-                        INSERT INTO users (
-                            user_id, full_name, email, mobile_number, password_hash,
-                            terms_version, privacy_version
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT DO NOTHING
-                        """,
-                userId,
-                name,
-                email,
-                mobile,
-                passwordHash,
-                TERMS_VERSION,
-                PRIVACY_VERSION
-        );
-        if (inserted == 0) {
+        SupabaseAuthClient.SupabaseUser authUser;
+        try {
+            authUser = supabaseAuthClient.signUp(email, request.password(), Map.of(
+                    "railconnect_account_type", "PASSENGER",
+                    "full_name", name,
+                    "mobile_number", mobile,
+                    "terms_version", TERMS_VERSION,
+                    "privacy_version", PRIVACY_VERSION
+            ));
+        } catch (SupabaseAuthClient.SupabaseAuthException exception) {
+            if (isSupabaseDuplicate(exception)) {
+                recordDuplicateRegistration(email, mobile, servletRequest);
+                return registrationResponse();
+            }
+            throw authProviderUnavailable(exception);
+        } catch (org.springframework.web.client.RestClientException exception) {
+            throw authProviderUnavailable(exception);
+        }
+
+        if (!authUser.newlyCreated()) {
             recordDuplicateRegistration(email, mobile, servletRequest);
             return registrationResponse();
         }
-        jdbcTemplate.update(
-                "INSERT INTO user_roles (user_id, role_code, assigned_by) VALUES (?, 'PASSENGER', ?)",
-                userId,
-                userId
-        );
-        auditService.record("AUTH_REGISTER", "SUCCESS", userId, userId, null, servletRequest);
-        return registrationResponse();
+
+        try {
+            persistPassengerProfile(authUser, name, mobile, TERMS_VERSION, PRIVACY_VERSION);
+        } catch (RuntimeException exception) {
+            deleteSupabaseUserAfterFailure(supabaseAuthClient, authUser.id(), exception);
+            if (exception instanceof DuplicateKeyException && exception.getSuppressed().length == 0) {
+                recordDuplicateRegistration(email, mobile, servletRequest);
+                return registrationResponse();
+            }
+            throw exception;
+        }
+        auditService.record("AUTH_REGISTER", "SUCCESS", authUser.id(), authUser.id(), null, servletRequest);
+        return registrationResponse(authUser.emailConfirmedAt() == null
+                ? "Registration received. Check your email to confirm your account before signing in."
+                : "Registration complete. You can now sign in.");
     }
 
     @Transactional(noRollbackFor = IdentityException.class)
@@ -142,32 +149,74 @@ public class IdentityService {
             HttpServletRequest servletRequest,
             HttpServletResponse servletResponse
     ) {
-        String identifier = normalizeIdentifier(request.identifier());
-        String identifierHash = hashing.hash("login:" + identifier);
+        String email = normalizeEmail(request.identifier());
+        if (!email.contains("@")) {
+            throw invalidCredentials();
+        }
+        String identifierHash = hashing.hash("login:" + email);
         if (loginThrottleService.isBlocked(identifierHash)) {
             auditService.record(
                     "AUTH_LOGIN", "BLOCKED", null, null, identifierHash, servletRequest);
             throw invalidCredentials();
         }
 
-        Authentication authentication;
+        SupabaseAuthClient.SupabaseUser authUser;
         try {
-            authentication = authenticationManager.authenticate(
-                    UsernamePasswordAuthenticationToken.unauthenticated(identifier, request.password()));
-        } catch (AuthenticationException exception) {
-            loginThrottleService.recordFailure(identifierHash);
-            auditService.record(
-                    "AUTH_LOGIN", "FAILURE", null, null, identifierHash, servletRequest);
-            throw invalidCredentials();
+            authUser = supabaseAuthClient.authenticate(email, request.password());
+        } catch (SupabaseAuthClient.SupabaseAuthException exception) {
+            if ("email_not_confirmed".equalsIgnoreCase(exception.code())) {
+                throw new IdentityException(
+                        HttpStatus.FORBIDDEN,
+                        "EMAIL_CONFIRMATION_REQUIRED",
+                        "Confirm your email address before signing in");
+            }
+            if (isInvalidSupabaseCredentials(exception)) {
+                loginThrottleService.recordFailure(identifierHash);
+                auditService.record(
+                        "AUTH_LOGIN", "FAILURE", null, null, identifierHash, servletRequest);
+                throw invalidCredentials();
+            }
+            throw authProviderUnavailable(exception);
+        } catch (org.springframework.web.client.RestClientException exception) {
+            throw authProviderUnavailable(exception);
         }
 
-        RailConnectPrincipal principal = (RailConnectPrincipal) authentication.getPrincipal();
+        RailConnectPrincipal principal;
+        try {
+            principal = userDetailsService.loadUserByUserId(authUser.id());
+        } catch (UsernameNotFoundException exception) {
+            if (!"PASSENGER".equals(authUser.metadata().get("railconnect_account_type"))) {
+                throw invalidCredentials();
+            }
+            persistPassengerProfile(
+                    authUser,
+                    String.valueOf(authUser.metadata().getOrDefault("full_name", "")),
+                    String.valueOf(authUser.metadata().getOrDefault("mobile_number", "")),
+                    String.valueOf(authUser.metadata().getOrDefault("terms_version", TERMS_VERSION)),
+                    String.valueOf(authUser.metadata().getOrDefault("privacy_version", PRIVACY_VERSION))
+            );
+            principal = userDetailsService.loadUserByUserId(authUser.id());
+        }
+        if (authUser.emailConfirmedAt() != null) {
+            jdbcTemplate.update(
+                    """
+                            UPDATE users
+                            SET email_verified_at = COALESCE(email_verified_at, ?::timestamptz)
+                            WHERE user_id = ?
+                            """,
+                    authUser.emailConfirmedAt(),
+                    authUser.id()
+            );
+        }
         if (!"ACTIVE".equals(principal.status())) {
             loginThrottleService.recordFailure(identifierHash);
             auditService.record(
                     "AUTH_LOGIN", "FAILURE", null, null, identifierHash, servletRequest);
             throw invalidCredentials();
         }
+
+        Authentication authentication = UsernamePasswordAuthenticationToken.authenticated(
+                principal, null, principal.authorities());
         loginThrottleService.clear(identifierHash);
         HttpSession session = servletRequest.getSession(true);
         session.setMaxInactiveInterval(30 * 60);
@@ -248,30 +297,38 @@ public class IdentityService {
             ChangePasswordRequest request,
             HttpServletRequest servletRequest
     ) {
-        String existingHash = jdbcTemplate.queryForObject(
-                "SELECT password_hash FROM users WHERE user_id = ?",
-                String.class,
-                userId
-        );
-        if (!passwordEncoder.matches(request.currentPassword(), existingHash)) {
-            throw new IdentityException(
-                    HttpStatus.BAD_REQUEST, "CURRENT_PASSWORD_INVALID",
-                    "The current password is incorrect");
+        RailConnectPrincipal principal = userDetailsService.loadUserByUserId(userId);
+        try {
+            supabaseAuthClient.authenticate(principal.email(), request.currentPassword());
+        } catch (SupabaseAuthClient.SupabaseAuthException exception) {
+            if (exception.status().is4xxClientError()) {
+                throw new IdentityException(
+                        HttpStatus.BAD_REQUEST, "CURRENT_PASSWORD_INVALID",
+                        "The current password is incorrect");
+            }
+            throw authProviderUnavailable(exception);
+        } catch (org.springframework.web.client.RestClientException exception) {
+            throw authProviderUnavailable(exception);
         }
-        validatePassword(request.newPassword());
-        if (passwordEncoder.matches(request.newPassword(), existingHash)) {
+        if (request.currentPassword().equals(request.newPassword())) {
             throw new IdentityException(
                     HttpStatus.BAD_REQUEST, "PASSWORD_REUSE",
                     "Choose a password that is different from the current password");
+        }
+        validatePassword(request.newPassword());
+        try {
+            supabaseAuthClient.updatePassword(userId, request.newPassword());
+        } catch (SupabaseAuthClient.SupabaseAuthException
+                 | org.springframework.web.client.RestClientException exception) {
+            throw authProviderUnavailable(exception);
         }
 
         jdbcTemplate.update(
                 """
                         UPDATE users
-                        SET password_hash = ?, must_change_password = FALSE, updated_at = CURRENT_TIMESTAMP
+                        SET password_hash = NULL, must_change_password = FALSE, updated_at = CURRENT_TIMESTAMP
                         WHERE user_id = ?
                         """,
-                passwordEncoder.encode(request.newPassword()),
                 userId
         );
         revokeAllSessions(userId);
@@ -409,7 +466,7 @@ public class IdentityService {
         boolean upper = normalized.codePoints().anyMatch(Character::isUpperCase);
         boolean digit = normalized.codePoints().anyMatch(Character::isDigit);
         boolean symbol = normalized.codePoints().anyMatch(character -> !Character.isLetterOrDigit(character));
-        long categories = List.of(lower, upper, digit, symbol).stream().filter(Boolean::booleanValue).count();
+        long categories = (lower ? 1 : 0) + (upper ? 1 : 0) + (digit ? 1 : 0) + (symbol ? 1 : 0);
         String lowerPassword = normalized.toLowerCase(Locale.ROOT);
         if (normalized.length() < 12 || normalized.length() > 128 || categories < 3
                 || COMMON_PASSWORDS.contains(lowerPassword)) {
@@ -437,7 +494,81 @@ public class IdentityService {
     private static RegistrationResponse registrationResponse() {
         return new RegistrationResponse(
                 true,
-                "Registration request received. You can try signing in; no verification message was sent.");
+                "Registration request received. Check your email for next steps.");
+    }
+
+    private static RegistrationResponse registrationResponse(String message) {
+        return new RegistrationResponse(true, message);
+    }
+
+    private void persistPassengerProfile(
+            SupabaseAuthClient.SupabaseUser authUser,
+            String fullName,
+            String mobile,
+            String termsVersion,
+            String privacyVersion
+    ) {
+        String normalizedMobile = normalizeMobile(mobile);
+        if (!normalizedMobile.matches("^\\+[1-9][0-9]{7,14}$")) {
+            throw new IdentityException(
+                    HttpStatus.BAD_REQUEST,
+                    "PROFILE_DATA_INVALID",
+                    "A valid international phone number is required");
+        }
+        String verifiedAt = authUser.emailConfirmedAt();
+        jdbcTemplate.update(
+                """
+                        INSERT INTO users (
+                            user_id, full_name, email, mobile_number, password_hash,
+                            email_verified_at, terms_version, privacy_version
+                        ) VALUES (?, ?, ?, ?, NULL, ?::timestamptz, ?, ?)
+                        """,
+                authUser.id(),
+                normalizeName(fullName),
+                normalizeEmail(authUser.email()),
+                normalizedMobile,
+                verifiedAt,
+                termsVersion,
+                privacyVersion
+        );
+        jdbcTemplate.update(
+                "INSERT INTO user_roles (user_id, role_code, assigned_by) VALUES (?, 'PASSENGER', ?)",
+                authUser.id(),
+                authUser.id()
+        );
+    }
+
+    static IdentityException authProviderUnavailable(Exception exception) {
+        return new IdentityException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "AUTH_PROVIDER_UNAVAILABLE",
+                "Account authentication is temporarily unavailable. Please try again later");
+    }
+
+    static void deleteSupabaseUserAfterFailure(
+            SupabaseAuthClient supabaseAuthClient,
+            UUID userId,
+            RuntimeException originalFailure
+    ) {
+        try {
+            supabaseAuthClient.deleteUser(userId);
+        } catch (RuntimeException cleanupFailure) {
+            originalFailure.addSuppressed(cleanupFailure);
+        }
+    }
+
+    private static boolean isSupabaseDuplicate(SupabaseAuthClient.SupabaseAuthException exception) {
+        return "user_already_exists".equalsIgnoreCase(exception.code())
+                || "email_exists".equalsIgnoreCase(exception.code())
+                || "identity_already_exists".equalsIgnoreCase(exception.code());
+    }
+
+    private static boolean isInvalidSupabaseCredentials(
+            SupabaseAuthClient.SupabaseAuthException exception
+    ) {
+        return "invalid_credentials".equalsIgnoreCase(exception.code())
+                || "invalid_grant".equalsIgnoreCase(exception.code())
+                || "user_not_found".equalsIgnoreCase(exception.code());
     }
 
     public void assertRecentAuthentication(HttpServletRequest request) {
@@ -452,11 +583,6 @@ public class IdentityService {
                     "REAUTHENTICATION_REQUIRED",
                     "Sign in again before performing this sensitive action");
         }
-    }
-
-    private static String normalizeIdentifier(String identifier) {
-        String trimmed = identifier.trim();
-        return trimmed.contains("@") ? normalizeEmail(trimmed) : normalizeMobile(trimmed);
     }
 
     private static String normalizeEmail(String email) {
