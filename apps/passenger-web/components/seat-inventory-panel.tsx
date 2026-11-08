@@ -33,11 +33,14 @@ type Hold = {
 type PassengerDraft = { displayName: string; preferredBerthType: string };
 type Reservation = {
   reservationRequestId: string;
+  coachClassCode: string;
+  groupSeatingRequested: boolean;
   status: string;
   groupSeatingResult: string;
   expiresAt: string | null;
   passengers: {
     displayName: string;
+    preferredBerthType: string | null;
     coachNumber: string | null;
     berthNumber: string | null;
     preferenceResult: string | null;
@@ -116,6 +119,9 @@ export function SeatInventoryPanel({
   const [signInBusy, setSignInBusy] = useState(false);
   const [signInError, setSignInError] = useState("");
   const availabilityRequest = useRef(0);
+  const reservationStorageKey = run
+    ? `railconnect:reservation-request:${run.trainRunId}:${journeyDate}:${fromStationId}:${toStationId}`
+    : null;
 
   const loadHolds = useCallback(async () => {
     try {
@@ -181,6 +187,8 @@ export function SeatInventoryPanel({
     setError("");
     setRun(null);
     setAvailability(null);
+    setReservation(null);
+    setBooking(null);
     availabilityRequest.current += 1;
     void apiFetch<Page<TrainRun>>(`/api/v1/public/inventory/runs?${query}`)
       .then((response) => {
@@ -195,7 +203,55 @@ export function SeatInventoryPanel({
     return () => {
       active = false;
     };
-  }, [trainId, journeyDate]);
+  }, [fromStationId, journeyDate, toStationId, trainId]);
+
+  useEffect(() => {
+    if (authStatus !== "signed-in" || !reservationStorageKey || reservation) return;
+
+    let reservationId: string | null;
+    try {
+      reservationId = window.localStorage.getItem(reservationStorageKey);
+    } catch {
+      setError("Browser storage is unavailable, so the saved reservation request could not be restored.");
+      return;
+    }
+    if (!reservationId) return;
+
+    let active = true;
+    void apiFetch<Reservation>(
+      `/api/v1/passenger/reservations/requests/${encodeURIComponent(reservationId)}`,
+    )
+      .then((response) => {
+        if (!response.data) throw new Error("The server did not return the saved reservation request.");
+        if (!active) return;
+        setReservation(response.data);
+        setSelectedClass(response.data.coachClassCode);
+        setGroupSeatingRequested(response.data.groupSeatingRequested);
+        setPassengers(response.data.passengers.map((passenger) => ({
+          displayName: passenger.displayName,
+          preferredBerthType: passenger.preferredBerthType ?? "",
+        })));
+        setNotice("Your reservation request has been restored.");
+      })
+      .catch((caught: unknown) => {
+        if (!active) return;
+        if (caught instanceof ApiRequestError && caught.status === 404) {
+          try {
+            window.localStorage.removeItem(reservationStorageKey);
+          } catch {
+            setError("The saved reservation request could not be found, and its browser entry could not be cleared.");
+            return;
+          }
+          setNotice("The saved reservation request is no longer available. You can create a new request.");
+          return;
+        }
+        setError(message(caught));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authStatus, reservation, reservationStorageKey]);
 
   const loadAvailability = useCallback(async () => {
     if (!run || !selectedClass) return;
@@ -352,6 +408,12 @@ export function SeatInventoryPanel({
         }),
       });
       if (!response.data) throw new Error("The server did not return the reservation request.");
+      if (!reservationStorageKey) throw new Error("The train run is not ready for a reservation request.");
+      try {
+        window.localStorage.setItem(reservationStorageKey, response.data.reservationRequestId);
+      } catch {
+        setError("Reservation request created, but this browser could not save it for restoration after refresh.");
+      }
       setReservation(response.data);
       setIdempotencyKey("");
       setNotice("Reservation request created. No berth is allocated until you continue.");
