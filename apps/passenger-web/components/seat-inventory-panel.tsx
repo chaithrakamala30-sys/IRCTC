@@ -44,6 +44,11 @@ type Reservation = {
   }[];
 };
 
+function isHoldExpired(expiresAt: string): boolean {
+  const value = new Date(expiresAt).getTime();
+  return Number.isFinite(value) && value <= Date.now();
+}
+
 function message(error: unknown): string {
   return error instanceof ApiRequestError
     ? error.message
@@ -90,7 +95,11 @@ export function SeatInventoryPanel({
   const loadHolds = useCallback(async () => {
     try {
       const response = await apiFetch<Hold[]>("/api/v1/passenger/inventory/holds");
-      setHolds(response.data ?? []);
+      const refreshed = (response.data ?? []).filter((hold) => !isHoldExpired(hold.expiresAt));
+      setHolds(refreshed);
+      if (response.data && response.data.length !== refreshed.length) {
+        setNotice("One or more temporary holds have expired and were removed from your active list.");
+      }
     } catch (caught: unknown) {
       if (caught instanceof ApiRequestError && caught.status === 401) {
         setAuthStatus("signed-out");
@@ -100,6 +109,15 @@ export function SeatInventoryPanel({
       setError(message(caught));
     }
   }, []);
+
+  useEffect(() => {
+    if (authStatus !== "signed-in") return;
+    const timer = window.setInterval(() => {
+      setHolds((current) => current.filter((hold) => !isHoldExpired(hold.expiresAt)));
+      void loadHolds();
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [authStatus, loadHolds]);
 
   useEffect(() => {
     let active = true;
