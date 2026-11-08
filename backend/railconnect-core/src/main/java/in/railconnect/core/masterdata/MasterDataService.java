@@ -992,7 +992,7 @@ public class MasterDataService {
                 compositionId,
                 versionNumber,
                 totalCapacity,
-                json(snapshot),
+                json(Map.of("coaches", snapshot)),
                 blankToNull(request.changeReason()),
                 actor
         );

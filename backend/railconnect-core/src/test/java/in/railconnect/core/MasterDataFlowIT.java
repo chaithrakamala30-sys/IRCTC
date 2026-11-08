@@ -178,6 +178,19 @@ class MasterDataFlowIT {
                 train.trainId(), composition.currentVersionId(), actor, null);
         assertThat(composition.status()).isEqualTo("PUBLISHED");
         assertThat(composition.totalCapacity()).isEqualTo(2);
+        String compositionSnapshotType = jdbcTemplate.queryForObject(
+                "SELECT jsonb_typeof(snapshot) FROM train_composition_versions WHERE composition_version_id = ?",
+                String.class,
+                composition.currentVersionId()
+        );
+        Integer compositionSnapshotCoachCount = jdbcTemplate.queryForObject(
+                "SELECT jsonb_array_length(snapshot -> 'coaches') FROM train_composition_versions "
+                        + "WHERE composition_version_id = ?",
+                Integer.class,
+                composition.currentVersionId()
+        );
+        assertThat(compositionSnapshotType).isEqualTo("object");
+        assertThat(compositionSnapshotCoachCount).isEqualTo(1);
 
         Integer stationVersions = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM station_versions WHERE station_id = ?",
