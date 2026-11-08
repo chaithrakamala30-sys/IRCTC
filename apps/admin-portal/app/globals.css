@@ -773,3 +773,41 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+@media (max-width: 760px) {
+  .master-data-console .master-data-note[aria-label="Master-data audit history"] {
+    padding: 14px;
+  }
+
+  .master-data-console .master-data-note[aria-label="Master-data audit history"] .admin-panel-heading {
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: space-between;
+  }
+
+  .master-data-console .master-data-note[aria-label="Master-data audit history"] .admin-panel-heading > div {
+    min-width: 0;
+  }
+
+  .master-data-console .master-data-note[aria-label="Master-data audit history"] .admin-panel-heading h2 {
+    font-size: 1rem;
+  }
+
+  .master-data-console .master-data-note[aria-label="Master-data audit history"] .admin-panel-heading p {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .master-data-console .master-data-note[aria-label="Master-data audit history"] .admin-panel-heading > .button {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 8px 10px;
+  }
+
+  .master-data-console .master-data-note[aria-label="Master-data audit history"] .admin-table th,
+  .master-data-console .master-data-note[aria-label="Master-data audit history"] .admin-table td {
+    font-size: 0.76rem;
+    padding: 9px 8px;
+  }
+}
