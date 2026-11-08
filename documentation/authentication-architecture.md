@@ -30,7 +30,7 @@ sequenceDiagram
 
 - Passenger and admin Next.js apps are browser clients. They call the API through the shared `@railconnect/api` workspace and never connect directly to PostgreSQL.
 - Supabase Auth owns email/password credentials and email confirmation. The backend verifies credentials through the Supabase Auth API; the browser never receives the service-role key.
-- Spring Security protects the Spring Boot API with the existing server-side cookie/session model. Supabase Auth user UUIDs are the primary keys for matching rows in `railconnect.users`; roles and application profile fields stay in PostgreSQL. HTTP Basic and form login are disabled.
+- Spring Security protects the Spring Boot API with the existing server-side cookie/session model. `railconnect.users.auth_user_id` maps Supabase Auth UUIDs to application profiles; new profiles use the Auth UUID as their application primary key, while legacy profiles retain their existing primary keys during first-login linking. Roles and application profile fields stay in PostgreSQL. HTTP Basic and form login are disabled.
 - PostgreSQL stores identity, role grants, throttles, audit events, and Spring Session state in the configured `railconnect` schema.
 - CORS accepts exact configured origins and credentials. Do not replace the allowlist with a wildcard.
 - Mutating requests use CSRF protection. The API helper first gets a CSRF token, then sends it in `X-XSRF-TOKEN`; the browser supplies cookies with credentials.

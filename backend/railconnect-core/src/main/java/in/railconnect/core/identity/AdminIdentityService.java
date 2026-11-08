@@ -180,10 +180,11 @@ public class AdminIdentityService {
             jdbcTemplate.update(
                     """
                             INSERT INTO users (
-                                user_id, full_name, email, mobile_number, password_hash, email_verified_at,
+                                user_id, auth_user_id, full_name, email, mobile_number, password_hash, email_verified_at,
                                 must_change_password, terms_version, privacy_version
-                            ) VALUES (?, ?, ?, ?, NULL, CURRENT_TIMESTAMP, TRUE, 'staff-provisioned', 'staff-provisioned')
+                            ) VALUES (?, ?, ?, ?, ?, NULL, CURRENT_TIMESTAMP, TRUE, 'staff-provisioned', 'staff-provisioned')
                             """,
+                    userId,
                     userId,
                     request.fullName().trim().replaceAll("\\s+", " "),
                     email,

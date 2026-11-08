@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,8 @@ class IdentityFlowIT {
     private ObjectMapper objectMapper;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     @MockitoBean
     private SupabaseAuthClient supabaseAuthClient;
 
@@ -183,6 +186,78 @@ class IdentityFlowIT {
         mockMvc.perform(get("/api/v1/auth/me").cookie(sessionCookie))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error.code").value("SESSION_REVOKED"));
+    }
+
+    @Test
+    void legacyPasswordLoginLinksProfileToSupabaseAuthAndClearsLegacyHash() throws Exception {
+        String email = "legacy-" + UUID.randomUUID().toString().replace("-", "") + "@example.test";
+        String mobile = "+1555" + String.format(
+                Locale.ROOT,
+                "%010d",
+                Math.abs(UUID.randomUUID().getLeastSignificantBits() % 10_000_000_000L));
+        String password = "LegacyRail!Password2026";
+        UUID localUserId = UUID.randomUUID();
+        UUID authUserId = UUID.randomUUID();
+        jdbcTemplate.update(
+                """
+                        INSERT INTO users (
+                            user_id, full_name, email, mobile_number, password_hash,
+                            terms_version, privacy_version
+                        ) VALUES (?, 'Legacy User', ?, ?, ?, 'legacy', 'legacy')
+                        """,
+                localUserId,
+                email,
+                mobile,
+                passwordEncoder.encode(password)
+        );
+        jdbcTemplate.update(
+                "INSERT INTO user_roles (user_id, role_code, assigned_by) VALUES (?, 'PASSENGER', ?)",
+                localUserId,
+                localUserId
+        );
+
+        var authUser = new SupabaseAuthClient.SupabaseUser(
+                authUserId,
+                email,
+                "2026-11-07T00:00:00Z",
+                Map.of("railconnect_account_type", "LEGACY"),
+                true
+        );
+        when(supabaseAuthClient.authenticate(eq(email), eq(password)))
+                .thenThrow(new SupabaseAuthClient.SupabaseAuthException(
+                        org.springframework.http.HttpStatus.UNAUTHORIZED,
+                        "INVALID_CREDENTIALS"));
+        when(supabaseAuthClient.signUp(eq(email), eq(password), anyMap())).thenReturn(authUser);
+
+        MvcResult csrfResult = mockMvc.perform(get("/api/v1/auth/csrf"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode csrfBody = objectMapper.readTree(csrfResult.getResponse().getContentAsString());
+        String csrfToken = csrfBody.path("data").path("token").asText();
+        var csrfCookie = csrfResult.getResponse().getCookie("XSRF-TOKEN");
+
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"identifier":"%s","password":"%s"}
+                                """.formatted(email, password)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value(email))
+                .andReturn();
+
+        assertThat(loginResult.getResponse().getCookie("RCSESSION")).isNotNull();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT auth_user_id FROM users WHERE user_id = ?",
+                UUID.class,
+                localUserId
+        )).isEqualTo(authUserId);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT password_hash FROM users WHERE user_id = ?",
+                String.class,
+                localUserId
+        )).isNull();
     }
 
     private void stubSupabaseUser(String email, String password, String fullName, String mobile) {

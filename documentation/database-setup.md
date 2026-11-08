@@ -32,6 +32,7 @@ Before any real customer data, recheck current free-plan storage, pause behavior
 - The default application schema is `railconnect`; Flyway creates it if needed. Keep application tables isolated from Supabase's shared `public` schema.
 - Supabase Auth stores credentials under its managed `auth` schema. The application stores each matching account/profile and role in `railconnect.users` using the Supabase Auth UUID. Do not query or modify Supabase's managed Auth tables directly.
 - V3 makes the application password-hash column nullable. New accounts do not store password hashes in the application table. Existing local-only users are not automatically imported into Supabase Auth; provision/migrate them through a deliberate account-recovery process before deploying this migration to a database with real users.
+- V4 adds a nullable unique Supabase Auth ID mapping for linking legacy profiles on a successful password-verified login. The link operation clears the legacy password hash after creating the Auth identity.
 - Hibernate schema generation is `validate`; Flyway owns schema changes.
 - Add forward-only, reviewed migrations with explicit constraints/indexes and tests. Never put secrets or personal data in migration fixtures.
 - Do not use automatic destructive schema updates or manually modify `flyway_schema_history`.

@@ -39,6 +39,29 @@ public class IdentityUserDetailsService {
         return principal(users.get(0));
     }
 
+    public RailConnectPrincipal loadUserByAuthUserId(UUID authUserId) throws UsernameNotFoundException {
+        List<UserRow> users = jdbcTemplate.query(
+                """
+                        SELECT user_id, email, full_name, status, must_change_password
+                        FROM users
+                        WHERE auth_user_id = ? OR (user_id = ? AND auth_user_id IS NULL)
+                        """,
+                (result, rowNumber) -> new UserRow(
+                        result.getObject("user_id", UUID.class),
+                        result.getString("email"),
+                        result.getString("full_name"),
+                        result.getString("status"),
+                        result.getBoolean("must_change_password")
+                ),
+                authUserId,
+                authUserId
+        );
+        if (users.isEmpty()) {
+            throw new UsernameNotFoundException("Account not found");
+        }
+        return principal(users.get(0));
+    }
+
     private RailConnectPrincipal principal(UserRow user) {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("identity:self:read"));

@@ -223,11 +223,11 @@ public class SupabaseAuthClient {
         private final HttpStatus status;
         private final String code;
 
-        SupabaseAuthException(HttpStatus status, String code) {
+        public SupabaseAuthException(HttpStatus status, String code) {
             this(status, code, "Supabase Auth request failed");
         }
 
-        SupabaseAuthException(HttpStatus status, String code, String message) {
+        public SupabaseAuthException(HttpStatus status, String code, String message) {
             super(message);
             this.status = status;
             this.code = code;

@@ -2,7 +2,9 @@
 
 ## Password storage and validation
 
-Supabase Auth is the credential store and verifies email/password sign-ins. The application stores profile and authorization data in `railconnect.users` with the matching Supabase Auth UUID; `password_hash` is nullable and new accounts do not store a password hash there. Existing legacy hashes are not used for authentication and are retained until an explicit account-migration/cleanup decision.
+Supabase Auth is the credential store and verifies email/password sign-ins. The application stores profile and authorization data in `railconnect.users`; `auth_user_id` links a profile to its Supabase Auth identity, and `password_hash` is nullable. New accounts do not store a local password hash.
+
+On the first login for a legacy profile that has no linked Supabase identity, the backend verifies the submitted password against the existing Argon2 hash. If it matches, the backend creates the Supabase Auth identity, stores its ID in `auth_user_id`, and clears the legacy hash. If Supabase requires email confirmation, the account remains linked but login is refused until confirmation. A mismatch never creates or links an Auth identity.
 
 New passwords must contain at least 12 characters, satisfy the configured character-class policy, and avoid the built-in common-password blocklist before they are sent to Supabase Auth. Password changes verify the current password through Supabase Auth and update the Supabase credential through the server-only service-role key.
 

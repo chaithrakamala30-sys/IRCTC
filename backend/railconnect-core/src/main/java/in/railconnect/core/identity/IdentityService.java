@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -38,6 +39,7 @@ public class IdentityService {
 
     private final JdbcTemplate jdbcTemplate;
     private final SupabaseAuthClient supabaseAuthClient;
+    private final PasswordEncoder passwordEncoder;
     private final IdentityUserDetailsService userDetailsService;
     private final LoginThrottleService loginThrottleService;
     private final RegistrationThrottleService registrationThrottleService;
@@ -50,6 +52,7 @@ public class IdentityService {
     public IdentityService(
             JdbcTemplate jdbcTemplate,
             SupabaseAuthClient supabaseAuthClient,
+            PasswordEncoder passwordEncoder,
             IdentityUserDetailsService userDetailsService,
             LoginThrottleService loginThrottleService,
             RegistrationThrottleService registrationThrottleService,
@@ -59,6 +62,7 @@ public class IdentityService {
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.supabaseAuthClient = supabaseAuthClient;
+        this.passwordEncoder = passwordEncoder;
         this.userDetailsService = userDetailsService;
         this.loginThrottleService = loginThrottleService;
         this.registrationThrottleService = registrationThrottleService;
@@ -171,19 +175,23 @@ public class IdentityService {
                         "Confirm your email address before signing in");
             }
             if (isInvalidSupabaseCredentials(exception)) {
-                loginThrottleService.recordFailure(identifierHash);
-                auditService.record(
-                        "AUTH_LOGIN", "FAILURE", null, null, identifierHash, servletRequest);
-                throw invalidCredentials();
+                authUser = linkLegacyAccount(email, request.password(), identifierHash, servletRequest);
+            } else {
+                throw authProviderUnavailable(exception);
             }
-            throw authProviderUnavailable(exception);
         } catch (org.springframework.web.client.RestClientException exception) {
             throw authProviderUnavailable(exception);
+        }
+        if (authUser == null) {
+            loginThrottleService.recordFailure(identifierHash);
+            auditService.record(
+                    "AUTH_LOGIN", "FAILURE", null, null, identifierHash, servletRequest);
+            throw invalidCredentials();
         }
 
         RailConnectPrincipal principal;
         try {
-            principal = userDetailsService.loadUserByUserId(authUser.id());
+            principal = userDetailsService.loadUserByAuthUserId(authUser.id());
         } catch (UsernameNotFoundException exception) {
             if (!"PASSENGER".equals(authUser.metadata().get("railconnect_account_type"))) {
                 throw invalidCredentials();
@@ -195,7 +203,7 @@ public class IdentityService {
                     String.valueOf(authUser.metadata().getOrDefault("terms_version", TERMS_VERSION)),
                     String.valueOf(authUser.metadata().getOrDefault("privacy_version", PRIVACY_VERSION))
             );
-            principal = userDetailsService.loadUserByUserId(authUser.id());
+            principal = userDetailsService.loadUserByAuthUserId(authUser.id());
         }
         if (authUser.emailConfirmedAt() != null) {
             jdbcTemplate.update(
@@ -205,7 +213,7 @@ public class IdentityService {
                             WHERE user_id = ?
                             """,
                     authUser.emailConfirmedAt(),
-                    authUser.id()
+                    principal.userId()
             );
         }
         if (!"ACTIVE".equals(principal.status())) {
@@ -250,6 +258,100 @@ public class IdentityService {
         auditService.record(
                 "AUTH_LOGIN", "SUCCESS", principal.userId(), principal.userId(), identifierHash, servletRequest);
         return userResponse(principal.userId());
+    }
+
+    private SupabaseAuthClient.SupabaseUser linkLegacyAccount(
+            String email,
+            String password,
+            String identifierHash,
+            HttpServletRequest request
+    ) {
+        List<LegacyAccount> accounts = jdbcTemplate.query(
+                """
+                        SELECT user_id, password_hash, full_name, mobile_number,
+                               terms_version, privacy_version
+                        FROM users
+                        WHERE lower(email) = ? AND auth_user_id IS NULL
+                          AND password_hash IS NOT NULL AND status = 'ACTIVE'
+                        """,
+                (result, rowNumber) -> new LegacyAccount(
+                        result.getObject("user_id", UUID.class),
+                        result.getString("password_hash"),
+                        result.getString("full_name"),
+                        result.getString("mobile_number"),
+                        result.getString("terms_version"),
+                        result.getString("privacy_version")
+                ),
+                email
+        );
+        if (accounts.isEmpty() || !passwordEncoder.matches(password, accounts.get(0).passwordHash())) {
+            return null;
+        }
+
+        LegacyAccount account = accounts.get(0);
+        SupabaseAuthClient.SupabaseUser createdUser;
+        try {
+            createdUser = supabaseAuthClient.signUp(email, password, Map.of(
+                    "railconnect_account_type", "LEGACY",
+                    "full_name", account.fullName(),
+                    "mobile_number", account.mobileNumber(),
+                    "terms_version", account.termsVersion(),
+                    "privacy_version", account.privacyVersion()
+            ));
+        } catch (SupabaseAuthClient.SupabaseAuthException exception) {
+            if (isSupabaseDuplicate(exception)) {
+                return null;
+            }
+            throw authProviderUnavailable(exception);
+        } catch (org.springframework.web.client.RestClientException exception) {
+            throw authProviderUnavailable(exception);
+        }
+        if (!createdUser.newlyCreated()) {
+            return null;
+        }
+
+        try {
+            int updated = jdbcTemplate.update(
+                    """
+                            UPDATE users
+                            SET auth_user_id = ?, password_hash = NULL, updated_at = CURRENT_TIMESTAMP
+                            WHERE user_id = ? AND auth_user_id IS NULL AND password_hash IS NOT NULL
+                            """,
+                    createdUser.id(),
+                    account.userId()
+            );
+            if (updated != 1) {
+                throw invalidCredentials();
+            }
+            auditService.record(
+                    "AUTH_ACCOUNT_LINKED",
+                    "SUCCESS",
+                    account.userId(),
+                    account.userId(),
+                    identifierHash,
+                    request
+            );
+        } catch (RuntimeException exception) {
+            deleteSupabaseUserAfterFailure(supabaseAuthClient, createdUser.id(), exception);
+            throw exception;
+        }
+        if (createdUser.emailConfirmedAt() == null) {
+            throw new IdentityException(
+                    HttpStatus.FORBIDDEN,
+                    "EMAIL_CONFIRMATION_REQUIRED",
+                    "Check your email to confirm your new authentication account before signing in");
+        }
+        return createdUser;
+    }
+
+    private record LegacyAccount(
+            UUID userId,
+            String passwordHash,
+            String fullName,
+            String mobileNumber,
+            String termsVersion,
+            String privacyVersion
+    ) {
     }
 
     @Transactional
@@ -317,7 +419,12 @@ public class IdentityService {
         }
         validatePassword(request.newPassword());
         try {
-            supabaseAuthClient.updatePassword(userId, request.newPassword());
+            UUID authUserId = jdbcTemplate.queryForObject(
+                    "SELECT COALESCE(auth_user_id, user_id) FROM users WHERE user_id = ?",
+                    UUID.class,
+                    userId
+            );
+            supabaseAuthClient.updatePassword(authUserId, request.newPassword());
         } catch (SupabaseAuthClient.SupabaseAuthException
                  | org.springframework.web.client.RestClientException exception) {
             throw authProviderUnavailable(exception);
@@ -519,10 +626,11 @@ public class IdentityService {
         jdbcTemplate.update(
                 """
                         INSERT INTO users (
-                            user_id, full_name, email, mobile_number, password_hash,
+                            user_id, auth_user_id, full_name, email, mobile_number, password_hash,
                             email_verified_at, terms_version, privacy_version
-                        ) VALUES (?, ?, ?, ?, NULL, ?::timestamptz, ?, ?)
+                        ) VALUES (?, ?, ?, ?, ?, NULL, ?::timestamptz, ?, ?)
                         """,
+                authUser.id(),
                 authUser.id(),
                 normalizeName(fullName),
                 normalizeEmail(authUser.email()),
