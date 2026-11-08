@@ -95,10 +95,12 @@ export function SeatInventoryPanel({
   const loadHolds = useCallback(async () => {
     try {
       const response = await apiFetch<Hold[]>("/api/v1/passenger/inventory/holds");
-      const refreshed = (response.data ?? []).filter((hold) => !isHoldExpired(hold.expiresAt));
+      const refreshed = (response.data ?? []).filter(
+        (hold) => hold.status === "ACTIVE" && !isHoldExpired(hold.expiresAt),
+      );
       setHolds(refreshed);
       if (response.data && response.data.length !== refreshed.length) {
-        setNotice("One or more temporary holds have expired and were removed from your active list.");
+        setNotice("One or more temporary holds have expired or been released and were removed from your active list.");
       }
     } catch (caught: unknown) {
       if (caught instanceof ApiRequestError && caught.status === 401) {
@@ -113,7 +115,7 @@ export function SeatInventoryPanel({
   useEffect(() => {
     if (authStatus !== "signed-in") return;
     const timer = window.setInterval(() => {
-      setHolds((current) => current.filter((hold) => !isHoldExpired(hold.expiresAt)));
+      setHolds((current) => current.filter((hold) => hold.status === "ACTIVE" && !isHoldExpired(hold.expiresAt)));
       void loadHolds();
     }, 15000);
     return () => window.clearInterval(timer);
@@ -244,7 +246,7 @@ export function SeatInventoryPanel({
       });
       const createdHold = response.data;
       if (!createdHold) throw new Error("The server did not return the created hold.");
-      setHolds((current) => [...current, createdHold]);
+      setHolds((current) => [...current.filter((hold) => hold.inventoryHoldId !== createdHold.inventoryHoldId), createdHold]);
       setNotice("Temporary seat hold created. It is not a reservation or ticket.");
       await loadHolds();
       await loadAvailability();
@@ -265,8 +267,8 @@ export function SeatInventoryPanel({
           `/api/v1/passenger/inventory/holds/${encodeURIComponent(hold.inventoryHoldId)}`,
           { method: "DELETE" },
         );
-        setHolds((current) => current.filter((item) => item.inventoryHoldId !== hold.inventoryHoldId));
       }
+      setHolds([]);
       setNotice("Temporary holds released.");
       await loadHolds();
       await loadAvailability();
