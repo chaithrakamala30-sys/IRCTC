@@ -317,7 +317,8 @@ public class InventoryService {
                             JOIN inventory_coaches coach ON coach.inventory_coach_id = berth.inventory_coach_id
                             WHERE berth.train_run_id = :runId
                               AND berth.base_status = 'AVAILABLE'
-                              AND (:classCode IS NULL OR coach.coach_class_code = :classCode)
+                              AND (CAST(:classCode AS varchar) IS NULL
+                                   OR coach.coach_class_code = :classCode)
                         )
                         SELECT coach_class_code, coach_class_name, COUNT(*) AS total,
                                COUNT(*) FILTER (WHERE base_status = 'AVAILABLE' AND NOT blocked AND NOT held) AS available,
@@ -362,7 +363,8 @@ public class InventoryService {
                 FROM inventory_berths berth
                 JOIN inventory_coaches coach ON coach.inventory_coach_id = berth.inventory_coach_id
                 WHERE berth.train_run_id = :runId
-                  AND (:classCode IS NULL OR coach.coach_class_code = :classCode)
+                  AND (CAST(:classCode AS varchar) IS NULL
+                       OR coach.coach_class_code = :classCode)
                   AND NOT EXISTS (
                       SELECT 1 FROM inventory_segment_claims claim
                       JOIN inventory_blocks block ON block.inventory_block_id = claim.inventory_block_id
