@@ -299,7 +299,10 @@ export function SeatInventoryPanel({
           toStationId,
           coachClassCode: selectedClass,
           groupSeatingRequested,
-          passengers,
+          passengers: passengers.map(({ displayName, preferredBerthType }) => ({
+            displayName,
+            ...(preferredBerthType ? { preferredBerthType } : {}),
+          })),
           inventoryHoldIds: holds.map((hold) => hold.inventoryHoldId),
         }),
       });
