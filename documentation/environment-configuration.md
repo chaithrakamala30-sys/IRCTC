@@ -37,14 +37,14 @@ Only `.env.example` is committed; it contains placeholder values and non-secret 
 
 Vercel hosts the Next.js frontend; Supabase hosts PostgreSQL. Supabase does not run this repository's Spring Boot REST API. A registration page deployed on Vercel therefore also needs a separately running, publicly reachable Spring Boot API.
 
-The passenger and admin apps proxy `/api/*` requests through their Vercel deployment to Render. This keeps browser API calls on the frontend site so the browser can send the CSRF and session cookies without relying on third-party cookies. Vercel builds for these two apps must use the Next.js server output; the static export remains enabled for local Docker builds.
+The passenger, admin, and operations apps proxy `/api/*` requests through their Vercel deployment to Render. This keeps browser API calls on the frontend site so the browser can send the CSRF and session cookies without relying on third-party cookies. Vercel builds for these apps must use the Next.js server output; static export remains enabled for local Docker builds.
 
-Set these Vercel environment variables for the passenger and admin projects, then redeploy:
+Set these Vercel environment variables for the passenger, admin, and operations projects, then redeploy:
 
 | Variable | Value |
 |---|---|
 | `RAILCONNECT_API_ORIGIN` | `https://irctc-wb68.onrender.com` |
-| `NEXT_PUBLIC_API_BASE_URL` | Optional. The origin of that specific Vercel project, with no trailing slash; for example, `https://irctc-rho.vercel.app` for the passenger project. If omitted, the shared client uses same-origin `/api/*` URLs. |
+| `NEXT_PUBLIC_API_BASE_URL` | Optional. The origin of that specific Vercel project, with no trailing slash. If omitted, the shared client uses same-origin `/api/*` URLs. |
 
 Set the following in Render's backend environment:
 
