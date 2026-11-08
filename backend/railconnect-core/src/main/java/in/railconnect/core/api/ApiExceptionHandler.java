@@ -2,11 +2,13 @@ package in.railconnect.core.api;
 
 import jakarta.validation.ConstraintViolationException;
 import in.railconnect.core.identity.IdentityException;
+import in.railconnect.core.masterdata.MasterDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -69,6 +71,26 @@ public class ApiExceptionHandler {
                 exception.status(),
                 exception.code(),
                 exception.getMessage(),
+                List.of()
+        );
+    }
+
+    @ExceptionHandler(MasterDataException.class)
+    public ResponseEntity<ApiEnvelope<Void>> handleMasterDataException(MasterDataException exception) {
+        return failure(
+                exception.status(),
+                exception.code(),
+                exception.getMessage(),
+                List.of()
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiEnvelope<Void>> handleAccessDenied(AccessDeniedException exception) {
+        return failure(
+                HttpStatus.FORBIDDEN,
+                "FORBIDDEN",
+                "You are not allowed to perform this action",
                 List.of()
         );
     }

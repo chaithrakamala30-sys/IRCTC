@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,10 +67,25 @@ class ApiExceptionHandlerTest {
                 .andExpect(jsonPath("$.error.code").value("REQUEST_TOO_LARGE"));
     }
 
+    @Test
+    void authorizationDeniedUsesForbiddenErrorEnvelope() throws Exception {
+        mockMvc.perform(post("/test-forbidden"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.error.message")
+                        .value("You are not allowed to perform this action"));
+    }
+
     @RestController
     static class ValidationTestController {
         @PostMapping("/test-validation")
         void validate(@Valid @RequestBody TestRequest request) {
+        }
+
+        @PostMapping("/test-forbidden")
+        void forbidden() {
+            throw new AuthorizationDeniedException("insufficient permissions");
         }
     }
 
