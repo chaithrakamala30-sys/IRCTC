@@ -694,6 +694,21 @@
     padding-top: 28px;
   }
 
+  .master-data-tabs {
+    display: grid;
+    gap: 7px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+    padding-bottom: 12px;
+  }
+
+  .master-data-tab {
+    font-size: 0.76rem;
+    min-width: 0;
+    padding: 8px 5px;
+    white-space: normal;
+  }
+
   .master-data-stats,
   .master-data-columns,
   .master-data-mini-forms,
@@ -743,5 +758,18 @@
 
   .master-data-title {
     align-items: flex-start;
+  }
+
+  .master-data-title > .button {
+    width: 100%;
+  }
+
+  .master-data-console .admin-table-wrap {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
   }
 }
