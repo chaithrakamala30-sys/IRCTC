@@ -87,15 +87,33 @@ export function SeatInventoryPanel({
   const [signInError, setSignInError] = useState("");
   const availabilityRequest = useRef(0);
 
+  const loadHolds = useCallback(async () => {
+    try {
+      const response = await apiFetch<Hold[]>("/api/v1/passenger/inventory/holds");
+      setHolds(response.data ?? []);
+    } catch (caught: unknown) {
+      if (caught instanceof ApiRequestError && caught.status === 401) {
+        setAuthStatus("signed-out");
+        setHolds([]);
+        return;
+      }
+      setError(message(caught));
+    }
+  }, []);
+
   useEffect(() => {
     let active = true;
     void apiFetch<unknown>("/api/v1/auth/me")
       .then(() => {
-        if (active) setAuthStatus("signed-in");
+        if (active) {
+          setAuthStatus("signed-in");
+          void loadHolds();
+        }
       })
       .catch((caught: unknown) => {
         if (active) {
           setAuthStatus("signed-out");
+          setHolds([]);
           if (!(caught instanceof ApiRequestError && caught.status === 401)) {
             setSignInError(message(caught));
           }
@@ -104,7 +122,7 @@ export function SeatInventoryPanel({
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadHolds]);
 
   useEffect(() => {
     let active = true;
@@ -178,6 +196,7 @@ export function SeatInventoryPanel({
       });
       setAuthStatus("signed-in");
       setNotice("Signed in. You can now hold an available berth.");
+      await loadHolds();
       await loadAvailability();
     } catch (caught) {
       setSignInError(message(caught));
@@ -209,6 +228,7 @@ export function SeatInventoryPanel({
       if (!createdHold) throw new Error("The server did not return the created hold.");
       setHolds((current) => [...current, createdHold]);
       setNotice("Temporary seat hold created. It is not a reservation or ticket.");
+      await loadHolds();
       await loadAvailability();
     } catch (caught) {
       setError(message(caught));
@@ -230,6 +250,7 @@ export function SeatInventoryPanel({
         setHolds((current) => current.filter((item) => item.inventoryHoldId !== hold.inventoryHoldId));
       }
       setNotice("Temporary holds released.");
+      await loadHolds();
       await loadAvailability();
     } catch (caught) {
       setError(message(caught));
@@ -248,6 +269,7 @@ export function SeatInventoryPanel({
       });
       setHolds((current) => current.filter((hold) => hold.inventoryHoldId !== holdId));
       setNotice("Temporary hold released.");
+      await loadHolds();
       await loadAvailability();
     } catch (caught) {
       setError(message(caught));
