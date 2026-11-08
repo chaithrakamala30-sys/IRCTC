@@ -80,6 +80,42 @@ class DatabaseMigrationIT {
                 )
                 """,
                 Integer.class);
+        Integer inventoryTableCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name IN (
+                    'inventory_train_runs', 'inventory_run_stops', 'inventory_run_segments',
+                    'inventory_coaches', 'inventory_berths', 'inventory_holds',
+                    'inventory_hold_segments', 'inventory_blocks', 'inventory_block_segments',
+                    'inventory_segment_claims', 'inventory_audit_log', 'inventory_configuration',
+                    'inventory_hold_rate_limits'
+                  )
+                """,
+                Integer.class);
+        Integer inventoryPermissionCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM permissions
+                WHERE permission_code IN (
+                    'inventory:availability:read', 'inventory:holds:manage', 'inventory:runs:initialize',
+                    'inventory:admin:read', 'inventory:blocks:manage'
+                )
+                """,
+                Integer.class);
+        Integer inventorySnapshotTriggerCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM pg_trigger
+                WHERE NOT tgisinternal
+                  AND tgname IN (
+                    'inventory_train_run_snapshot_immutable',
+                    'inventory_run_stops_immutable',
+                    'inventory_run_segments_immutable',
+                    'inventory_coaches_immutable',
+                    'inventory_berths_immutable'
+                  )
+                """,
+                Integer.class);
         Integer basePassengerCategoryCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM fare_passenger_categories WHERE category_code = 'ADULT' AND active = TRUE",
                 Integer.class);
@@ -92,5 +128,8 @@ class DatabaseMigrationIT {
         assertThat(fareTableCount).isEqualTo(9);
         assertThat(farePermissionCount).isEqualTo(4);
         assertThat(basePassengerCategoryCount).isEqualTo(1);
+        assertThat(inventoryTableCount).isEqualTo(13);
+        assertThat(inventoryPermissionCount).isEqualTo(5);
+        assertThat(inventorySnapshotTriggerCount).isEqualTo(5);
     }
 }

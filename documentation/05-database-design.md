@@ -1,6 +1,6 @@
 # PostgreSQL database design
 
-This document combines the logical design with the implemented PostgreSQL schema. Flyway migrations V1–V8 provide identity, railway master data, passenger search indexes, the Phase 4 schedule-range audit action, and Phase 5 fare rules and quotes. Reservation, inventory, payment, and financial-ledger invariants remain future design and are not implemented. PostgreSQL is the data-integrity authority; migrations are append-only and must be validated on the selected PostgreSQL version before deployment.
+This document combines the logical design with the implemented PostgreSQL schema. Flyway migrations V1–V9 provide identity, railway master data, passenger search indexes, the Phase 4 schedule-range audit action, Phase 5 fare rules and quotes, and Phase 6 train-run seat inventory with segment claims, temporary holds, operational blocks, and audit. Confirmed reservation allocation, payment, and financial-ledger invariants remain future work. PostgreSQL is the data-integrity authority; migrations are append-only and must be validated on the selected PostgreSQL version before deployment.
 
 ## ER overview
 

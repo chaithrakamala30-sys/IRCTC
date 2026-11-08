@@ -5,6 +5,7 @@ import { ApiRequestError, apiFetch } from "@railconnect/api";
 import { Brand } from "@railconnect/ui";
 import { AdminMasterDataConsole } from "./admin-master-data-console";
 import { AdminFareConsole } from "./admin-fare-console";
+import { AdminInventoryConsole } from "./admin-inventory-console";
 
 type AdminUser = {
   userId: string;
@@ -55,7 +56,7 @@ type AdminSession = {
   current: boolean;
 };
 
-type AdminTab = "identity" | "master-data" | "fares";
+type AdminTab = "identity" | "master-data" | "fares" | "inventory";
 
 type AdminTabItem = {
   id: AdminTab;
@@ -109,6 +110,7 @@ const staffRoles = [
   "RESERVATION_OFFICER",
   "FINANCE_ADMIN",
   "CUSTOMER_SUPPORT",
+  "OPERATIONS_MANAGER",
   "SUPER_ADMIN",
 ];
 
@@ -441,11 +443,13 @@ export function AdminIdentityConsole() {
       { id: "identity", label: "Identity administration" },
       { id: "master-data", label: "Railway master data" },
       { id: "fares", label: "Fare management" },
+      { id: "inventory", label: "Seat inventory" },
     ]
     : isRailwayAdmin
       ? [
         { id: "master-data", label: "Railway master data" },
         { id: "fares", label: "Fare management" },
+        { id: "inventory", label: "Seat inventory" },
       ]
       : isFinanceAdmin
         ? [{ id: "fares", label: "Fare management" }]
@@ -671,6 +675,9 @@ export function AdminIdentityConsole() {
         )}
         {activeTab === "fares" && (isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && (
           <AdminFareConsole roles={user.roles} />
+        )}
+        {activeTab === "inventory" && (isSuperAdmin || isRailwayAdmin) && (
+          <AdminInventoryConsole />
         )}
       </main>
     </>

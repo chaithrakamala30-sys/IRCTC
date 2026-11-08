@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
 import { formatLocalTime } from "../lib/time-format";
 import type { TrainDetail } from "./train-search-types";
+import { SeatInventoryPanel } from "./seat-inventory-panel";
 
 type DeviceExperience = "mobile" | "laptop";
 type PassengerCategory = {
@@ -222,6 +223,17 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
             </ol>
           </section>
 
+          <SeatInventoryPanel
+            classes={detail.journey.coachClasses.map((coachClass) => ({
+              code: coachClass.code,
+              name: coachClass.name,
+            }))}
+            fromStationId={detail.route.find((stop) => stop.selectedOrigin)?.stationId ?? detail.journey.origin.stationId}
+            journeyDate={detail.journey.journeyDate}
+            toStationId={detail.route.find((stop) => stop.selectedDestination)?.stationId ?? detail.journey.destination.stationId}
+            trainId={detail.journey.trainId}
+          />
+
           <section aria-labelledby="fare-quote-title" className="passenger-fare-section">
             <div className="passenger-fare-heading">
               <div>
@@ -310,8 +322,7 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
           </section>
 
           <p className="no-booking-note">
-            An indicative fare quote is not a reservation or ticket and does not guarantee a fare at a later time.
-            Seat availability, reservations, and payment are not provided.
+            An indicative fare quote and temporary seat hold are not a reservation or ticket. Reservations, payments, and ticketing are not provided.
           </p>
         </>
       )}

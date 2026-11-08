@@ -52,6 +52,8 @@ The integration test executes `SELECT 1`, checks successful Flyway history, and 
 
 The configured Supabase endpoint accepted a TLS PostgreSQL connection and identified itself as PostgreSQL 17.11. An initial integration attempt did not apply V1: Flyway reported that `public` was non-empty but had no Flyway schema history, then stopped. No migration was applied in that attempt. To avoid baselining or modifying `public`, the application was configured to create and use a dedicated `railconnect` schema. The subsequent `mvn verify` succeeded: V1 was applied there and the database migration/API integration tests passed. Do not enable automatic baselining or alter existing schema objects to bypass Flyway safeguards.
 
+On 2026-11-08, Flyway successfully applied V9 to the same dedicated `railconnect` schema. A read-only query confirmed the V9 history row succeeded and all 13 inventory tables exist. A subsequent targeted `DatabaseMigrationIT` attempt did not reach its assertions because the application context could not acquire a pooled database connection; the inventory integration scenarios were not run against Supabase.
+
 ## Pooling and transactions
 
 Hikari is bounded (default maximum 5, idle 0, short acquisition timeout) to support constrained local/free-tier instances. Use transaction boundaries in backend services; do not hold DB connections during provider/network calls. Future inventory correctness must remain in PostgreSQL constraints/transactions, never Redis.

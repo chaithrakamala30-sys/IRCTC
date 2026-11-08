@@ -183,6 +183,12 @@
   gap: 14px;
 }
 
+.admin-form--inventory {
+  align-items: end;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  margin-top: 16px;
+}
+
 .admin-form label,
 .admin-staff-form > label,
 .admin-filters label {
@@ -227,6 +233,12 @@
 .admin-panel-heading p {
   color: var(--color-muted);
   font-size: 0.88rem;
+}
+
+.admin-panel code {
+  display: block;
+  max-width: 380px;
+  overflow-wrap: anywhere;
 }
 
 .admin-panel-heading {
@@ -729,7 +741,8 @@
   }
 
   .admin-staff-form,
-  .admin-filters {
+  .admin-filters,
+  .admin-form--inventory {
     grid-template-columns: 1fr;
   }
 

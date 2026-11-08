@@ -26,6 +26,12 @@ import in.railconnect.core.fare.FareModels.FareRuleVersionRequest;
 import in.railconnect.core.fare.FareModels.PassengerRequest;
 import in.railconnect.core.fare.FareService;
 import in.railconnect.core.identity.RailConnectPrincipal;
+import in.railconnect.core.inventory.InventoryException;
+import in.railconnect.core.inventory.InventoryModels.BlockRequest;
+import in.railconnect.core.inventory.InventoryModels.HoldRequest;
+import in.railconnect.core.inventory.InventoryModels.InitializeRunRequest;
+import in.railconnect.core.inventory.InventoryModels.JourneyRequest;
+import in.railconnect.core.inventory.InventoryService;
 import in.railconnect.core.search.PublicTrainSearchService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -69,6 +75,9 @@ class MasterDataFlowIT {
 
     @Autowired
     private FareService fareService;
+
+    @Autowired
+    private InventoryService inventoryService;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -288,6 +297,80 @@ class MasterDataFlowIT {
         );
         assertThat(compositionSnapshotType).isEqualTo("object");
         assertThat(compositionSnapshotCoachCount).isEqualTo(1);
+
+        var inventoryRun = inventoryService.initializeRun(
+                new InitializeRunRequest(train.trainId(), serviceMonday), null);
+        assertThat(inventoryRun.stops()).isEqualTo(3);
+        assertThat(inventoryRun.coaches()).isEqualTo(1);
+        assertThat(inventoryRun.berths()).isEqualTo(2);
+        var inventoryOwner = createInventoryPassenger();
+        var firstHoldRequest = new HoldRequest(
+                inventoryRun.trainRunId(), origin.stationId(), intermediate.stationId(),
+                coachClass.code(), null);
+        var firstHold = inventoryService.createHold(firstHoldRequest, "inventory-hold-1", inventoryOwner.userId());
+        var sameRequestRetry = inventoryService.createHold(
+                firstHoldRequest, "inventory-hold-1", inventoryOwner.userId());
+        assertThat(sameRequestRetry.inventoryHoldId()).isEqualTo(firstHold.inventoryHoldId());
+        UUID inventoryOriginId = origin.stationId();
+        UUID inventoryIntermediateId = intermediate.stationId();
+        UUID inventoryDestinationId = destination.stationId();
+        String inventoryClassCode = coachClass.code();
+        assertThatThrownBy(() -> inventoryService.createHold(
+                new HoldRequest(inventoryRun.trainRunId(), inventoryOriginId, inventoryDestinationId,
+                        inventoryClassCode, null),
+                "inventory-hold-1", inventoryOwner.userId()))
+                .isInstanceOfSatisfying(InventoryException.class, exception ->
+                        assertThat(exception.code()).isEqualTo("IDEMPOTENCY_KEY_REUSED"));
+        var otherInventoryOwner = createInventoryPassenger();
+        assertThatThrownBy(() -> inventoryService.releaseHold(firstHold.inventoryHoldId(),
+                otherInventoryOwner.userId()))
+                .isInstanceOfSatisfying(InventoryException.class, exception ->
+                        assertThat(exception.code()).isEqualTo("HOLD_NOT_FOUND"));
+        assertThat(inventoryService.availability(new JourneyRequest(
+                inventoryRun.trainRunId(), origin.stationId(), intermediate.stationId(), coachClass.code()))
+                .classes().get(0).available()).isEqualTo(1);
+        assertThat(inventoryService.availability(new JourneyRequest(
+                inventoryRun.trainRunId(), intermediate.stationId(), destination.stationId(), coachClass.code()))
+                .classes().get(0).available()).isEqualTo(2);
+        var secondHold = inventoryService.createHold(
+                new HoldRequest(inventoryRun.trainRunId(), origin.stationId(), intermediate.stationId(),
+                        coachClass.code(), null),
+                "inventory-hold-2", inventoryOwner.userId());
+        assertThat(inventoryService.availability(new JourneyRequest(
+                inventoryRun.trainRunId(), origin.stationId(), intermediate.stationId(), coachClass.code()))
+                .classes().get(0).available()).isZero();
+        assertThatThrownBy(() -> inventoryService.createHold(
+                new HoldRequest(inventoryRun.trainRunId(), inventoryOriginId, inventoryIntermediateId,
+                        inventoryClassCode, null),
+                "inventory-hold-3", inventoryOwner.userId()))
+                .isInstanceOfSatisfying(InventoryException.class, exception ->
+                        assertThat(exception.code()).isEqualTo("NO_BERTH_AVAILABLE"));
+        inventoryService.releaseHold(firstHold.inventoryHoldId(), inventoryOwner.userId());
+        jdbcTemplate.update(
+                "UPDATE inventory_holds SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE inventory_hold_id = ?",
+                secondHold.inventoryHoldId());
+        assertThat(inventoryService.holds(inventoryOwner.userId()))
+                .filteredOn(hold -> hold.inventoryHoldId().equals(secondHold.inventoryHoldId()))
+                .singleElement()
+                .satisfies(hold -> assertThat(hold.status()).isEqualTo("EXPIRED"));
+        inventoryService.createBlock(
+                inventoryRun.trainRunId(),
+                new BlockRequest(firstHold.inventoryBerthId(), origin.stationId(), intermediate.stationId(),
+                        "MAINTENANCE", "Integration test maintenance"),
+                inventoryOwner.userId());
+        assertThat(inventoryService.availability(new JourneyRequest(
+                inventoryRun.trainRunId(), origin.stationId(), intermediate.stationId(), coachClass.code()))
+                .classes().get(0).available()).isEqualTo(1);
+
+        mockMvc.perform(get("/api/v1/public/inventory/availability")
+                        .param("trainRunId", inventoryRun.trainRunId().toString())
+                        .param("fromStationId", origin.stationId().toString())
+                        .param("toStationId", intermediate.stationId().toString())
+                        .param("coachClassCode", coachClass.code()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.classes[0].blocked").value(1));
+
         var filteredJourney = publicTrainSearchService.search(
                 origin.stationId(),
                 intermediate.stationId(),
@@ -530,5 +613,31 @@ class MasterDataFlowIT {
                 new SimpleGrantedAuthority("fares:rules:publish"));
         return new RailConnectPrincipal(
                 userId, email, "Fare " + label, "ACTIVE", false, authorities);
+    }
+
+    private RailConnectPrincipal createInventoryPassenger() {
+        UUID userId = UUID.randomUUID();
+        String unique = UUID.randomUUID().toString();
+        String email = "inventory-" + unique + "@example.test";
+        jdbcTemplate.update("""
+                INSERT INTO users (
+                    user_id, full_name, email, mobile_number, password_hash,
+                    terms_version, privacy_version
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                userId,
+                "Inventory Passenger " + unique.substring(0, 8),
+                email,
+                "+2" + unique.replace("-", "").substring(0, 10),
+                "test-password-hash",
+                "test-terms",
+                "test-privacy");
+        return new RailConnectPrincipal(
+                userId, email, "Inventory Passenger", "ACTIVE", false,
+                List.of(
+                        new SimpleGrantedAuthority("ROLE_PASSENGER"),
+                        new SimpleGrantedAuthority("inventory:availability:read"),
+                        new SimpleGrantedAuthority("inventory:holds:manage")
+                ));
     }
 }

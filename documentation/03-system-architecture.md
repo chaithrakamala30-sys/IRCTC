@@ -42,6 +42,8 @@ Rules: modules expose application-service contracts/events; no cross-module tabl
 
 The Phase 3 implementation remains within the existing Spring Boot modular monolith and PostgreSQL/Flyway deployment. Staff master-data APIs are protected by permissions and write audit/version records transactionally. The operations portal is a separate frontend workspace; the responsive master-data screens currently live in the authenticated admin portal.
 
+Phase 6 adds a train-run inventory module to the same API. PostgreSQL stores immutable dated route/composition snapshots and segment claims; a unique `(inventory_berth_id, segment_index)` key prevents overlapping holds or operational blocks from claiming the same physical berth. Passenger availability and hold controls are available on both device-specific journey details experiences. Staff inventory administration and operations tools remain permission-gated; the inventory feature does not implement confirmed reservations or payments. See [Phase 6 seat inventory](phase-6-seat-inventory.md).
+
 ## Technology choices and tradeoffs
 
 - **Next.js / React / TypeScript / Tailwind:** typed, accessible, reusable UI. Prefer static export and API-driven pages for lowest-cost static hosting. Any SSR/edge runtime feature must be proven compatible with the selected free host before use; API remains independent.

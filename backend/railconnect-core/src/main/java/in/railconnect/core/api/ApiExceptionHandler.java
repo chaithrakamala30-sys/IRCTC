@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolationException;
 import in.railconnect.core.identity.IdentityException;
 import in.railconnect.core.fare.FareException;
 import in.railconnect.core.masterdata.MasterDataException;
+import in.railconnect.core.inventory.InventoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -88,6 +89,16 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(FareException.class)
     public ResponseEntity<ApiEnvelope<Void>> handleFareException(FareException exception) {
+        return failure(
+                exception.status(),
+                exception.code(),
+                exception.getMessage(),
+                List.of()
+        );
+    }
+
+    @ExceptionHandler(InventoryException.class)
+    public ResponseEntity<ApiEnvelope<Void>> handleInventoryException(InventoryException exception) {
         return failure(
                 exception.status(),
                 exception.code(),

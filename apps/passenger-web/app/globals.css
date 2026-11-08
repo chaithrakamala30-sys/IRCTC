@@ -1135,6 +1135,148 @@
   margin: 14px 0 0;
 }
 
+.passenger-inventory-section {
+  background: #fff;
+  border: 1px solid #dce5ef;
+  border-radius: 18px;
+  margin-top: 18px;
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.passenger-inventory-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.passenger-inventory-heading h2 {
+  font-size: 1.45rem;
+  margin: 6px 0;
+}
+
+.passenger-inventory-heading > span {
+  background: #edf4ff;
+  border-radius: 999px;
+  color: #124e92;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 750;
+  padding: 8px 11px;
+}
+
+.passenger-inventory-intro,
+.passenger-inventory-empty {
+  color: #52657b;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  margin: 8px 0 18px;
+  max-width: 80ch;
+}
+
+.passenger-inventory-controls {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.passenger-inventory-controls label {
+  color: #263b56;
+  display: grid;
+  font-size: 0.83rem;
+  font-weight: 750;
+  gap: 7px;
+  min-width: min(100%, 240px);
+}
+
+.passenger-inventory-controls select {
+  border: 1px solid #c9d5e3;
+  border-radius: 9px;
+  color: #172d48;
+  min-height: 44px;
+  padding: 0 11px;
+  width: 100%;
+}
+
+.passenger-inventory-result {
+  align-items: stretch;
+  background: #f6f9fc;
+  border: 1px solid #e2eaf2;
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 14px;
+}
+
+.passenger-inventory-result > div {
+  display: grid;
+  gap: 5px;
+  min-width: 120px;
+}
+
+.passenger-inventory-result > div span {
+  color: #52657b;
+  font-size: 0.76rem;
+}
+
+.passenger-inventory-result > div strong {
+  color: #172d48;
+  font-size: 1.15rem;
+}
+
+.inventory-status {
+  align-self: center;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 8px 11px;
+}
+
+.inventory-status--available {
+  background: #e7f7ef;
+  color: #17653f;
+}
+
+.inventory-status--limited {
+  background: #fff4d8;
+  color: #7e5200;
+}
+
+.inventory-status--sold_out {
+  background: #fde9e8;
+  color: #9c302a;
+}
+
+.passenger-inventory-hold {
+  align-items: center;
+  border: 1px solid #cce5d8;
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 14px;
+}
+
+.passenger-inventory-hold p {
+  color: #263b56;
+  margin: 0;
+}
+
+.passenger-inventory-notice {
+  background: #eaf8f0;
+  border: 1px solid #c6e8d4;
+  border-radius: 10px;
+  color: #17653f;
+  margin: 12px 0;
+  padding: 12px 14px;
+}
+
 .passenger-fare-section {
   background: #fff;
   border: 1px solid #dce5ef;
@@ -1592,6 +1734,37 @@
   .passenger-fare-section {
     border-radius: 15px;
     padding: 16px 13px;
+  }
+
+  .passenger-inventory-section {
+    border-radius: 15px;
+    padding: 16px 13px;
+  }
+
+  .passenger-inventory-heading {
+    flex-direction: column;
+  }
+
+  .passenger-inventory-heading > span {
+    white-space: normal;
+  }
+
+  .passenger-inventory-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .passenger-inventory-controls label {
+    min-width: 0;
+  }
+
+  .passenger-inventory-result > div {
+    min-width: calc(50% - 8px);
+  }
+
+  .passenger-inventory-hold {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .passenger-fare-heading,
