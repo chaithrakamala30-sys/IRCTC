@@ -308,6 +308,63 @@ class IdentityFlowIT {
     }
 
     @Test
+    void superAdminCanListAccountsWithoutOptionalFilters() throws Exception {
+        String email = "admin-list-" + UUID.randomUUID().toString().replace("-", "") + "@example.test";
+        String mobile = "+1555" + String.format(
+                Locale.ROOT,
+                "%010d",
+                Math.abs(UUID.randomUUID().getLeastSignificantBits() % 10_000_000_000L));
+        String password = "SecureRail!Password2026";
+        UUID userId = UUID.randomUUID();
+        jdbcTemplate.update(
+                """
+                        INSERT INTO users (
+                            user_id, auth_user_id, full_name, email, mobile_number, password_hash,
+                            email_verified_at, must_change_password, terms_version, privacy_version
+                        ) VALUES (?, ?, 'Admin List Test', ?, ?, NULL, CURRENT_TIMESTAMP, FALSE, 'test', 'test')
+                        """,
+                userId,
+                userId,
+                email,
+                mobile
+        );
+        jdbcTemplate.update(
+                "INSERT INTO user_roles (user_id, role_code) VALUES (?, 'SUPER_ADMIN')",
+                userId
+        );
+        when(supabaseAuthClient.authenticate(eq(email), eq(password))).thenReturn(
+                new SupabaseAuthClient.SupabaseUser(
+                        userId,
+                        email,
+                        "2026-11-07T00:00:00Z",
+                        Map.of("railconnect_account_type", "STAFF"),
+                        true
+                )
+        );
+
+        MvcResult csrfResult = mockMvc.perform(get("/api/v1/auth/csrf"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode csrfBody = objectMapper.readTree(csrfResult.getResponse().getContentAsString());
+        var csrfCookie = csrfResult.getResponse().getCookie("XSRF-TOKEN");
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfBody.path("data").path("token").asText())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"identifier":"%s","password":"%s"}
+                                """.formatted(email, password)))
+                .andExpect(status().isOk())
+                .andReturn();
+        var sessionCookie = Objects.requireNonNull(loginResult.getResponse().getCookie("RCSESSION"));
+
+        mockMvc.perform(get("/api/v1/admin/users?page=0&size=50").cookie(sessionCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalItems").value(1))
+                .andExpect(jsonPath("$.data.items[0].email").value(email));
+    }
+
+    @Test
     void legacyPasswordLoginLinksProfileToSupabaseAuthAndClearsLegacyHash() throws Exception {
         String email = "legacy-" + UUID.randomUUID().toString().replace("-", "") + "@example.test";
         String mobile = "+1555" + String.format(

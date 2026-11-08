@@ -56,10 +56,10 @@ public class AdminIdentityService {
                 ? null
                 : roleCode.trim().toUpperCase(Locale.ROOT);
         String where = """
-                WHERE (? IS NULL OR lower(u.full_name) LIKE ? OR lower(u.email) LIKE ?
+                WHERE (CAST(? AS VARCHAR) IS NULL OR lower(u.full_name) LIKE ? OR lower(u.email) LIKE ?
                     OR u.mobile_number LIKE ?)
-                    AND (? IS NULL OR u.status = ?)
-                    AND (? IS NULL OR EXISTS (
+                    AND (CAST(? AS VARCHAR) IS NULL OR u.status = ?)
+                    AND (CAST(? AS VARCHAR) IS NULL OR EXISTS (
                         SELECT 1 FROM user_roles filter_ur
                         WHERE filter_ur.user_id = u.user_id AND filter_ur.role_code = ?
                     ))
