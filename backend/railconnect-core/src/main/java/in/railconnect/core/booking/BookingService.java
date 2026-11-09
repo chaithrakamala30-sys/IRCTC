@@ -265,7 +265,7 @@ public class BookingService {
                        created_at, (SELECT COUNT(*) FROM booking_passengers p
                                    WHERE p.booking_id = bookings.booking_id) AS passenger_count
                 FROM bookings
-                """ + predicate + """
+                """ + predicate + " " + """
                 ORDER BY created_at DESC, booking_id
                 LIMIT ? OFFSET ?
                 """,
