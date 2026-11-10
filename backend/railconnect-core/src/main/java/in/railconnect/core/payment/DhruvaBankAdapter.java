@@ -1,11 +1,15 @@
 package in.railconnect.core.payment;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import in.railconnect.core.api.RequestIds;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -20,6 +24,7 @@ import java.util.Objects;
 public final class DhruvaBankAdapter implements PaymentProviderAdapter {
     private static final String PROVIDER_HOST = "dhruva-bank.vercel.app";
     private static final String LOCALHOST = "localhost";
+    private static final Logger LOGGER = LoggerFactory.getLogger(DhruvaBankAdapter.class);
 
     private final RestClient restClient;
     private final URI baseUri;
@@ -202,11 +207,24 @@ public final class DhruvaBankAdapter implements PaymentProviderAdapter {
         try {
             ProviderEnvelope<T> envelope = call.invoke();
             if (envelope == null || !envelope.success()) {
+                LOGGER.warn("Dhruva Bank returned an unsuccessful response; requestId={}",
+                        RequestIds.current());
                 throw new PaymentProviderUnavailableException(
                         "Dhruva Bank rejected the merchant payment request");
             }
             return envelope;
+        } catch (RestClientResponseException exception) {
+            LOGGER.warn("Dhruva Bank returned HTTP {}; requestId={}",
+                    exception.getStatusCode().value(), RequestIds.current());
+            throw new PaymentProviderUnavailableException(
+                    "Dhruva Bank could not complete the merchant payment request");
         } catch (RestClientException exception) {
+            Throwable rootCause = exception;
+            while (rootCause.getCause() != null) {
+                rootCause = rootCause.getCause();
+            }
+            LOGGER.warn("Dhruva Bank connection failed; failureType={}, requestId={}",
+                    rootCause.getClass().getName(), RequestIds.current());
             throw new PaymentProviderUnavailableException(
                     "Dhruva Bank could not complete the merchant payment request");
         }
