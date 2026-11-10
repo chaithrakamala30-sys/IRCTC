@@ -1,1 +1,1 @@
-export { ApiRequestError, apiFetch } from "@railconnect/api";
+export { ApiRequestError, apiDownload, apiFetch } from "@railconnect/api";

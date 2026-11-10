@@ -93,6 +93,33 @@
   margin: 0 0 16px;
 }
 
+.ops-ticket-result {
+  border: 1px solid #dce5ef;
+  border-radius: 12px;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.ops-ticket-result.is-valid {
+  background: #f0faf4;
+  border-color: #9bd6b2;
+}
+
+.ops-ticket-result.is-invalid {
+  background: #fff5f4;
+  border-color: #efb4ae;
+}
+
+.ops-ticket-result h3 {
+  margin: 0 0 10px;
+}
+
+.ops-ticket-result ul {
+  display: grid;
+  gap: 7px;
+  padding-left: 20px;
+}
+
 .ops-login {
   max-width: 560px;
 }

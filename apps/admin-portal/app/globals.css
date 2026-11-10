@@ -69,6 +69,46 @@
   padding: 42px 24px;
 }
 
+.ticket-admin-panel h2 {
+  margin: 8px 0;
+}
+
+.ticket-admin-panel > p:not(.eyebrow) {
+  color: var(--color-muted);
+}
+
+.ticket-admin-panel .admin-filters {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 18px 0;
+}
+
+.ticket-admin-table-wrap {
+  overflow-x: auto;
+}
+
+.ticket-admin-table-wrap table {
+  border-collapse: collapse;
+  min-width: 720px;
+  width: 100%;
+}
+
+.ticket-admin-table-wrap th,
+.ticket-admin-table-wrap td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 11px 9px;
+  text-align: left;
+}
+
+.ticket-admin-diagnostics {
+  background: #f3f7fc;
+  border-radius: 12px;
+  margin-top: 18px;
+  padding: 16px;
+}
+
 .admin-title-row {
   align-items: flex-end;
   display: flex;

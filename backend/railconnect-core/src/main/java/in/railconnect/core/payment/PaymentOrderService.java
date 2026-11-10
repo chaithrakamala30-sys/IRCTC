@@ -10,6 +10,7 @@ import in.railconnect.core.payment.PaymentProviderAdapter.PaymentInitiationReque
 import in.railconnect.core.payment.PaymentProviderAdapter.VerifiedProviderStatus;
 import in.railconnect.core.reservation.ReservationModels.ReservationDetails;
 import in.railconnect.core.reservation.ReservationService;
+import in.railconnect.core.ticket.TicketIssuanceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -38,12 +39,14 @@ public class PaymentOrderService {
     private final JdbcTemplate jdbc;
     private final ReservationService reservationService;
     private final BookingService bookingService;
+    private final TicketIssuanceService ticketIssuanceService;
     private final URI passengerOrigin;
 
     public PaymentOrderService(
             JdbcTemplate jdbc,
             ReservationService reservationService,
             BookingService bookingService,
+            TicketIssuanceService ticketIssuanceService,
             @org.springframework.beans.factory.annotation.Value(
                     "${railconnect.pay.dhruva-bank.passenger-origin:https://irctc-rho.vercel.app}")
             String passengerOrigin
@@ -51,6 +54,7 @@ public class PaymentOrderService {
         this.jdbc = jdbc;
         this.reservationService = reservationService;
         this.bookingService = bookingService;
+        this.ticketIssuanceService = ticketIssuanceService;
         this.passengerOrigin = validatePassengerOrigin(passengerOrigin);
     }
 
@@ -361,6 +365,9 @@ public class PaymentOrderService {
         if (target == SUCCEEDED && !bookingService.confirmAfterVerifiedPayment(payment.bookingId())) {
             throw new PaymentException(HttpStatus.CONFLICT, "PAYMENT_CONFIRMATION_RACE",
                     "Payment status could not be safely matched to the booking");
+        }
+        if (target == SUCCEEDED) {
+            ticketIssuanceService.enqueueConfirmedBooking(payment.bookingId());
         }
         jdbc.update("""
                 UPDATE payment_attempts SET attempt_status = ?, completed_at = ?, failure_code = ?

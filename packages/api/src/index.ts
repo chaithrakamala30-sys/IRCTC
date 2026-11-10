@@ -128,6 +128,50 @@ export async function apiFetch<T>(
   return body;
 }
 
+export async function apiDownload(path: string, filename: string): Promise<void> {
+  const baseUrl = getApiBaseUrl();
+  const normalizedPath = path.replace(/^\/+/, "");
+  const requestUrl = baseUrl ? `${baseUrl}/${normalizedPath}` : `/${normalizedPath}`;
+  let response: Response;
+  try {
+    response = await fetch(requestUrl, {
+      credentials: "include",
+      headers: { Accept: "application/pdf" },
+    });
+  } catch {
+    throw new ApiRequestError(
+      "RailConnect's server could not be reached. Please try again later.",
+      0,
+      "API_UNREACHABLE",
+    );
+  }
+  if (!response.ok) {
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new ApiRequestError("The ticket could not be downloaded.", response.status, "DOWNLOAD_FAILED");
+    }
+    if (isApiEnvelope<unknown>(body)) {
+      throw new ApiRequestError(
+        body.error?.message ?? "The ticket could not be downloaded.",
+        response.status,
+        body.error?.code ?? "DOWNLOAD_FAILED",
+        body.requestId,
+        body.error?.details ?? [],
+      );
+    }
+    throw new ApiRequestError("The ticket could not be downloaded.", response.status, "DOWNLOAD_FAILED");
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename.replace(/[^A-Za-z0-9._-]/g, "_");
+  link.click();
+  URL.revokeObjectURL(objectUrl);
+}
+
 async function fetchCsrfToken(baseUrl: string): Promise<string> {
   let response: Response;
   try {
