@@ -11,6 +11,7 @@ import { AdminPaymentConsole } from "./admin-payment-console";
 import { TicketAdminConsole } from "./ticket-admin-console";
 import { AdminCancellationConsole } from "./admin-cancellation-console";
 import { AdminQuotaConsole } from "./admin-quota-console";
+import { AdminNotificationConsole } from "./admin-notification-console";
 
 type AdminUser = {
   userId: string;
@@ -61,7 +62,7 @@ type AdminSession = {
   current: boolean;
 };
 
-type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "quotas" | "payments" | "tickets" | "cancellations";
+type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "quotas" | "payments" | "tickets" | "cancellations" | "notifications";
 
 type AdminTabItem = {
   id: AdminTab;
@@ -455,6 +456,7 @@ export function AdminIdentityConsole() {
       { id: "payments", label: "Payments" },
       { id: "tickets", label: "Ticket management" },
       { id: "cancellations", label: "Cancellations" },
+      { id: "notifications", label: "Notifications" },
     ]
     : isRailwayAdmin
       ? [
@@ -465,6 +467,7 @@ export function AdminIdentityConsole() {
         { id: "quotas", label: "Quotas & Queues" },
         { id: "tickets", label: "Ticket management" },
         { id: "cancellations", label: "Cancellations" },
+        { id: "notifications", label: "Notifications" },
       ]
       : isReservationOfficer
         ? [
@@ -736,6 +739,11 @@ export function AdminIdentityConsole() {
         {(isSuperAdmin || isFinanceAdmin || isRailwayAdmin || isReservationOfficer) && (
           <div className={currentTab === "cancellations" ? undefined : "admin-tab-content-hidden"}>
             <AdminCancellationConsole />
+          </div>
+        )}
+        {(isSuperAdmin || isRailwayAdmin) && (
+          <div className={currentTab === "notifications" ? undefined : "admin-tab-content-hidden"}>
+            <AdminNotificationConsole />
           </div>
         )}
       </main>
