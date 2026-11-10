@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
+import { TrainTrackingModal } from "./train-tracking-modal";
 
 const navigationItems: NavigationItem[] = [
   { href: "/laptop", label: "Home" },
@@ -50,6 +51,7 @@ export function PassengerHeader({ experience }: PassengerHeaderProps) {
       {experience === "laptop" ? (
         <div className="passenger-header-actions">
           <PortalNavigation activeHref="/laptop" items={navigationItems} />
+          <TrainTrackingModal />
           {authStatus === "signed-in" ? (
             <Link className="button button--primary" href="/laptop/account">Passenger account</Link>
           ) : authStatus === "signed-out" ? (
