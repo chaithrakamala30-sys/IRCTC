@@ -1,16 +1,19 @@
 package in.railconnect.core.reservation;
 
-import in.railconnect.core.api.ApiResponse;
-import in.railconnect.core.identity.AuthenticatedUser;
+import in.railconnect.core.api.ApiEnvelope;
+import in.railconnect.core.api.RequestIds;
+import in.railconnect.core.identity.RailConnectPrincipal;
 import in.railconnect.core.reservation.AdvancedReservationModels.*;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1")
 public class AdvancedReservationController {
@@ -21,20 +24,24 @@ public class AdvancedReservationController {
         this.reservationService = reservationService;
     }
 
+    private static <T> ApiEnvelope<T> success(T data) {
+        return ApiEnvelope.success(data, RequestIds.current());
+    }
+
     // =========================================================================
     // Public / Passenger APIs
     // =========================================================================
 
     @GetMapping("/quotas")
-    public ApiResponse<List<QuotaView>> getPublicQuotas() {
-        return ApiResponse.ok(reservationService.listQuotas());
+    public ApiEnvelope<List<QuotaView>> getPublicQuotas() {
+        return success(reservationService.listQuotas());
     }
 
     @GetMapping("/bookings/{bookingId}/reservation-status")
-    public ApiResponse<PassengerReservationStatusView> getBookingReservationStatus(
+    public ApiEnvelope<PassengerReservationStatusView> getBookingReservationStatus(
             @PathVariable UUID bookingId
     ) {
-        return ApiResponse.ok(reservationService.getBookingReservationStatus(bookingId));
+        return success(reservationService.getBookingReservationStatus(bookingId));
     }
 
     // =========================================================================
@@ -43,40 +50,40 @@ public class AdvancedReservationController {
 
     @GetMapping("/admin/quotas")
     @PreAuthorize("hasAuthority('quotas:read')")
-    public ApiResponse<List<QuotaView>> getAdminQuotas() {
-        return ApiResponse.ok(reservationService.listQuotas());
+    public ApiEnvelope<List<QuotaView>> getAdminQuotas() {
+        return success(reservationService.listQuotas());
     }
 
     @GetMapping("/admin/train-runs/{trainRunId}/quota-allocations")
     @PreAuthorize("hasAuthority('quotas:read')")
-    public ApiResponse<List<QuotaAllocationView>> getQuotaAllocations(
+    public ApiEnvelope<List<QuotaAllocationView>> getQuotaAllocations(
             @PathVariable UUID trainRunId
     ) {
-        return ApiResponse.ok(reservationService.listQuotaAllocations(trainRunId));
+        return success(reservationService.listQuotaAllocations(trainRunId));
     }
 
     @PostMapping("/admin/quota-allocations")
     @PreAuthorize("hasAuthority('quotas:manage')")
-    public ApiResponse<QuotaAllocationView> configureQuotaAllocation(
+    public ApiEnvelope<QuotaAllocationView> configureQuotaAllocation(
             @Valid @RequestBody QuotaAllocationInput input
     ) {
-        return ApiResponse.ok(reservationService.configureQuotaAllocation(input));
+        return success(reservationService.configureQuotaAllocation(input));
     }
 
     @GetMapping("/admin/train-runs/{trainRunId}/queues")
     @PreAuthorize("hasAuthority('quotas:read')")
-    public ApiResponse<List<ReservationQueueView>> getReservationQueues(
+    public ApiEnvelope<List<ReservationQueueView>> getReservationQueues(
             @PathVariable UUID trainRunId
     ) {
-        return ApiResponse.ok(reservationService.listQueues(trainRunId));
+        return success(reservationService.listQueues(trainRunId));
     }
 
     @PostMapping("/admin/train-runs/{trainRunId}/process-promotions")
     @PreAuthorize("hasAuthority('quotas:manage')")
-    public ApiResponse<List<PromotionResult>> triggerPromotions(
+    public ApiEnvelope<List<PromotionResult>> triggerPromotions(
             @PathVariable UUID trainRunId
     ) {
-        return ApiResponse.ok(reservationService.processPromotionsForTrainRun(trainRunId, null));
+        return success(reservationService.processPromotionsForTrainRun(trainRunId, null));
     }
 
     // =========================================================================
@@ -85,47 +92,46 @@ public class AdvancedReservationController {
 
     @GetMapping("/operations/charts")
     @PreAuthorize("hasAuthority('charts:read')")
-    public ApiResponse<List<ChartView>> getOperationalCharts() {
-        return ApiResponse.ok(reservationService.listCharts());
+    public ApiEnvelope<List<ChartView>> getOperationalCharts() {
+        return success(reservationService.listCharts());
     }
 
     @GetMapping("/operations/charts/{chartId}")
     @PreAuthorize("hasAuthority('charts:read')")
-    public ApiResponse<ChartView> getChartDetails(
+    public ApiEnvelope<ChartView> getChartDetails(
             @PathVariable UUID chartId
     ) {
-        return ApiResponse.ok(reservationService.getChart(chartId));
+        return success(reservationService.getChart(chartId));
     }
 
     @PostMapping("/operations/train-runs/{trainRunId}/prepare-chart")
     @PreAuthorize("hasAuthority('charts:prepare')")
-    public ApiResponse<ChartView> prepareChart(
+    public ApiEnvelope<ChartView> prepareChart(
             @PathVariable UUID trainRunId,
-            @AuthenticationPrincipal AuthenticatedUser user
+            @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
-        UUID operatorId = user != null ? user.userId() : null;
-        return ApiResponse.ok(reservationService.prepareChart(trainRunId, operatorId));
+        UUID operatorId = principal != null ? principal.userId() : null;
+        return success(reservationService.prepareChart(trainRunId, operatorId));
     }
 
     @PostMapping("/operations/charts/{chartId}/finalize")
     @PreAuthorize("hasAuthority('charts:finalize')")
-    public ApiResponse<ChartView> finalizeChart(
+    public ApiEnvelope<ChartView> finalizeChart(
             @PathVariable UUID chartId,
-            @AuthenticationPrincipal AuthenticatedUser user
+            @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
-        UUID operatorId = user != null ? user.userId() : null;
-        return ApiResponse.ok(reservationService.finalizeChart(chartId, operatorId));
+        UUID operatorId = principal != null ? principal.userId() : null;
+        return success(reservationService.finalizeChart(chartId, operatorId));
     }
 
     @PostMapping("/operations/charts/{chartId}/corrections")
     @PreAuthorize("hasAuthority('charts:correct')")
-    public ApiResponse<ChartView> authorizeChartCorrection(
+    public ApiEnvelope<ChartView> authorizeChartCorrection(
             @PathVariable UUID chartId,
             @Valid @RequestBody ChartCorrectionRequest request,
-            @AuthenticationPrincipal AuthenticatedUser user
+            @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
-        UUID operatorId = user != null ? user.userId() : null;
-        return ApiResponse.ok(reservationService.authorizeCorrection(chartId, request, operatorId));
+        UUID operatorId = principal != null ? principal.userId() : null;
+        return success(reservationService.authorizeCorrection(chartId, request, operatorId));
     }
 }
-
