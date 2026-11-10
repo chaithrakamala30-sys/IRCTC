@@ -64,4 +64,3 @@ GRANT ALL ON SCHEMA railconnect TO postgres;
 GRANT ALL ON SCHEMA public TO postgres;
 
 SET search_path TO railconnect, public;
-
