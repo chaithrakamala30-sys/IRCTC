@@ -27,3 +27,4 @@ RailConnect provides a configurable, versioned quota management engine enabling 
 
 2. **Historical Booking Preservation**:
    All bookings and reservations store their assigned quota at booking creation time and cannot be retroactively mutated.
+

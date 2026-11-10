@@ -15,3 +15,4 @@ This document governs the procedures and rules applicable after a departure char
 
 - Conductor or station manager berth reassignments (e.g., coach defect, medical accommodation) require explicit authorization.
 - Every correction writes an audit row to `chart_correction_history` and increments the chart version (`v1` $\rightarrow$ `v2`), preserving historical manifests immutably.
+

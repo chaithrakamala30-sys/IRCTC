@@ -308,3 +308,4 @@ export function OperationalChartConsole() {
     </section>
   );
 }
+

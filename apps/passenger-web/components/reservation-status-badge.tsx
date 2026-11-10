@@ -142,3 +142,4 @@ export function ReservationStatusBadge({ bookingId }: { bookingId: string }) {
     </div>
   );
 }
+

@@ -34,3 +34,4 @@ stateDiagram-v2
 | `CONFIRMED` | `CANCELLED` | Passenger cancellation |
 | `CANCELLED` | *None* | Terminal state |
 | `EXPIRED` | *None* | Terminal state |
+

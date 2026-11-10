@@ -16,3 +16,4 @@ RailConnect's RAC engine grants passengers a confirmed travel authorization with
    When any confirmed passenger cancels, the lowest sequential RAC passenger is automatically promoted:
    $$\text{RAC} \longrightarrow \text{CONFIRMED}$$
    The passenger's status transitions to `PROMOTED_CONFIRMED`, their position becomes 0, and a dedicated berth is assigned.
+

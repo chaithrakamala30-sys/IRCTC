@@ -78,3 +78,4 @@ This document provides endpoint contracts for Quota, Queue, Promotion, and Depar
 - **POST** `/api/v1/operations/train-runs/{trainRunId}/prepare-chart`: Generate snapshot and initial manifest.
 - **POST** `/api/v1/operations/charts/{chartId}/finalize`: Freeze and lock departure chart.
 - **POST** `/api/v1/operations/charts/{chartId}/corrections`: Authorize post-chart passenger berth reassignment with audit reason.
+

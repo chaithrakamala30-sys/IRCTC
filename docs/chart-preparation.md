@@ -26,3 +26,4 @@ Each chart manifest record in `reservation_chart_passengers` contains:
 - `coach_class_code`: Travel class.
 - `reservation_status`: `CONFIRMED`, `RAC`, or `WAITLISTED`.
 - `from_station_code` & `to_station_code`: Station boarding and destination codes.
+

@@ -17,3 +17,4 @@ The Reservation Promotion Engine automates the cascade of berth allocations when
    - `WAITLISTED` $\rightarrow$ `RAC`
    - `RAC` $\rightarrow$ `CONFIRMED`
    - `WAITLISTED` $\rightarrow$ `CONFIRMED` (direct promotion when unshared berths are freed)
+

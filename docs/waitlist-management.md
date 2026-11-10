@@ -21,3 +21,4 @@ Each waitlisted passenger record in `waitlist_entries` stores:
 ## 2. Dynamic Position Updates
 
 When prior passengers cancel or are promoted, waitlist positions advance automatically. Passengers can check their live status and position history at any time via `GET /api/v1/bookings/{bookingId}/reservation-status`.
+

@@ -21,3 +21,4 @@ To ensure zero over-allocation, gap-free queue numbering, and race-free promotio
 
 3. **Quota Capacity Enforcement**:
    - Aggregations on `quota_inventory_allocations` validate that cumulative quota berths do not exceed total physical berths in `inventory_coaches`.
+

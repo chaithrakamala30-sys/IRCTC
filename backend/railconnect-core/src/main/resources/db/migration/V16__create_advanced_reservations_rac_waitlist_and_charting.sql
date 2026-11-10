@@ -291,3 +291,4 @@ SELECT 'RESERVATION_OFFICER', p.permission_code
 FROM permissions p
 WHERE p.permission_code IN ('quotas:read', 'charts:read')
 ON CONFLICT DO NOTHING;
+
