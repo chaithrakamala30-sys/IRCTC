@@ -7,6 +7,7 @@ import { AdminMasterDataConsole } from "./admin-master-data-console";
 import { AdminFareConsole } from "./admin-fare-console";
 import { AdminInventoryConsole } from "./admin-inventory-console";
 import { AdminReservationConsole } from "./admin-reservation-console";
+import { AdminPaymentConsole } from "./admin-payment-console";
 
 type AdminUser = {
   userId: string;
@@ -57,7 +58,7 @@ type AdminSession = {
   current: boolean;
 };
 
-type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations";
+type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "payments";
 
 type AdminTabItem = {
   id: AdminTab;
@@ -447,6 +448,7 @@ export function AdminIdentityConsole() {
       { id: "fares", label: "Fare management" },
       { id: "inventory", label: "Seat inventory" },
       { id: "reservations", label: "Reservations" },
+      { id: "payments", label: "Payments" },
     ]
     : isRailwayAdmin
       ? [
@@ -458,7 +460,10 @@ export function AdminIdentityConsole() {
       : isReservationOfficer
         ? [{ id: "reservations", label: "Reservations" }]
       : isFinanceAdmin
-        ? [{ id: "fares", label: "Fare management" }]
+        ? [
+          { id: "fares", label: "Fare management" },
+          { id: "payments", label: "Payments" },
+        ]
         : [];
   const currentTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : tabs[0]?.id ?? activeTab;
   return (
@@ -688,6 +693,9 @@ export function AdminIdentityConsole() {
         )}
         {currentTab === "reservations" && (isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
           <AdminReservationConsole roles={user.roles} />
+        )}
+        {currentTab === "payments" && (isSuperAdmin || isFinanceAdmin) && (
+          <AdminPaymentConsole />
         )}
       </main>
     </>

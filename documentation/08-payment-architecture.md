@@ -1,8 +1,10 @@
 # Payment architecture
 
+> **Implementation status:** RailConnect implements disabled-by-default demo checkout initiation, owner-scoped payment status refresh, authoritative Dhruva verification, verified booking confirmation, passenger mobile/laptop return pages, and read-only finance administration. Webhooks, automated reconciliation, refunds, settlement, and real-money processing are not implemented. See [`docs/dhruva-bank-integration.md`](../docs/dhruva-bank-integration.md).
+
 ## Separation and scope
 
-Payment is a separate module with a provider-neutral interface. Reservation correctness does not depend on a particular gateway. The initial implementation is local-only or sandbox-only; an internal test provider must display **SIMULATED — NO MONEY MOVED** on every response and ticket/receipt. Never accept real card details in test mode.
+Payment is a separate module with a provider-neutral interface. Reservation correctness does not depend on a particular gateway. No test provider is implemented in the current scaffold. Any future internal test provider must display **SIMULATED — NO MONEY MOVED** on every response and ticket/receipt. Never accept real card details in test mode.
 
 Live payment is a later approval gate. Provider selection, transaction fees, settlement timelines, chargeback/dispute handling, merchant/KYC obligations, refund rules, and applicable payment compliance require current review. ₹0 infrastructure does not imply free payment transactions.
 

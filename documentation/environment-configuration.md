@@ -16,6 +16,11 @@ Only `.env.example` is committed; it contains placeholder values and non-secret 
 | `RAILCONNECT_SUPABASE_URL` | Yes for authentication | Supabase project URL, for example `https://<project-ref>.supabase.co`. |
 | `RAILCONNECT_SUPABASE_ANON_KEY` | Yes for authentication | Legacy anon/public API key used only by the backend to call Supabase Auth. |
 | `RAILCONNECT_SUPABASE_SERVICE_ROLE_KEY` | Yes for staff provisioning and password updates | Supabase service-role key. Store only in Render/backend secrets; never expose it to Vercel or the browser. |
+| `RAILCONNECT_PAY_DHRUVA_BANK_ENABLED` | No | Defaults false. Enables the documented Dhruva Bank demo merchant API adapter; requires backend-only `RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET`. |
+| `RAILCONNECT_PAY_DHRUVA_BANK_BASE_URL` | No | Defaults to the documented `https://dhruva-bank.vercel.app`; local development may use `http://localhost:3000`. |
+| `RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET` | When payments enabled | Backend-only Dhruva merchant API secret sent as a Bearer credential. Never set in Vercel or `NEXT_PUBLIC_*`. |
+| `RAILCONNECT_PAY_PASSENGER_ORIGIN` | No | Trusted passenger website origin used to construct fixed checkout return URLs; defaults to `https://irctc-rho.vercel.app`. |
+| `RAILCONNECT_PAY_REQUESTS_PER_MINUTE` | No | Per-passenger payment initiation and refresh limit; defaults to 6 requests per minute. |
 | `RAILCONNECT_DB_SCHEMA` | No | Application schema for datasource, Hibernate, and Flyway; defaults to the isolated `railconnect` schema. |
 | `RAILCONNECT_COMPOSE_DB_URL` | Compose | Container-network URL, normally `jdbc:postgresql://db:5432/railconnect`; use provider URL only when deliberately targeting a remote DB. |
 | `RAILCONNECT_DB_NAME` | Compose | Local PostgreSQL database name; default placeholder value is `railconnect`. |

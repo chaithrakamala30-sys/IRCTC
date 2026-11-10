@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
+import { DemoPaymentAction } from "./demo-payment-action";
 
 type DeviceExperience = "mobile" | "laptop";
 type BookingSummary = {
@@ -135,6 +136,7 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
           <select onChange={(event) => { setPage(0); setStatus(event.target.value); }} value={status}>
             <option value="">All statuses</option>
             <option value="AWAITING_PAYMENT">Awaiting payment</option>
+            <option value="CONFIRMED">Confirmed</option>
             <option value="EXPIRED">Expired</option>
           </select>
         </label>
@@ -194,6 +196,9 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
           <p><strong>{selected.trainNumber} · {selected.trainName}</strong></p>
           <p>{selected.originName} to {selected.destinationName} · {selected.journeyDate} · {selected.coachClassCode}</p>
           <p>Status: <strong>{selected.status.replaceAll("_", " ")}</strong></p>
+          {selected.status === "AWAITING_PAYMENT" && (
+            <DemoPaymentAction bookingId={selected.bookingId} device={device} />
+          )}
           <p>Payment deadline: {new Date(selected.paymentDeadline).toLocaleString()}</p>
           <div className="booking-detail-passengers">
             {selected.passengers.map((passenger) => (
@@ -219,7 +224,12 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
               </li>
             ))}
           </ol>
-          <p className="identity-note">Awaiting payment does not mean paid or confirmed. No payment is processed in this phase.</p>
+          {selected.status !== "CONFIRMED" && (
+            <p className="identity-note">Awaiting payment does not mean paid or confirmed.</p>
+          )}
+          {selected.status === "CONFIRMED" && (
+            <p className="identity-note">Demo payment verified. This is not a real-money ticket.</p>
+          )}
         </section>
       )}
     </section>

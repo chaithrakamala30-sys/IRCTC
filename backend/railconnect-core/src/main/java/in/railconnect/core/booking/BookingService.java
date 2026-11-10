@@ -310,6 +310,78 @@ public class BookingService {
         }
     }
 
+    @Transactional
+    public boolean canConfirmAfterVerifiedPayment(UUID bookingId) {
+        BookingExpiryRow booking = jdbc.query("""
+                SELECT owner_user_id, reservation_request_id, status, payment_deadline
+                FROM bookings WHERE booking_id = ? FOR UPDATE
+                """, result -> result.next()
+                ? new BookingExpiryRow(
+                        result.getObject("owner_user_id", UUID.class),
+                        result.getObject("reservation_request_id", UUID.class),
+                        result.getString("status"),
+                        result.getTimestamp("payment_deadline").toInstant())
+                : null, bookingId);
+        if (booking == null) {
+            return false;
+        }
+        if ("CONFIRMED".equals(booking.status())) {
+            return true;
+        }
+        if (!AWAITING_PAYMENT.equals(booking.status())
+                || !booking.paymentDeadline().isAfter(databaseNow())) {
+            return false;
+        }
+        ReservationDetails allocation = reservationService.readForBooking(booking.reservationRequestId());
+        return ALLOCATION_PENDING.equals(allocation.status())
+                && allocation.expiresAt() != null
+                && allocation.expiresAt().isAfter(databaseNow());
+    }
+
+    @Transactional
+    public boolean confirmAfterVerifiedPayment(UUID bookingId) {
+        BookingExpiryRow booking = jdbc.query("""
+                SELECT owner_user_id, reservation_request_id, status, payment_deadline
+                FROM bookings WHERE booking_id = ? FOR UPDATE
+                """, result -> result.next()
+                ? new BookingExpiryRow(
+                        result.getObject("owner_user_id", UUID.class),
+                        result.getObject("reservation_request_id", UUID.class),
+                        result.getString("status"),
+                        result.getTimestamp("payment_deadline").toInstant())
+                : null, bookingId);
+        if (booking == null) {
+            return false;
+        }
+        if ("CONFIRMED".equals(booking.status())) {
+            return true;
+        }
+        if (!AWAITING_PAYMENT.equals(booking.status())
+                || !booking.paymentDeadline().isAfter(databaseNow())) {
+            return false;
+        }
+        ReservationDetails allocation = reservationService.readForBooking(booking.reservationRequestId());
+        if (!ALLOCATION_PENDING.equals(allocation.status())
+                || allocation.expiresAt() == null
+                || !allocation.expiresAt().isAfter(databaseNow())) {
+            return false;
+        }
+        reservationService.confirmAfterBooking(booking.reservationRequestId(), bookingId);
+        int updated = jdbc.update("""
+                UPDATE bookings SET status = 'CONFIRMED', updated_at = CURRENT_TIMESTAMP
+                WHERE booking_id = ? AND status = 'AWAITING_PAYMENT'
+                  AND payment_deadline > CURRENT_TIMESTAMP
+                """, bookingId);
+        if (updated != 1) {
+            throw new BookingException(HttpStatus.CONFLICT, "BOOKING_CONFIRMATION_RACE",
+                    "The booking deadline passed during payment confirmation");
+        }
+        appendHistory(bookingId, AWAITING_PAYMENT, "CONFIRMED", "PAYMENT_CONFIRMED");
+        appendAudit(bookingId, null, "BOOKING_PAYMENT_CONFIRMED",
+                Map.of("reservationRequestId", booking.reservationRequestId()));
+        return true;
+    }
+
     private void expireIfDue(UUID bookingId, UUID ownerId) {
         UUID ownedId = jdbc.query("""
                 SELECT booking_id FROM bookings
@@ -336,6 +408,17 @@ public class BookingService {
         if (booking == null || (expectedOwnerId != null && !expectedOwnerId.equals(booking.ownerId()))
                 || !AWAITING_PAYMENT.equals(booking.status())
                 || booking.paymentDeadline().isAfter(databaseNow())) {
+            return;
+        }
+
+        Integer unresolvedPaymentCount = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM payment_orders
+                WHERE booking_id = ?
+                  AND payment_status IN ('INITIATED', 'REQUIRES_RECONCILIATION')
+                """, Integer.class, bookingId);
+        if (unresolvedPaymentCount != null && unresolvedPaymentCount > 0) {
+            meterRegistry.counter("railconnect.bookings.expiration", "result", "payment_outcome_unresolved")
+                    .increment();
             return;
         }
 
@@ -631,7 +714,9 @@ public class BookingService {
     private String normalizeStatus(String status) {
         if (status == null || status.isBlank()) return null;
         String normalized = status.trim().toUpperCase();
-        if (!AWAITING_PAYMENT.equals(normalized) && !EXPIRED.equals(normalized)) {
+        if (!AWAITING_PAYMENT.equals(normalized)
+                && !EXPIRED.equals(normalized)
+                && !"CONFIRMED".equals(normalized)) {
             throw new BookingException(HttpStatus.BAD_REQUEST, "BOOKING_STATUS_INVALID",
                     "The requested booking status filter is invalid");
         }
