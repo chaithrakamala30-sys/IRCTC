@@ -33,6 +33,13 @@ type QueueView = {
   waitingCount: number;
 };
 
+type PromotionResult = {
+  promotionId: string;
+  bookingPassengerId: string;
+  fromStatus: string;
+  toStatus: string;
+};
+
 export function AdminQuotaConsole() {
   const [quotas, setQuotas] = useState<QuotaView[]>([]);
   const [trainRunId, setTrainRunId] = useState("");
@@ -54,16 +61,15 @@ export function AdminQuotaConsole() {
     void loadQuotas();
   }, []);
 
-  async function searchRun(e: React.FormEvent) {
-    e.preventDefault();
-    if (!trainRunId.trim()) return;
+  async function fetchRunData(runId: string) {
+    if (!runId.trim()) return;
     setError("");
     setNotice("");
     setLoading(true);
     try {
       const [allocRes, queueRes] = await Promise.all([
-        apiFetch<QuotaAllocationView[]>(`/api/v1/admin/train-runs/${trainRunId.trim()}/quota-allocations`),
-        apiFetch<QueueView[]>(`/api/v1/admin/train-runs/${trainRunId.trim()}/queues`)
+        apiFetch<QuotaAllocationView[]>(`/api/v1/admin/train-runs/${runId.trim()}/quota-allocations`),
+        apiFetch<QueueView[]>(`/api/v1/admin/train-runs/${runId.trim()}/queues`)
       ]);
       setAllocations(allocRes.data ?? []);
       setQueues(queueRes.data ?? []);
@@ -74,17 +80,22 @@ export function AdminQuotaConsole() {
     }
   }
 
+  async function searchRun(e: React.FormEvent) {
+    e.preventDefault();
+    await fetchRunData(trainRunId);
+  }
+
   async function triggerPromotion() {
     if (!trainRunId.trim()) return;
     setError("");
     setNotice("");
     setLoading(true);
     try {
-      const res = await apiFetch<any[]>(`/api/v1/admin/train-runs/${trainRunId.trim()}/process-promotions`, {
+      const res = await apiFetch<PromotionResult[]>(`/api/v1/admin/train-runs/${trainRunId.trim()}/process-promotions`, {
         method: "POST"
       });
       setNotice(`Promotion engine processed ${res.data?.length ?? 0} passenger transitions.`);
-      await searchRun({ preventDefault: () => {} } as any);
+      await fetchRunData(trainRunId);
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Promotion run failed");
     } finally {

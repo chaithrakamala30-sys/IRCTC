@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ApiRequestError, apiFetch } from "@railconnect/api";
 
 type RefundView = {
