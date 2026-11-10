@@ -1,5 +1,79 @@
 @import "@railconnect/ui/styles.css";
 
+/* ==========================================================================
+   Theme & Glassmorphism Design Tokens
+   ========================================================================== */
+:root {
+  --rc-canvas: #f8fafc;
+  --rc-surface: #ffffff;
+  --rc-surface-glass: rgba(255, 255, 255, 0.85);
+  --rc-border: #e2e8f0;
+  --rc-border-glass: rgba(226, 232, 240, 0.8);
+  --rc-text-main: #0f172a;
+  --rc-text-muted: #64748b;
+  --rc-brand: #ea580c; /* Railway Warm Amber/Orange */
+  --rc-brand-glow: rgba(234, 88, 12, 0.15);
+}
+
+.dark {
+  --rc-canvas: #090d16;
+  --rc-surface: #0f172a;
+  --rc-surface-glass: rgba(15, 23, 42, 0.85);
+  --rc-border: #1e293b;
+  --rc-border-glass: rgba(255, 255, 255, 0.1);
+  --rc-text-main: #f8fafc;
+  --rc-text-muted: #94a3b8;
+  --rc-brand: #f97316;
+  --rc-brand-glow: rgba(249, 115, 22, 0.2);
+}
+
+html.dark {
+  color-scheme: dark;
+  background-color: var(--rc-canvas);
+  color: var(--rc-text-main);
+}
+
+html.dark body {
+  background-color: var(--rc-canvas);
+  color: var(--rc-text-main);
+}
+
+html.dark .site-header,
+html.dark .admin-header {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html.dark .admin-panel,
+html.dark .card,
+html.dark .train-card {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scaleUp {
+  animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .passenger-mobile,
 .passenger-laptop {
   margin: 0 auto;

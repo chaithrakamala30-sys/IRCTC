@@ -18,6 +18,7 @@ import { AdminApprovalConsole } from "./admin-approval-console";
 import { AdminFinanceConsole } from "./admin-finance-console";
 import { AdminReportsConsole } from "./admin-reports-console";
 import { AdminSystemConfigConsole } from "./admin-system-config-console";
+import { ThemeToggle } from "./theme-toggle";
 
 type AdminUser = {
   userId: string;
@@ -108,8 +109,14 @@ function AdminPortalHeader({
       )}
       {user && onSignOut && (
         <div className="admin-header-actions">
+          <ThemeToggle />
           <span>{user.fullName}</span>
           <button className="button button--secondary" onClick={onSignOut} type="button">Sign out</button>
+        </div>
+      )}
+      {!user && (
+        <div className="admin-header-actions">
+          <ThemeToggle />
         </div>
       )}
     </header>

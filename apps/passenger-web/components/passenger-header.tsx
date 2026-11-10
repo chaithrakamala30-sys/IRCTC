@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
 import { TrainTrackingModal } from "./train-tracking-modal";
 import { NotificationBellDropdown } from "./notification-bell-dropdown";
+import { ThemeToggle } from "./theme-toggle";
 
 const navigationItems: NavigationItem[] = [
   { href: "/laptop", label: "Home" },
@@ -55,6 +56,7 @@ export function PassengerHeader({ experience }: PassengerHeaderProps) {
           <PortalNavigation activeHref="/laptop" items={navigationItems} />
           <TrainTrackingModal />
           <NotificationBellDropdown />
+          <ThemeToggle />
           {authStatus === "signed-in" ? (
             <Link className="button button--primary" href="/laptop/account">Passenger account</Link>
           ) : authStatus === "signed-out" ? (
@@ -73,6 +75,7 @@ export function PassengerHeader({ experience }: PassengerHeaderProps) {
         <div className="passenger-header-actions">
           <DeviceExperienceSwitch current={experience} />
           <NotificationBellDropdown />
+          <ThemeToggle />
           {authStatus === "signed-in" ? (
             <Link className="header-account-link" href="/mobile/account">Passenger account</Link>
           ) : authStatus === "signed-out" ? (
