@@ -44,11 +44,11 @@ Vercel hosts the Next.js frontend; Supabase hosts PostgreSQL. Supabase does not 
 
 The passenger, admin, and operations apps proxy `/api/*` requests through their Vercel deployment to Render. This keeps browser API calls on the frontend site so the browser can send the CSRF and session cookies without relying on third-party cookies. Vercel builds for these apps must use the Next.js server output; static export remains enabled for local Docker builds.
 
-Set these Vercel environment variables for the passenger, admin, and operations projects, then redeploy:
+The passenger, admin, and operations apps default their API proxy to `https://irctc-wb68.onrender.com`, so Vercel builds do not fail when no override is set. Set `RAILCONNECT_API_ORIGIN` only when the backend uses a different HTTPS origin:
 
 | Variable | Value |
 |---|---|
-| `RAILCONNECT_API_ORIGIN` | `https://irctc-wb68.onrender.com` |
+| `RAILCONNECT_API_ORIGIN` | Optional. The public backend HTTPS origin, with no path or trailing route. |
 | `NEXT_PUBLIC_API_BASE_URL` | Optional. The origin of that specific Vercel project, with no trailing slash. If omitted, the shared client uses same-origin `/api/*` URLs. |
 
 Set the following in Render's backend environment:
