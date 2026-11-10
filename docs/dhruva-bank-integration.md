@@ -2,7 +2,7 @@
 
 ## Contract implemented
 
-RailConnect integrates only with the supplied Dhruva Bank Merchant Payment API v1. The adapter uses the documented Bearer API-secret option; it does not implement HMAC signing. It calls:
+RailConnect integrates only with the supplied Dhruva Bank Merchant Payment API v1. The adapter sends the documented `x-merchant-key` and `x-merchant-secret` headers; it does not implement HMAC signing. It calls:
 
 - `POST /api/v1/merchant/payment-intents`
 - `GET /api/v1/merchant/payment-intents/{paymentIntentId}`
@@ -14,7 +14,7 @@ The adapter never exposes the merchant secret to a browser or stores it in Postg
 
 ## Enablement
 
-Payments are disabled by default. To enable the **demo** adapter, configure the backend-only `RAILCONNECT_PAY_DHRUVA_BANK_ENABLED=true` and `RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET` values in a trusted backend secret store. The database configuration row is synchronized as enabled only when the adapter is enabled and has a nonblank secret. Do not set these on Vercel or in any `NEXT_PUBLIC_*` variable.
+Payments are disabled by default. To enable the **demo** adapter, configure the backend-only `RAILCONNECT_PAY_DHRUVA_BANK_ENABLED=true`, `RAILCONNECT_PAY_DHRUVA_BANK_API_KEY`, and `RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET` values in a trusted backend secret store. The database configuration row is synchronized as enabled only when the adapter is enabled and both credentials are present. Do not set these on Vercel or in any `NEXT_PUBLIC_*` variable.
 
 No live-money processing, settlement, refund, or banking credential collection is supported. Confirm the provider deployment is still a simulated environment before enabling it. This repository does not connect to, inspect, or modify Dhruva Bank's repository or database.
 

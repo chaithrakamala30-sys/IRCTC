@@ -28,20 +28,24 @@ public final class DhruvaBankAdapter implements PaymentProviderAdapter {
 
     private final RestClient restClient;
     private final URI baseUri;
+    private final String apiKey;
     private final String apiSecret;
     private final boolean enabled;
 
     public DhruvaBankAdapter(
             @Value("${railconnect.pay.dhruva-bank.enabled:false}") boolean enabled,
             @Value("${railconnect.pay.dhruva-bank.base-url:https://dhruva-bank.vercel.app}") String baseUrl,
+            @Value("${railconnect.pay.dhruva-bank.api-key:}") String apiKey,
             @Value("${railconnect.pay.dhruva-bank.api-secret:}") String apiSecret
     ) {
         this.enabled = enabled;
+        this.apiKey = apiKey == null ? "" : apiKey.trim();
         this.apiSecret = apiSecret == null ? "" : apiSecret.trim();
         this.baseUri = validateBaseUri(baseUrl);
-        if (enabled && this.apiSecret.isBlank()) {
+        if (enabled && (this.apiKey.isBlank() || this.apiSecret.isBlank())) {
             throw new IllegalStateException(
-                    "RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET is required when Dhruva Bank is enabled");
+                    "RAILCONNECT_PAY_DHRUVA_BANK_API_KEY and RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET "
+                            + "are required when Dhruva Bank is enabled");
         }
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
@@ -61,7 +65,7 @@ public final class DhruvaBankAdapter implements PaymentProviderAdapter {
 
     @Override
     public boolean available() {
-        return enabled && !apiSecret.isBlank();
+        return enabled && !apiKey.isBlank() && !apiSecret.isBlank();
     }
 
     @Override
@@ -81,7 +85,7 @@ public final class DhruvaBankAdapter implements PaymentProviderAdapter {
                 request.metadata());
         IntentData data = execute(() -> restClient.post()
                 .uri("/api/v1/merchant/payment-intents")
-                .headers(headers -> headers.setBearerAuth(apiSecret))
+                .headers(this::addMerchantCredentials)
                 .body(body)
                 .retrieve()
                 .body(IntentEnvelope.class)).data();
@@ -112,7 +116,7 @@ public final class DhruvaBankAdapter implements PaymentProviderAdapter {
         }
         IntentData data = execute(() -> restClient.get()
                 .uri("/api/v1/merchant/payment-intents/{paymentIntentId}", providerPaymentIntentId)
-                .headers(headers -> headers.setBearerAuth(apiSecret))
+                .headers(this::addMerchantCredentials)
                 .retrieve()
                 .body(IntentEnvelope.class)).data();
         return status(data, false, null, null);
@@ -126,7 +130,7 @@ public final class DhruvaBankAdapter implements PaymentProviderAdapter {
         }
         VerificationData data = execute(() -> restClient.post()
                 .uri("/api/v1/merchant/payment-intents/{paymentIntentId}/verify", providerPaymentIntentId)
-                .headers(headers -> headers.setBearerAuth(apiSecret))
+                .headers(this::addMerchantCredentials)
                 .retrieve()
                 .body(VerificationEnvelope.class)).data();
         if (data == null) {
@@ -235,6 +239,11 @@ public final class DhruvaBankAdapter implements PaymentProviderAdapter {
             throw new PaymentProviderUnavailableException(
                     "Dhruva Bank payments are disabled or missing server-side credentials");
         }
+    }
+
+    private void addMerchantCredentials(org.springframework.http.HttpHeaders headers) {
+        headers.set("x-merchant-key", apiKey);
+        headers.set("x-merchant-secret", apiSecret);
     }
 
     private URI validateCheckoutUri(String checkoutUrl, String sessionId) {

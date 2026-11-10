@@ -18,7 +18,7 @@ class DhruvaBankAdapterTest {
     @Test
     void remainsUnavailableWhenDisabledWithoutIssuingProviderRequests() {
         DhruvaBankAdapter adapter = new DhruvaBankAdapter(
-                false, "https://dhruva-bank.vercel.app", "");
+                false, "https://dhruva-bank.vercel.app", "", "");
         PaymentGateway gateway = new PaymentGatewayRouter(java.util.List.of(adapter));
 
         assertThat(adapter.provider()).isEqualTo(PaymentProvider.DHRUVA_BANK);
@@ -29,17 +29,17 @@ class DhruvaBankAdapterTest {
     }
 
     @Test
-    void refusesToStartWhenEnabledWithoutASecret() {
+    void refusesToStartWhenEnabledWithoutMerchantCredentials() {
         assertThatThrownBy(() -> new DhruvaBankAdapter(
-                true, "https://dhruva-bank.vercel.app", ""))
+                true, "https://dhruva-bank.vercel.app", "", ""))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("API_SECRET is required");
+                .hasMessageContaining("RAILCONNECT_PAY_DHRUVA_BANK_API_KEY");
     }
 
     @Test
     void rejectsUntrustedProviderOrigins() {
         assertThatThrownBy(() -> new DhruvaBankAdapter(
-                false, "https://attacker.example", ""))
+                false, "https://attacker.example", "", ""))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -63,12 +63,14 @@ class DhruvaBankAdapterTest {
     }
 
     @Test
-    void createsIntentUsingDocumentedJsonFieldsAndBearerAuthentication() throws Exception {
-        AtomicReference<String> authorization = new AtomicReference<>();
+    void createsIntentUsingDocumentedJsonFieldsAndMerchantCredentials() throws Exception {
+        AtomicReference<String> merchantKey = new AtomicReference<>();
+        AtomicReference<String> merchantSecret = new AtomicReference<>();
         AtomicReference<String> requestBody = new AtomicReference<>();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/api/v1/merchant/payment-intents", exchange -> {
-            authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            merchantKey.set(exchange.getRequestHeaders().getFirst("x-merchant-key"));
+            merchantSecret.set(exchange.getRequestHeaders().getFirst("x-merchant-secret"));
             requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             String response = """
                     {"success":true,"data":{
@@ -85,7 +87,8 @@ class DhruvaBankAdapterTest {
         try {
             Instant expiresAt = Instant.now().plus(Duration.ofMinutes(8));
             DhruvaBankAdapter adapter = new DhruvaBankAdapter(
-                    true, "http://127.0.0.1:" + server.getAddress().getPort(), "merchant-secret");
+                    true, "http://127.0.0.1:" + server.getAddress().getPort(),
+                    "merchant-key", "merchant-secret");
             PaymentProviderAdapter.CheckoutSession session = adapter.createCheckout(new PaymentProviderAdapter.PaymentInitiationRequest(
                     UUID.randomUUID(),
                     "RC-PAY-RC-BOOKING1",
@@ -101,7 +104,8 @@ class DhruvaBankAdapterTest {
                     Duration.ofMinutes(8),
                     Map.of("train_number", "12951")));
 
-            assertThat(authorization.get()).isEqualTo("Bearer merchant-secret");
+            assertThat(merchantKey.get()).isEqualTo("merchant-key");
+            assertThat(merchantSecret.get()).isEqualTo("merchant-secret");
             assertThat(requestBody.get()).contains("\"merchant_order_ref\":\"RC-PAY-RC-BOOKING1\"")
                     .contains("\"booking_reference\":\"RC-BOOKING1\"")
                     .contains("\"amount\":1250.00")
@@ -119,13 +123,15 @@ class DhruvaBankAdapterTest {
 
     @Test
     void separatesStatusLookupFromAuthoritativeVerification() throws Exception {
-        AtomicReference<String> verificationAuthorization = new AtomicReference<>();
+        AtomicReference<String> verificationMerchantKey = new AtomicReference<>();
+        AtomicReference<String> verificationMerchantSecret = new AtomicReference<>();
         AtomicReference<String> verificationPath = new AtomicReference<>();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/api/v1/merchant/payment-intents/pi_test_123", exchange -> {
             if ("POST".equals(exchange.getRequestMethod())
                     && exchange.getRequestURI().getPath().endsWith("/verify")) {
-                verificationAuthorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
+                verificationMerchantKey.set(exchange.getRequestHeaders().getFirst("x-merchant-key"));
+                verificationMerchantSecret.set(exchange.getRequestHeaders().getFirst("x-merchant-secret"));
                 verificationPath.set(exchange.getRequestURI().getPath());
                 respond(exchange, 200, verifiedResponse());
             } else {
@@ -142,7 +148,8 @@ class DhruvaBankAdapterTest {
         server.start();
         try {
             DhruvaBankAdapter adapter = new DhruvaBankAdapter(
-                    true, "http://127.0.0.1:" + server.getAddress().getPort(), "merchant-secret");
+                    true, "http://127.0.0.1:" + server.getAddress().getPort(),
+                    "merchant-key", "merchant-secret");
             PaymentProviderAdapter.VerifiedProviderStatus lookup = adapter.retrieveStatus("pi_test_123");
             PaymentProviderAdapter.VerifiedProviderStatus verification = adapter.verifyPayment("pi_test_123");
 
@@ -152,7 +159,8 @@ class DhruvaBankAdapterTest {
             assertThat(verification.transactionReference()).isEqualTo("TXN-RC-TEST-1");
             assertThat(verification.amountMinor()).isEqualTo(125000);
             assertThat(verification.currency()).isEqualTo("INR");
-            assertThat(verificationAuthorization.get()).isEqualTo("Bearer merchant-secret");
+            assertThat(verificationMerchantKey.get()).isEqualTo("merchant-key");
+            assertThat(verificationMerchantSecret.get()).isEqualTo("merchant-secret");
             assertThat(verificationPath.get()).isEqualTo("/api/v1/merchant/payment-intents/pi_test_123/verify");
         } finally {
             server.stop(0);

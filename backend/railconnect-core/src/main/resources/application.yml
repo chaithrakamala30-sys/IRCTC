@@ -88,6 +88,7 @@ railconnect:
     dhruva-bank:
       enabled: ${RAILCONNECT_PAY_DHRUVA_BANK_ENABLED:false}
       base-url: ${RAILCONNECT_PAY_DHRUVA_BANK_BASE_URL:https://dhruva-bank.vercel.app}
+      api-key: ${RAILCONNECT_PAY_DHRUVA_BANK_API_KEY:}
       api-secret: ${RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET:}
       passenger-origin: ${RAILCONNECT_PAY_PASSENGER_ORIGIN:https://irctc-rho.vercel.app}
   reservations:

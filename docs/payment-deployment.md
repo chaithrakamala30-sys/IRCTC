@@ -5,6 +5,7 @@
 Payment enablement is opt-in. The default configuration is disabled and the provider secret is empty. In the backend's trusted secret store only, set:
 
 - `RAILCONNECT_PAY_DHRUVA_BANK_ENABLED=true`
+- `RAILCONNECT_PAY_DHRUVA_BANK_API_KEY` to the merchant API key
 - `RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET` to the merchant API secret
 - `RAILCONNECT_PAY_DHRUVA_BANK_BASE_URL` to `https://dhruva-bank.vercel.app` (local development may use loopback HTTP)
 - `RAILCONNECT_PAY_PASSENGER_ORIGIN` to the exact passenger-site origin for hosted-checkout returns
