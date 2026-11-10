@@ -10,6 +10,7 @@ import in.railconnect.core.reservation.ReservationException;
 import in.railconnect.core.payment.PaymentException;
 import in.railconnect.core.payment.PaymentProviderUnavailableException;
 import in.railconnect.core.ticket.TicketException;
+import in.railconnect.core.cancellation.CancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -150,6 +151,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(TicketException.class)
     public ResponseEntity<ApiEnvelope<Void>> handleTicketException(TicketException exception) {
+        return failure(exception.status(), exception.code(), exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(CancellationException.class)
+    public ResponseEntity<ApiEnvelope<Void>> handleCancellationException(CancellationException exception) {
         return failure(exception.status(), exception.code(), exception.getMessage(), List.of());
     }
 

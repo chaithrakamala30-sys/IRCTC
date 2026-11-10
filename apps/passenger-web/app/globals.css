@@ -2778,3 +2778,83 @@
     padding: 14px;
   }
 }
+
+/* Cancellation Modal & Styling */
+.cancellation-container {
+  margin-top: 16px;
+}
+
+.button--danger {
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.button--primary.button--danger {
+  background: #b91c1c;
+  color: #ffffff;
+  border-color: #991b1b;
+}
+
+.cancellation-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.cancellation-modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  max-width: 520px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.cancellation-breakdown {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 14px 0;
+}
+
+.cancellation-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+  font-size: 0.92rem;
+}
+
+.cancellation-breakdown .total {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #0f172a;
+  border-top: 1px solid #cbd5e1;
+  padding-top: 8px;
+}
+
+.cancellation-receipt-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.refund-status-pill {
+  background: #e0f2fe;
+  color: #0369a1;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-top: 8px;
+}
+

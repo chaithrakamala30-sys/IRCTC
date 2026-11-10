@@ -9,6 +9,7 @@ import { AdminInventoryConsole } from "./admin-inventory-console";
 import { AdminReservationConsole } from "./admin-reservation-console";
 import { AdminPaymentConsole } from "./admin-payment-console";
 import { TicketAdminConsole } from "./ticket-admin-console";
+import { AdminCancellationConsole } from "./admin-cancellation-console";
 
 type AdminUser = {
   userId: string;
@@ -59,7 +60,7 @@ type AdminSession = {
   current: boolean;
 };
 
-type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "payments" | "tickets";
+type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "payments" | "tickets" | "cancellations";
 
 type AdminTabItem = {
   id: AdminTab;
@@ -451,6 +452,7 @@ export function AdminIdentityConsole() {
       { id: "reservations", label: "Reservations" },
       { id: "payments", label: "Payments" },
       { id: "tickets", label: "Ticket management" },
+      { id: "cancellations", label: "Cancellations & Refunds" },
     ]
     : isRailwayAdmin
       ? [
@@ -459,6 +461,7 @@ export function AdminIdentityConsole() {
         { id: "inventory", label: "Seat inventory" },
         { id: "reservations", label: "Reservations" },
         { id: "tickets", label: "Ticket management" },
+        { id: "cancellations", label: "Cancellations & Refunds" },
       ]
       : isReservationOfficer
         ? [
@@ -469,6 +472,7 @@ export function AdminIdentityConsole() {
         ? [
           { id: "fares", label: "Fare management" },
           { id: "payments", label: "Payments" },
+          { id: "cancellations", label: "Cancellations & Refunds" },
         ]
         : [];
   const currentTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : tabs[0]?.id ?? activeTab;
@@ -718,6 +722,11 @@ export function AdminIdentityConsole() {
         {(isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
           <div className={currentTab === "tickets" ? undefined : "admin-tab-content-hidden"}>
             <TicketAdminConsole />
+          </div>
+        )}
+        {(isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && (
+          <div className={currentTab === "cancellations" ? undefined : "admin-tab-content-hidden"}>
+            <AdminCancellationConsole />
           </div>
         )}
       </main>

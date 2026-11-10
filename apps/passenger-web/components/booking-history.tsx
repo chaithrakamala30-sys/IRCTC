@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ApiRequestError, apiDownload, apiFetch } from "../lib/api";
 import { DemoPaymentAction } from "./demo-payment-action";
 import { TicketHistoryPanel } from "./ticket-history";
+import { CancellationAction } from "./cancellation-action";
 
 type DeviceExperience = "mobile" | "laptop";
 type BookingSummary = {
@@ -301,6 +302,14 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
                   >
                     Download e-ticket PDF
                   </button>
+                  <CancellationAction
+                    bookingId={selected.bookingId}
+                    device={device}
+                    onCancelled={() => {
+                      void openBooking(selected.bookingId);
+                      void loadBookings();
+                    }}
+                  />
                 </div>
               )}
             </section>
