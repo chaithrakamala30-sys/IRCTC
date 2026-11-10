@@ -3681,7 +3681,7 @@ CREATE TABLE reservation_promotions (
 CREATE INDEX reservation_promotions_run_idx ON reservation_promotions(train_run_id, promoted_at DESC);
 CREATE INDEX reservation_promotions_passenger_idx ON reservation_promotions(booking_passenger_id);
 
-CREATE TABLE reservation_state_history (
+CREATE TABLE IF NOT EXISTS passenger_reservation_state_history (
     history_id UUID PRIMARY KEY,
     booking_passenger_id UUID NOT NULL REFERENCES booking_passengers(booking_passenger_id),
     previous_state VARCHAR(24) NOT NULL,
@@ -3691,7 +3691,7 @@ CREATE TABLE reservation_state_history (
     occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX reservation_state_history_pax_idx ON reservation_state_history(booking_passenger_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS passenger_reservation_state_history_pax_idx ON passenger_reservation_state_history(booking_passenger_id, occurred_at DESC);
 
 -- 6. Departure Charts & Manifests
 CREATE TABLE reservation_charts (

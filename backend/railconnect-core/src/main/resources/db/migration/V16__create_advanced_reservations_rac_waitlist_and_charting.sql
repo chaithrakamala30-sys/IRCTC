@@ -6,7 +6,7 @@
 -- ============================================================================
 
 -- 1. Quota Definitions and Policy Versioning
-CREATE TABLE reservation_quotas (
+CREATE TABLE IF NOT EXISTS reservation_quotas (
     quota_id UUID PRIMARY KEY,
     quota_code VARCHAR(32) NOT NULL UNIQUE,
     display_name VARCHAR(120) NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE reservation_quotas (
     )
 );
 
-CREATE TABLE quota_policy_versions (
+CREATE TABLE IF NOT EXISTS quota_policy_versions (
     policy_version_id UUID PRIMARY KEY,
     version_number INT NOT NULL,
     status VARCHAR(24) NOT NULL DEFAULT 'DRAFT',
@@ -36,10 +36,10 @@ CREATE TABLE quota_policy_versions (
     CONSTRAINT quota_policy_effective_dates CHECK (effective_until IS NULL OR effective_until > effective_from)
 );
 
-CREATE UNIQUE INDEX quota_policy_one_published_idx ON quota_policy_versions(status) WHERE status = 'PUBLISHED';
+CREATE UNIQUE INDEX IF NOT EXISTS quota_policy_one_published_idx ON quota_policy_versions(status) WHERE status = 'PUBLISHED';
 
 -- 2. Quota Inventory Allocations per Train Run and Class
-CREATE TABLE quota_inventory_allocations (
+CREATE TABLE IF NOT EXISTS quota_inventory_allocations (
     allocation_id UUID PRIMARY KEY,
     train_run_id UUID NOT NULL REFERENCES inventory_train_runs(train_run_id) ON DELETE CASCADE,
     coach_class_code VARCHAR(32) NOT NULL,
@@ -49,88 +49,93 @@ CREATE TABLE quota_inventory_allocations (
     waitlist_capacity INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT quota_allocations_non_negative CHECK (
+    CONSTRAINT quota_inventory_allocations_unique UNIQUE (train_run_id, coach_class_code, quota_code),
+    CONSTRAINT quota_inventory_capacities_positive CHECK (
         allocated_berths >= 0 AND rac_capacity >= 0 AND waitlist_capacity >= 0
-    ),
-    CONSTRAINT quota_allocations_unique_run_class_quota UNIQUE (train_run_id, coach_class_code, quota_code)
+    )
 );
 
-CREATE INDEX quota_allocations_run_class_idx ON quota_inventory_allocations(train_run_id, coach_class_code);
+CREATE INDEX IF NOT EXISTS quota_inventory_allocations_run_idx ON quota_inventory_allocations(train_run_id, coach_class_code);
 
--- 3. Reservation Queues (RAC and Waitlist)
-CREATE TABLE reservation_queues (
+-- 3. Queues & Waitlist Mechanics
+CREATE TABLE IF NOT EXISTS reservation_queues (
     queue_id UUID PRIMARY KEY,
     train_run_id UUID NOT NULL REFERENCES inventory_train_runs(train_run_id) ON DELETE CASCADE,
     coach_class_code VARCHAR(32) NOT NULL,
     quota_code VARCHAR(32) NOT NULL REFERENCES reservation_quotas(quota_code),
-    queue_type VARCHAR(16) NOT NULL, -- 'RAC' or 'WAITLIST'
-    current_highest_sequence INT NOT NULL DEFAULT 0,
+    queue_type VARCHAR(16) NOT NULL, -- 'WAITLIST' or 'RAC'
+    current_length INT NOT NULL DEFAULT 0,
+    last_assigned_number INT NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT reservation_queue_type_check CHECK (queue_type IN ('RAC', 'WAITLIST')),
-    CONSTRAINT reservation_queue_unique UNIQUE (train_run_id, coach_class_code, quota_code, queue_type)
+    CONSTRAINT reservation_queues_type_check CHECK (queue_type IN ('WAITLIST', 'RAC')),
+    CONSTRAINT reservation_queues_unique UNIQUE (train_run_id, coach_class_code, quota_code, queue_type)
 );
 
-CREATE INDEX reservation_queues_run_idx ON reservation_queues(train_run_id, coach_class_code, queue_type);
-
--- 4. Waitlist and RAC Entries
-CREATE TABLE waitlist_entries (
+CREATE TABLE IF NOT EXISTS waitlist_entries (
     waitlist_id UUID PRIMARY KEY,
-    booking_id UUID NOT NULL REFERENCES bookings(booking_id),
-    booking_passenger_id UUID NOT NULL UNIQUE REFERENCES booking_passengers(booking_passenger_id),
-    train_run_id UUID NOT NULL REFERENCES inventory_train_runs(train_run_id),
-    from_station_id UUID NOT NULL REFERENCES stations(station_id),
-    to_station_id UUID NOT NULL REFERENCES stations(station_id),
+    queue_id UUID NOT NULL REFERENCES reservation_queues(queue_id) ON DELETE CASCADE,
+    booking_id UUID NOT NULL REFERENCES bookings(booking_id) ON DELETE CASCADE,
+    booking_passenger_id UUID NOT NULL REFERENCES booking_passengers(booking_passenger_id) ON DELETE CASCADE,
+    train_run_id UUID NOT NULL REFERENCES inventory_train_runs(train_run_id) ON DELETE CASCADE,
     coach_class_code VARCHAR(32) NOT NULL,
     quota_code VARCHAR(32) NOT NULL REFERENCES reservation_quotas(quota_code),
-    waitlist_category VARCHAR(16) NOT NULL DEFAULT 'GNWL', -- GNWL, RLWL, PQWL, etc.
     initial_position INT NOT NULL,
     current_position INT NOT NULL,
-    queue_sequence INT NOT NULL,
     status VARCHAR(24) NOT NULL DEFAULT 'WAITLISTED',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT waitlist_status_check CHECK (status IN ('WAITLISTED', 'PROMOTED_RAC', 'PROMOTED_CONFIRMED', 'CANCELLED', 'EXPIRED')),
-    CONSTRAINT waitlist_position_positive CHECK (initial_position > 0 AND current_position >= 0 AND queue_sequence > 0)
+    CONSTRAINT waitlist_entries_status_check CHECK (
+        status IN ('WAITLISTED', 'PROMOTED_TO_RAC', 'PROMOTED_TO_CONFIRMED', 'CANCELLED', 'DROPPED')
+    ),
+    CONSTRAINT waitlist_positions_positive CHECK (initial_position > 0 AND current_position >= 0)
 );
 
-CREATE INDEX waitlist_entries_queue_priority_idx ON waitlist_entries(train_run_id, coach_class_code, quota_code, status, queue_sequence);
-CREATE INDEX waitlist_entries_booking_idx ON waitlist_entries(booking_id);
+CREATE INDEX IF NOT EXISTS waitlist_entries_queue_idx ON waitlist_entries(queue_id, current_position) WHERE status = 'WAITLISTED';
+CREATE INDEX IF NOT EXISTS waitlist_entries_booking_idx ON waitlist_entries(booking_id);
+CREATE INDEX IF NOT EXISTS waitlist_entries_passenger_idx ON waitlist_entries(booking_passenger_id);
 
-CREATE TABLE rac_entries (
+-- 4. RAC (Reservation Against Cancellation) Mechanics
+CREATE TABLE IF NOT EXISTS rac_entries (
     rac_id UUID PRIMARY KEY,
-    booking_id UUID NOT NULL REFERENCES bookings(booking_id),
-    booking_passenger_id UUID NOT NULL UNIQUE REFERENCES booking_passengers(booking_passenger_id),
-    train_run_id UUID NOT NULL REFERENCES inventory_train_runs(train_run_id),
-    from_station_id UUID NOT NULL REFERENCES stations(station_id),
-    to_station_id UUID NOT NULL REFERENCES stations(station_id),
+    queue_id UUID NOT NULL REFERENCES reservation_queues(queue_id) ON DELETE CASCADE,
+    booking_id UUID NOT NULL REFERENCES bookings(booking_id) ON DELETE CASCADE,
+    booking_passenger_id UUID NOT NULL REFERENCES booking_passengers(booking_passenger_id) ON DELETE CASCADE,
+    train_run_id UUID NOT NULL REFERENCES inventory_train_runs(train_run_id) ON DELETE CASCADE,
     coach_class_code VARCHAR(32) NOT NULL,
     quota_code VARCHAR(32) NOT NULL REFERENCES reservation_quotas(quota_code),
-    initial_position INT NOT NULL,
+    rac_number INT NOT NULL,
     current_position INT NOT NULL,
-    queue_sequence INT NOT NULL,
-    assigned_berth_id UUID REFERENCES inventory_berths(inventory_berth_id),
+    assigned_coach_number VARCHAR(16),
+    assigned_berth_number VARCHAR(16),
+    shared_berth_slot INT NOT NULL DEFAULT 1, -- 1 = First Half Seat, 2 = Second Half Seat
     status VARCHAR(24) NOT NULL DEFAULT 'RAC',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT rac_status_check CHECK (status IN ('RAC', 'PROMOTED_CONFIRMED', 'CANCELLED', 'EXPIRED')),
-    CONSTRAINT rac_position_positive CHECK (initial_position > 0 AND current_position >= 0 AND queue_sequence > 0)
+    CONSTRAINT rac_entries_status_check CHECK (
+        status IN ('RAC', 'PROMOTED_TO_CONFIRMED', 'CANCELLED')
+    ),
+    CONSTRAINT rac_positions_positive CHECK (rac_number > 0 AND current_position >= 0)
 );
 
-CREATE INDEX rac_entries_queue_priority_idx ON rac_entries(train_run_id, coach_class_code, quota_code, status, queue_sequence);
-CREATE INDEX rac_entries_booking_idx ON rac_entries(booking_id);
+CREATE INDEX IF NOT EXISTS rac_entries_queue_idx ON rac_entries(queue_id, current_position) WHERE status = 'RAC';
+CREATE INDEX IF NOT EXISTS rac_entries_booking_idx ON rac_entries(booking_id);
+CREATE INDEX IF NOT EXISTS rac_entries_passenger_idx ON rac_entries(booking_passenger_id);
 
--- 5. Reservation Promotions & History
-CREATE TABLE reservation_promotions (
+-- 5. Cancellation-Driven Atomic Promotion Tracking
+CREATE TABLE IF NOT EXISTS reservation_promotions (
     promotion_id UUID PRIMARY KEY,
-    train_run_id UUID NOT NULL REFERENCES inventory_train_runs(train_run_id),
-    booking_passenger_id UUID NOT NULL REFERENCES booking_passengers(booking_passenger_id),
+    train_run_id UUID NOT NULL REFERENCES inventory_train_runs(train_run_id) ON DELETE CASCADE,
+    coach_class_code VARCHAR(32) NOT NULL,
+    quota_code VARCHAR(32) NOT NULL,
+    booking_passenger_id UUID NOT NULL REFERENCES booking_passengers(booking_passenger_id) ON DELETE CASCADE,
     from_status VARCHAR(24) NOT NULL,
     to_status VARCHAR(24) NOT NULL,
-    promoted_from_position INT,
-    promoted_to_position INT,
-    freed_by_cancellation_id UUID,
-    allocated_berth_id UUID REFERENCES inventory_berths(inventory_berth_id),
+    freed_inventory_berth_id UUID REFERENCES inventory_berths(inventory_berth_id),
+    allocated_coach_number VARCHAR(16),
+    allocated_berth_number VARCHAR(16),
+    triggered_by_cancellation_id UUID,
     promoted_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT reservation_promotion_status_check CHECK (
         (from_status = 'WAITLISTED' AND to_status IN ('RAC', 'CONFIRMED')) OR
@@ -138,10 +143,10 @@ CREATE TABLE reservation_promotions (
     )
 );
 
-CREATE INDEX reservation_promotions_run_idx ON reservation_promotions(train_run_id, promoted_at DESC);
-CREATE INDEX reservation_promotions_passenger_idx ON reservation_promotions(booking_passenger_id);
+CREATE INDEX IF NOT EXISTS reservation_promotions_run_idx ON reservation_promotions(train_run_id, promoted_at DESC);
+CREATE INDEX IF NOT EXISTS reservation_promotions_passenger_idx ON reservation_promotions(booking_passenger_id);
 
-CREATE TABLE reservation_state_history (
+CREATE TABLE IF NOT EXISTS passenger_reservation_state_history (
     history_id UUID PRIMARY KEY,
     booking_passenger_id UUID NOT NULL REFERENCES booking_passengers(booking_passenger_id),
     previous_state VARCHAR(24) NOT NULL,
@@ -151,10 +156,10 @@ CREATE TABLE reservation_state_history (
     occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX reservation_state_history_pax_idx ON reservation_state_history(booking_passenger_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS passenger_reservation_state_history_pax_idx ON passenger_reservation_state_history(booking_passenger_id, occurred_at DESC);
 
 -- 6. Departure Charts & Manifests
-CREATE TABLE reservation_charts (
+CREATE TABLE IF NOT EXISTS reservation_charts (
     chart_id UUID PRIMARY KEY,
     train_run_id UUID NOT NULL REFERENCES inventory_train_runs(train_run_id) ON DELETE RESTRICT,
     chart_status VARCHAR(24) NOT NULL DEFAULT 'PREPARED',
@@ -166,76 +171,78 @@ CREATE TABLE reservation_charts (
     prepared_by UUID REFERENCES users(user_id),
     prepared_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     finalized_at TIMESTAMPTZ,
-    finalized_by UUID REFERENCES users(user_id),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT reservation_chart_status_check CHECK (
-        chart_status IN ('NOT_PREPARED', 'PREPARATION_PENDING', 'PREPARED', 'FINALIZED', 'SUPERSEDED')
+    CONSTRAINT reservation_charts_status_check CHECK (
+        chart_status IN ('PREPARED', 'AMENDED', 'FINALIZED')
     ),
-    CONSTRAINT reservation_chart_unique_run UNIQUE (train_run_id)
+    CONSTRAINT reservation_charts_unique_run UNIQUE (train_run_id)
 );
 
-CREATE INDEX reservation_charts_run_status_idx ON reservation_charts(train_run_id, chart_status);
-
-CREATE TABLE reservation_chart_passengers (
+CREATE TABLE IF NOT EXISTS reservation_chart_passengers (
     chart_passenger_id UUID PRIMARY KEY,
     chart_id UUID NOT NULL REFERENCES reservation_charts(chart_id) ON DELETE CASCADE,
     booking_id UUID NOT NULL REFERENCES bookings(booking_id),
     booking_passenger_id UUID NOT NULL REFERENCES booking_passengers(booking_passenger_id),
-    pnr VARCHAR(24) NOT NULL,
     passenger_name VARCHAR(120) NOT NULL,
-    coach_number VARCHAR(20),
-    berth_number VARCHAR(20),
-    berth_type VARCHAR(24),
+    age INT NOT NULL,
+    gender VARCHAR(16) NOT NULL,
+    booking_reference VARCHAR(32) NOT NULL,
+    pnr VARCHAR(16),
     coach_class_code VARCHAR(32) NOT NULL,
-    reservation_status VARCHAR(24) NOT NULL, -- CONFIRMED, RAC, WAITLISTED
-    position_number INT,
-    from_station_code VARCHAR(16) NOT NULL,
-    to_station_code VARCHAR(16) NOT NULL,
+    quota_code VARCHAR(32) NOT NULL,
+    allocated_coach_number VARCHAR(16),
+    allocated_berth_number VARCHAR(16),
+    allocated_berth_type VARCHAR(16),
+    final_reservation_status VARCHAR(24) NOT NULL,
+    current_position INT NOT NULL DEFAULT 0,
+    boarding_station_code VARCHAR(16) NOT NULL,
+    destination_station_code VARCHAR(16) NOT NULL,
+    chart_version INT NOT NULL DEFAULT 1,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chart_passenger_unique UNIQUE (chart_id, booking_passenger_id)
+    CONSTRAINT chart_pax_status_check CHECK (final_reservation_status IN ('CONFIRMED', 'RAC', 'DROPPED_WAITLIST', 'CANCELLED'))
 );
 
-CREATE INDEX chart_passengers_coach_idx ON reservation_chart_passengers(chart_id, coach_number, berth_number);
-CREATE INDEX chart_passengers_pnr_idx ON reservation_chart_passengers(pnr);
+CREATE INDEX IF NOT EXISTS chart_passengers_chart_idx ON reservation_chart_passengers(chart_id);
+CREATE INDEX IF NOT EXISTS chart_passengers_coach_idx ON reservation_chart_passengers(chart_id, allocated_coach_number);
 
-CREATE TABLE reservation_chart_versions (
+CREATE TABLE IF NOT EXISTS reservation_chart_versions (
     version_id UUID PRIMARY KEY,
     chart_id UUID NOT NULL REFERENCES reservation_charts(chart_id) ON DELETE CASCADE,
     version_number INT NOT NULL,
-    snapshot_json TEXT NOT NULL,
-    reason VARCHAR(120) NOT NULL,
+    reason VARCHAR(255) NOT NULL,
+    total_confirmed INT NOT NULL,
+    total_rac INT NOT NULL,
     created_by UUID REFERENCES users(user_id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chart_versions_unique UNIQUE (chart_id, version_number)
+    CONSTRAINT chart_version_unique UNIQUE (chart_id, version_number)
 );
 
-CREATE TABLE chart_correction_history (
+-- 7. Post-Chart Correction History
+CREATE TABLE IF NOT EXISTS chart_correction_history (
     correction_id UUID PRIMARY KEY,
     chart_id UUID NOT NULL REFERENCES reservation_charts(chart_id) ON DELETE CASCADE,
-    chart_passenger_id UUID REFERENCES reservation_chart_passengers(chart_passenger_id),
-    previous_coach VARCHAR(20),
-    new_coach VARCHAR(20),
-    previous_berth VARCHAR(20),
-    new_berth VARCHAR(20),
-    reason TEXT NOT NULL,
+    booking_passenger_id UUID NOT NULL REFERENCES booking_passengers(booking_passenger_id),
+    old_coach_number VARCHAR(16),
+    old_berth_number VARCHAR(16),
+    new_coach_number VARCHAR(16) NOT NULL,
+    new_berth_number VARCHAR(16) NOT NULL,
+    correction_reason VARCHAR(255) NOT NULL,
     authorized_by UUID NOT NULL REFERENCES users(user_id),
-    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX chart_correction_chart_idx ON chart_correction_history(chart_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS chart_corrections_chart_idx ON chart_correction_history(chart_id);
 
--- 7. Rule Audit Logs
-CREATE TABLE reservation_rule_audit_logs (
+CREATE TABLE IF NOT EXISTS reservation_rule_audit_logs (
     audit_id UUID PRIMARY KEY,
-    actor_user_id UUID REFERENCES users(user_id),
-    event_type VARCHAR(48) NOT NULL,
-    resource_type VARCHAR(48) NOT NULL,
-    resource_id VARCHAR(64) NOT NULL,
-    details_json TEXT NOT NULL,
-    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    train_run_id UUID REFERENCES inventory_train_runs(train_run_id),
+    event_type VARCHAR(64) NOT NULL,
+    entity_id VARCHAR(64) NOT NULL,
+    details TEXT,
+    actor_id UUID REFERENCES users(user_id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX reservation_rule_audit_time_idx ON reservation_rule_audit_logs(occurred_at DESC);
+CREATE INDEX IF NOT EXISTS reservation_rule_audit_run_idx ON reservation_rule_audit_logs(train_run_id, created_at DESC);
 
 -- 8. Seed Default Quotas
 INSERT INTO reservation_quotas (quota_id, quota_code, display_name, description, eligibility_criteria_json) VALUES
@@ -291,4 +298,3 @@ SELECT 'RESERVATION_OFFICER', p.permission_code
 FROM permissions p
 WHERE p.permission_code IN ('quotas:read', 'charts:read')
 ON CONFLICT DO NOTHING;
-

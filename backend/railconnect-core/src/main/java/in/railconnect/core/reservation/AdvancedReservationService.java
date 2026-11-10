@@ -277,7 +277,7 @@ public class AdvancedReservationService {
 
     private void recordStateChange(UUID bookingPassengerId, String fromState, String toState, String reason, String details) {
         jdbcTemplate.update("""
-            INSERT INTO reservation_state_history (history_id, booking_passenger_id, previous_state, new_state, reason, details)
+            INSERT INTO passenger_reservation_state_history (history_id, booking_passenger_id, previous_state, new_state, reason, details)
             VALUES (?, ?, ?, ?, ?, ?)
             """, UUID.randomUUID(), bookingPassengerId, fromState, toState, reason, details);
     }
@@ -328,7 +328,7 @@ public class AdvancedReservationService {
 
         List<StatusHistoryItem> history = jdbcTemplate.query("""
             SELECT previous_state, new_state, reason, details, occurred_at
-            FROM reservation_state_history rsh
+            FROM passenger_reservation_state_history rsh
             JOIN booking_passengers bp ON rsh.booking_passenger_id = bp.booking_passenger_id
             WHERE bp.booking_id = ?
             ORDER BY occurred_at DESC
