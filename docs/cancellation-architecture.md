@@ -20,3 +20,4 @@ Phase 11A establishes a secure, versioned, double-entry financial cancellation a
 
 4. **Independent Financial Abstraction**:
    RailConnect communicates with Dhruva Bank via server-to-server REST calls (`POST /api/v1/merchant/refunds`). It never touches bank tables directly or bypasses double-entry validation.
+

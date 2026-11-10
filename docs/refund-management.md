@@ -16,3 +16,4 @@
 ## 2. Idempotency & Financial Invariants
 - Each refund carries `RC-REF-...` and an explicit `idempotency_key`.
 - Double-credit is prevented at the database and bank API levels.
+

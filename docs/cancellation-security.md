@@ -10,3 +10,4 @@
 
 3. **Departure Lock**:
    Cancellations attempted after scheduled departure timestamp are rejected at both API and trigger levels.
+

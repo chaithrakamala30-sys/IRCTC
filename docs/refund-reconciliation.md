@@ -7,3 +7,4 @@
 2. Authorized staff (`refunds:admin:reconcile`) can trigger `/api/v1/admin/refunds/{refundId}/reconcile`.
 3. The server invokes Dhruva Bank's `/verify` endpoint to check double-entry ledger settlement.
 4. When verified by the bank, the refund status transitions cleanly to `SUCCEEDED`.
+

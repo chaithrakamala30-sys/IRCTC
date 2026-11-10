@@ -24,3 +24,4 @@ RailConnect utilizes a configurable, versioned cancellation policy engine stored
 
 4. **Less than 4 Hours Before Departure / Post-Departure**:
    - Non-refundable (`100%` deduction).
+

@@ -123,3 +123,4 @@ class CancellationPolicyEngineTest {
         assertThat(result.refundableAmount()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 }
+

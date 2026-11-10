@@ -16,3 +16,4 @@ RailConnect communicates with Dhruva Bank via server-side merchant credentials (
 
 3. **Query Status**:
    `GET /api/v1/merchant/refunds/{refundId}`
+

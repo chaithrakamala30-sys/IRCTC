@@ -9,3 +9,4 @@
 4. Updates `reservation_allocations.status` to `RELEASED`.
 5. Logs released segments to `inventory_release_history`.
 6. Leaves non-cancelled passenger allocations and claims intact.
+

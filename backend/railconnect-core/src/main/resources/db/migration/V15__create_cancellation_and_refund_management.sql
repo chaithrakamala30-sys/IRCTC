@@ -500,3 +500,4 @@ WHERE permissions.permission_code IN (
     'cancellations:admin:read', 'cancellations:admin:manage', 'refunds:admin:reconcile'
 )
 ON CONFLICT DO NOTHING;
+
