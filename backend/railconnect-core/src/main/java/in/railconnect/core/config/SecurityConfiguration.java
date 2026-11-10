@@ -93,12 +93,18 @@ public class SecurityConfiguration {
                 .headers(headers -> headers
                         .contentTypeOptions(Customizer.withDefaults())
                         .frameOptions(frame -> frame.deny())
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                                .preload(true))
                         .referrerPolicy(referrer -> referrer
                                 .policy(org.springframework.security.web.header.writers
                                         .ReferrerPolicyHeaderWriter.ReferrerPolicy
                                         .STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicy(permissions -> permissions
+                                .policy("camera=(), microphone=(), geolocation=(), payment=(self \"https://dhruva-bank.vercel.app\")"))
                         .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; frame-ancestors 'none'")))
+                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")))
                 .addFilterAfter(authenticatedSessionFilter, SecurityContextHolderFilter.class)
                 .build();
     }
