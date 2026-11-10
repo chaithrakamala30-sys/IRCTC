@@ -67,7 +67,7 @@ export function AdminNotificationConsole() {
     setError("");
     setNotice("");
     try {
-      await apiFetch("/api/v1/operations/announcements", {
+      await apiFetch("/api/v1/admin/notifications/announcements", {
         method: "POST",
         body: JSON.stringify({
           title: announcementTitle.trim(),

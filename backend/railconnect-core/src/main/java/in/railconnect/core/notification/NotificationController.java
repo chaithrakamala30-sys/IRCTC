@@ -152,10 +152,10 @@ public class NotificationController {
     }
 
     // ==========================================
-    // OPERATIONS ENDPOINTS
+    // NOTIFICATION ANNOUNCEMENT ENDPOINTS
     // ==========================================
 
-    @PostMapping("/operations/announcements")
+    @PostMapping("/admin/notifications/announcements")
     public ResponseEntity<ApiEnvelope<Map<String, Object>>> publishAnnouncement(
             @RequestBody OperationalAnnouncementRequest request,
             @AuthenticationPrincipal RailConnectPrincipal principal
