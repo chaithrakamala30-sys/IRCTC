@@ -8,6 +8,7 @@ import { AdminFareConsole } from "./admin-fare-console";
 import { AdminInventoryConsole } from "./admin-inventory-console";
 import { AdminReservationConsole } from "./admin-reservation-console";
 import { AdminPaymentConsole } from "./admin-payment-console";
+import { TicketAdminConsole } from "./ticket-admin-console";
 
 type AdminUser = {
   userId: string;
@@ -58,7 +59,7 @@ type AdminSession = {
   current: boolean;
 };
 
-type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "payments";
+type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "payments" | "tickets";
 
 type AdminTabItem = {
   id: AdminTab;
@@ -449,6 +450,7 @@ export function AdminIdentityConsole() {
       { id: "inventory", label: "Seat inventory" },
       { id: "reservations", label: "Reservations" },
       { id: "payments", label: "Payments" },
+      { id: "tickets", label: "Ticket management" },
     ]
     : isRailwayAdmin
       ? [
@@ -456,9 +458,13 @@ export function AdminIdentityConsole() {
         { id: "fares", label: "Fare management" },
         { id: "inventory", label: "Seat inventory" },
         { id: "reservations", label: "Reservations" },
+        { id: "tickets", label: "Ticket management" },
       ]
       : isReservationOfficer
-        ? [{ id: "reservations", label: "Reservations" }]
+        ? [
+          { id: "reservations", label: "Reservations" },
+          { id: "tickets", label: "Ticket management" },
+        ]
       : isFinanceAdmin
         ? [
           { id: "fares", label: "Fare management" },
@@ -696,6 +702,9 @@ export function AdminIdentityConsole() {
         )}
         {currentTab === "payments" && (isSuperAdmin || isFinanceAdmin) && (
           <AdminPaymentConsole />
+        )}
+        {currentTab === "tickets" && (isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
+          <TicketAdminConsole />
         )}
       </main>
     </>
