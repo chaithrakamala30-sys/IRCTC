@@ -1,12 +1,11 @@
 import type { NextConfig } from "next";
 
 const isVercel = process.env.VERCEL === "1";
+const defaultApiOrigin = "https://irctc-wb68.onrender.com";
 
 function getApiOrigin(): string {
-  const configuredOrigin = process.env.RAILCONNECT_API_ORIGIN;
-  if (!configuredOrigin) {
-    throw new Error("RAILCONNECT_API_ORIGIN must be configured for Vercel deployments.");
-  }
+  const configuredOrigin =
+    process.env.RAILCONNECT_API_ORIGIN || defaultApiOrigin;
 
   let url: URL;
   try {

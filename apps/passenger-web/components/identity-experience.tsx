@@ -402,7 +402,11 @@ export function PassengerAccountExperience({
         <Link className="identity-brand" href={`/${device}`}>RailConnect</Link>
         <nav aria-label="Account navigation">
           <Link href={`/${device}`}>Passenger home</Link>
-          <button className="text-button" onClick={logout} type="button">Sign out</button>
+          {loading ? null : user ? (
+            <button className="text-button" onClick={logout} type="button">Sign out</button>
+          ) : (
+            <Link href={`/${device}/login`}>Sign in</Link>
+          )}
         </nav>
       </header>
       <main className="account-layout">

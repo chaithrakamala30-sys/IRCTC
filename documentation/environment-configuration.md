@@ -16,6 +16,11 @@ Only `.env.example` is committed; it contains placeholder values and non-secret 
 | `RAILCONNECT_SUPABASE_URL` | Yes for authentication | Supabase project URL, for example `https://<project-ref>.supabase.co`. |
 | `RAILCONNECT_SUPABASE_ANON_KEY` | Yes for authentication | Legacy anon/public API key used only by the backend to call Supabase Auth. |
 | `RAILCONNECT_SUPABASE_SERVICE_ROLE_KEY` | Yes for staff provisioning and password updates | Supabase service-role key. Store only in Render/backend secrets; never expose it to Vercel or the browser. |
+| `RAILCONNECT_PAY_DHRUVA_BANK_ENABLED` | No | Defaults false. Enables the documented Dhruva Bank demo merchant API adapter; requires backend-only `RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET`. |
+| `RAILCONNECT_PAY_DHRUVA_BANK_BASE_URL` | No | Defaults to the documented `https://dhruva-bank.vercel.app`; local development may use `http://localhost:3000`. |
+| `RAILCONNECT_PAY_DHRUVA_BANK_API_SECRET` | When payments enabled | Backend-only Dhruva merchant API secret sent as a Bearer credential. Never set in Vercel or `NEXT_PUBLIC_*`. |
+| `RAILCONNECT_PAY_PASSENGER_ORIGIN` | No | Trusted passenger website origin used to construct fixed checkout return URLs; defaults to `https://irctc-rho.vercel.app`. |
+| `RAILCONNECT_PAY_REQUESTS_PER_MINUTE` | No | Per-passenger payment initiation and refresh limit; defaults to 6 requests per minute. |
 | `RAILCONNECT_DB_SCHEMA` | No | Application schema for datasource, Hibernate, and Flyway; defaults to the isolated `railconnect` schema. |
 | `RAILCONNECT_COMPOSE_DB_URL` | Compose | Container-network URL, normally `jdbc:postgresql://db:5432/railconnect`; use provider URL only when deliberately targeting a remote DB. |
 | `RAILCONNECT_DB_NAME` | Compose | Local PostgreSQL database name; default placeholder value is `railconnect`. |
@@ -39,11 +44,11 @@ Vercel hosts the Next.js frontend; Supabase hosts PostgreSQL. Supabase does not 
 
 The passenger, admin, and operations apps proxy `/api/*` requests through their Vercel deployment to Render. This keeps browser API calls on the frontend site so the browser can send the CSRF and session cookies without relying on third-party cookies. Vercel builds for these apps must use the Next.js server output; static export remains enabled for local Docker builds.
 
-Set these Vercel environment variables for the passenger, admin, and operations projects, then redeploy:
+The passenger, admin, and operations apps default their API proxy to `https://irctc-wb68.onrender.com`, so Vercel builds do not fail when no override is set. Set `RAILCONNECT_API_ORIGIN` only when the backend uses a different HTTPS origin:
 
 | Variable | Value |
 |---|---|
-| `RAILCONNECT_API_ORIGIN` | `https://irctc-wb68.onrender.com` |
+| `RAILCONNECT_API_ORIGIN` | Optional. The public backend HTTPS origin, with no path or trailing route. |
 | `NEXT_PUBLIC_API_BASE_URL` | Optional. The origin of that specific Vercel project, with no trailing slash. If omitted, the shared client uses same-origin `/api/*` URLs. |
 
 Set the following in Render's backend environment:

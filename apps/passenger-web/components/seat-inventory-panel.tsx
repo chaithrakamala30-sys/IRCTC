@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { ApiRequestError, apiFetch } from "@railconnect/api";
+import { DemoPaymentAction } from "./demo-payment-action";
 
 type CoachClassOption = { code: string; name: string };
 type Page<T> = { items: T[]; page: number; size: number; total: number };
@@ -60,6 +61,8 @@ type Booking = {
   paymentDeadline: string;
   passengers: { displayName: string; coachNumber: string; berthNumber: string }[];
 };
+
+const TERMINAL_RESERVATION_STATUSES = new Set(["RELEASED", "FAILED", "EXPIRED"]);
 
 function isHoldExpired(expiresAt: string): boolean {
   const value = new Date(expiresAt).getTime();
@@ -122,6 +125,15 @@ export function SeatInventoryPanel({
   const reservationStorageKey = run
     ? `railconnect:reservation-request:${run.trainRunId}:${journeyDate}:${fromStationId}:${toStationId}`
     : null;
+
+  function resetReservationForm() {
+    setReservation(null);
+    setBooking(null);
+    setIdempotencyKey("");
+    setBookingIdempotencyKey("");
+    setGroupSeatingRequested(false);
+    setPassengers([{ displayName: "", preferredBerthType: "" }]);
+  }
 
   const loadHolds = useCallback(async () => {
     try {
@@ -224,6 +236,18 @@ export function SeatInventoryPanel({
       .then((response) => {
         if (!response.data) throw new Error("The server did not return the saved reservation request.");
         if (!active) return;
+        if (TERMINAL_RESERVATION_STATUSES.has(response.data.status)) {
+          try {
+            window.localStorage.removeItem(reservationStorageKey);
+          } catch {
+            setError("The saved reservation request is no longer active, but its browser entry could not be cleared.");
+            return;
+          }
+          resetReservationForm();
+          setNotice("");
+          void loadHolds();
+          return;
+        }
         setReservation(response.data);
         setSelectedClass(response.data.coachClassCode);
         setGroupSeatingRequested(response.data.groupSeatingRequested);
@@ -492,8 +516,18 @@ export function SeatInventoryPanel({
         },
       );
       if (!response.data) throw new Error("The server did not return the release result.");
-      setReservation(response.data);
-      setNotice("Reservation request released.");
+      try {
+        if (reservationStorageKey) {
+          window.localStorage.removeItem(reservationStorageKey);
+        }
+      } catch {
+        setError("Reservation request released, but its browser entry could not be cleared. Refresh after clearing site storage.");
+        return;
+      }
+      resetReservationForm();
+      setHolds([]);
+      setNotice("");
+      await loadHolds();
       await loadAvailability();
     } catch (caught) {
       setError(message(caught));
@@ -771,9 +805,17 @@ export function SeatInventoryPanel({
                     </strong>
                   </p>
                   <p>Payment deadline: <strong>{new Date(booking.paymentDeadline).toLocaleString()}</strong></p>
-                  <p className="reservation-disclaimer">
-                    Awaiting payment. No payment has been processed and this is not a confirmed or paid ticket.
-                  </p>
+                  {booking.status === "AWAITING_PAYMENT" && (
+                    <DemoPaymentAction bookingId={booking.bookingId} device={device} />
+                  )}
+                  {booking.status !== "CONFIRMED" && (
+                    <p className="reservation-disclaimer">
+                      Awaiting payment. This is not a confirmed or paid ticket.
+                    </p>
+                  )}
+                  {booking.status === "CONFIRMED" && (
+                    <p className="reservation-disclaimer">Demo payment verified. This is not a real-money ticket.</p>
+                  )}
                   <Link href={`/${device}/account#bookings`}>View booking history</Link>
                 </div>
               )}

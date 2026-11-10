@@ -193,6 +193,48 @@ class DatabaseMigrationIT {
                   )
                 """,
                 Integer.class);
+        Integer paymentTableCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name IN (
+                    'payment_provider_configurations', 'payment_request_rate_limits',
+                    'payment_orders', 'payment_attempts',
+                    'payment_status_history', 'payment_idempotency_records',
+                    'payment_webhook_events', 'payment_webhook_processing_attempts',
+                    'payment_reconciliation_records', 'payment_financial_exceptions',
+                    'payment_audit_records'
+                  )
+                """,
+                Integer.class);
+        Integer paymentTriggerCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM pg_trigger
+                WHERE NOT tgisinternal
+                  AND tgname IN (
+                    'payment_status_history_append_only',
+                    'payment_audit_records_append_only',
+                    'payment_idempotency_immutable',
+                    'payment_orders_state_guard'
+                  )
+                """,
+                Integer.class);
+        Integer enabledPaymentProviderCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM payment_provider_configurations
+                WHERE provider_code = 'DHRUVA_BANK'
+                  AND enabled = TRUE
+                """,
+                Integer.class);
+        Integer railConnectPayMigrationCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM flyway_schema_history
+                WHERE version IN ('12', '13') AND success = TRUE
+                """,
+                Integer.class);
 
         assertThat(connectionResult).isEqualTo(1);
         assertThat(migrationCount).isGreaterThanOrEqualTo(1);
@@ -212,5 +254,9 @@ class DatabaseMigrationIT {
         assertThat(bookingTableCount).isEqualTo(6);
         assertThat(bookingPermissionCount).isEqualTo(2);
         assertThat(bookingTriggerCount).isEqualTo(5);
+        assertThat(paymentTableCount).isEqualTo(11);
+        assertThat(paymentTriggerCount).isEqualTo(4);
+        assertThat(enabledPaymentProviderCount).isZero();
+        assertThat(railConnectPayMigrationCount).isEqualTo(2);
     }
 }
