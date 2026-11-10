@@ -34,6 +34,7 @@ import static in.railconnect.core.payment.PaymentState.*;
 @Service
 public class PaymentOrderService {
     private static final String PROVIDER = PaymentProvider.DHRUVA_BANK.name();
+    private static final long PROVIDER_EXPIRY_SAFETY_BUFFER_SECONDS = 30;
     private final JdbcTemplate jdbc;
     private final ReservationService reservationService;
     private final BookingService bookingService;
@@ -686,7 +687,14 @@ public class PaymentOrderService {
                 + payment.paymentId() + "&outcome=success");
         URI failure = URI.create(passengerOrigin + "/" + experience + "/payment/return?paymentId="
                 + payment.paymentId() + "&outcome=cancel");
-        long seconds = Math.max(1, Duration.between(databaseNow(), payment.expiresAt()).toSeconds());
+        long remainingSeconds = Duration.between(databaseNow(), payment.expiresAt()).toSeconds();
+        long seconds = payment.providerPaymentIntentId() == null
+                ? remainingSeconds - PROVIDER_EXPIRY_SAFETY_BUFFER_SECONDS
+                : Math.max(1, remainingSeconds);
+        if (seconds <= 0) {
+            throw new PaymentException(HttpStatus.CONFLICT, "PAYMENT_DEADLINE_TOO_CLOSE",
+                    "The booking payment deadline is too close to start checkout", true);
+        }
         return new PreparedPayment(
                 payment.paymentId(), payment.bookingId(), ownerId, "RC-PAY-" + payment.bookingReference(),
                 payment.bookingReference(), payment.providerPaymentIntentId(), payment.providerSessionId(),
