@@ -91,3 +91,4 @@ class TrainOperationsControlServiceTest {
         assertEquals("CONFLICT", result.assignmentStatus());
     }
 }
+

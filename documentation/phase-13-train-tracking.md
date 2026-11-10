@@ -20,3 +20,4 @@ RailConnect's internal train tracking system provides passenger and operational 
 $$\text{Delay}_{\text{minutes}} = \max\left(0, \frac{\text{ReportedActualTimestamp} - \text{ScheduledTimestamp}}{60,000}\right)$$
 
 If $\text{Delay} > 15 \text{ minutes}$, the operational status shifts automatically from `RUNNING` to `DELAYED`.
+

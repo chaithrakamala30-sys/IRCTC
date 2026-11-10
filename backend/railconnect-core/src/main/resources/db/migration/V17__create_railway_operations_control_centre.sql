@@ -268,3 +268,4 @@ SELECT 'RAILWAY_ADMIN', p.permission_code
 FROM permissions p
 WHERE p.permission_code LIKE 'operations:%'
 ON CONFLICT DO NOTHING;
+

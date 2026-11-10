@@ -52,3 +52,4 @@ sequenceDiagram
     DB-->>Svc: Stops with actual reported times & platforms
     Svc-->>Pax: Display route progress, delay (+X mins), platform, and reliability badge
 ```
+

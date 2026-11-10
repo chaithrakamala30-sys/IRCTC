@@ -14,3 +14,4 @@ Where:
 $$\text{Range} = [\text{scheduled\_arrival}, \text{scheduled\_departure}]$$
 
 If an overlapping slot is detected, the database marks the assignment with `conflict_flag = true` and `assignment_status = 'CONFLICT'`.
+

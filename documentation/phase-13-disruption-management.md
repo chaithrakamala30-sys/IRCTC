@@ -17,3 +17,4 @@ RailConnect classifies operational exceptions into disruptions and incidents wit
 ## 2. Incident Lifecycle
 
 $$\text{OPEN} \longrightarrow \text{ACKNOWLEDGED} \longrightarrow \text{INVESTIGATING} \longrightarrow \text{ESCALATED} \longrightarrow \text{RESOLVED} \longrightarrow \text{CLOSED}$$
+
