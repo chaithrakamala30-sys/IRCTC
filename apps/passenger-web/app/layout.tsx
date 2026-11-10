@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "../components/theme-provider";
+import { MobileBottomNav } from "../components/mobile-bottom-nav";
 
 export const metadata: Metadata = {
   title: {
@@ -40,7 +41,10 @@ export default function PassengerLayout({
         />
       </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-[#090d16] dark:text-slate-100 antialiased selection:bg-orange-500 selection:text-white">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <MobileBottomNav />
+        </ThemeProvider>
       </body>
     </html>
   );

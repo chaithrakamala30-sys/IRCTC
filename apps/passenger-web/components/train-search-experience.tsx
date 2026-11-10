@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
 import { StationAutocomplete } from "./station-autocomplete";
+import { RailwayGlossaryTooltip } from "./railway-glossary-tooltip";
 import type {
   SearchFilters,
   SearchPage,
@@ -413,6 +414,7 @@ export function TrainSearchExperience({ device }: { device: DeviceExperience }) 
           </button>
         </div>
         <p className="search-horizon-note">Search up to {maximumDays} days ahead. Times use each station&apos;s local timezone.</p>
+        <RailwayGlossaryTooltip />
         {formError && <p className="search-error" role="alert">{formError}</p>}
       </form>
 

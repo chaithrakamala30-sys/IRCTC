@@ -3038,4 +3038,271 @@ html.dark .train-card {
   }
 }
 
+/* =========================================================================
+   Mobile Bottom Navigation Bar (WCAG 2.2 AA & Responsive)
+   ========================================================================= */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  z-index: 900;
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.dark .mobile-bottom-nav {
+  background: rgba(15, 23, 42, 0.88);
+  border-top-color: rgba(51, 65, 85, 0.7);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+  }
+  
+  /* Add padding to page shell so bottom nav doesn't overlap content */
+  .page-shell,
+  .passenger-mobile,
+  .passenger-laptop {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.mobile-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 48px;
+  min-width: 48px;
+  text-decoration: none;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 500;
+  gap: 3px;
+  transition: color 0.15s ease, transform 0.15s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dark .mobile-bottom-nav-item {
+  color: #94a3b8;
+}
+
+.mobile-bottom-nav-item:hover,
+.mobile-bottom-nav-item.is-active {
+  color: #ea580c;
+}
+
+.dark .mobile-bottom-nav-item.is-active {
+  color: #fb923c;
+}
+
+.mobile-bottom-nav-item.is-active svg {
+  transform: translateY(-1px);
+}
+
+.bottom-nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 9999px;
+  min-width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+}
+
+.dark .bottom-nav-badge {
+  border-color: #0f172a;
+}
+
+/* Accessible visible focus ring for keyboard navigation */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
+
+/* Railway Terms Glossary Tooltip / Popover */
+.rail-glossary-widget {
+  position: relative;
+  display: inline-block;
+  margin-top: 6px;
+}
+
+.rail-glossary-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px dashed #94a3b8;
+  border-radius: 9999px;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 36px;
+}
+
+.dark .rail-glossary-toggle-btn {
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+.rail-glossary-toggle-btn:hover {
+  background: #f1f5f9;
+  border-color: #3b82f6;
+  color: #1e293b;
+}
+
+.dark .rail-glossary-toggle-btn:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.rail-glossary-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(90vw, 360px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  z-index: 1000;
+  animation: glassScaleUp 0.15s ease;
+}
+
+.dark .rail-glossary-popover {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.rail-glossary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.dark .rail-glossary-header {
+  border-bottom-color: #334155;
+}
+
+.rail-glossary-header h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+
+.dark .rail-glossary-header h4 {
+  color: #f8fafc;
+}
+
+.rail-glossary-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.rail-glossary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.rail-glossary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rail-glossary-term-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rail-glossary-term-badge strong {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.dark .rail-glossary-term-badge strong {
+  background: #0369a1;
+  color: #e0f2fe;
+}
+
+.rail-glossary-term-badge span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dark .rail-glossary-term-badge span {
+  color: #cbd5e1;
+}
+
+.rail-glossary-item p {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.dark .rail-glossary-item p {
+  color: #94a3b8;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
 
