@@ -94,15 +94,18 @@ public class PaymentOrderService {
                     "This idempotency key was already used for a different payment request");
         }
         PaymentRecord existing = jdbc.query("""
-                SELECT payment_order_id, booking_id, owner_user_id, merchant_reference,
-                       provider_payment_intent_id, provider_session_id, checkout_url,
-                       amount_minor, currency, payment_status, expires_at, created_at,
-                       failure_code, fare_quote_id, train_snapshot ->> 'trainNumber' AS train_number,
-                       train_snapshot ->> 'trainName' AS train_name,
-                       journey_snapshot ->> 'coachClassCode' AS coach_class_code,
+                SELECT payment_orders.payment_order_id, payment_orders.booking_id,
+                       payment_orders.owner_user_id, payment_orders.merchant_reference,
+                       payment_orders.provider_payment_intent_id, payment_orders.provider_session_id,
+                       payment_orders.checkout_url, payment_orders.amount_minor, payment_orders.currency,
+                       payment_orders.payment_status, payment_orders.expires_at, payment_orders.created_at,
+                       payment_orders.failure_code, payment_orders.fare_quote_id,
+                       bookings.train_snapshot ->> 'trainNumber' AS train_number,
+                       bookings.train_snapshot ->> 'trainName' AS train_name,
+                       bookings.journey_snapshot ->> 'coachClassCode' AS coach_class_code,
                        (SELECT COUNT(*) FROM booking_passengers p
                         WHERE p.booking_id = bookings.booking_id) AS passenger_count,
-                       payment_deadline
+                       bookings.payment_deadline
                 FROM payment_orders
                 JOIN bookings USING (booking_id)
                 WHERE payment_orders.booking_id = ? AND payment_orders.owner_user_id = ?
