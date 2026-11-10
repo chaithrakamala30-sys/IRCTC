@@ -121,10 +121,6 @@ public class PaymentOrderService {
         }
         if (existing != null) {
             ensureFreshProviderAttemptAllowed(existing, booking);
-            jdbc.update("""
-                    UPDATE payment_idempotency_records SET payment_order_id = ?
-                    WHERE owner_user_id = ? AND idempotency_key = ? AND payment_order_id IS NULL
-                    """, existing.paymentId(), ownerId, key);
             return prepared(existing, booking, ownerId, experience);
         }
         if (!"AWAITING_PAYMENT".equals(booking.bookingStatus())
