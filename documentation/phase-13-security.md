@@ -41,3 +41,4 @@ Public passenger tracking endpoints (`GET /api/v1/tracking/trains/{trainNumber}`
 
 - **Platform Assignments**: Validated within database transactions using `SELECT ... FOR UPDATE` on `platform_assignments` to prevent two trains from occupying the same platform slot simultaneously.
 - **Station Operational Updates**: Enforced via database unique constraint on `(train_run_id, station_id, event_type)` to eliminate duplicate race conditions.
+
