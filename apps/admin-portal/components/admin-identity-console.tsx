@@ -489,222 +489,236 @@ export function AdminIdentityConsole() {
             Your account is authenticated but is not authorized to use this administration portal.
           </p>
         )}
-        {currentTab === "identity" && isSuperAdmin && (
-          <>
-            <div className="admin-title-row">
-              <div>
-                <p className="eyebrow">Identity and access</p>
-                <h1>Administrator console</h1>
-                <p>Signed in as {user.fullName}. Changes to staff access require a recent sign-in.</p>
-              </div>
-            </div>
-          <section aria-labelledby="create-staff-title" className="admin-panel">
-            <h2 id="create-staff-title">Provision staff account</h2>
-            <p>Never use passenger registration for staff. Share the temporary password out of band.</p>
-            <form className="admin-staff-form" onSubmit={createStaff}>
-              <label>Full name<input maxLength={120} minLength={2} name="fullName" required /></label>
-              <label>Email<input maxLength={254} name="email" required type="email" /></label>
-              <label>Mobile with country code<input name="mobileNumber" placeholder="+14155552671" required type="tel" /></label>
-              <label>Temporary password<input minLength={12} name="temporaryPassword" required type="password" /></label>
-              <fieldset>
-                <legend>Assign roles</legend>
-                <div className="admin-role-options">
-                  {staffRoles.map((roleCode) => (
-                    <label key={roleCode}>
-                      <input name="roles" type="checkbox" value={roleCode} />
-                      {roleCode.replaceAll("_", " ")}
-                    </label>
-                  ))}
+        <div className={currentTab === "identity" && isSuperAdmin ? undefined : "admin-tab-content-hidden"}>
+          {isSuperAdmin && (
+            <>
+              <div className="admin-title-row">
+                <div>
+                  <p className="eyebrow">Identity and access</p>
+                  <h1>Administrator console</h1>
+                  <p>Signed in as {user.fullName}. Changes to staff access require a recent sign-in.</p>
                 </div>
-              </fieldset>
-              <label>Station scope (required for Station Manager)<input maxLength={100} name="stationScope" /></label>
-              <button className="button button--primary" type="submit">Create staff account</button>
-            </form>
-          </section>
-
-          <section aria-labelledby="user-directory-title" className="admin-panel">
-            <div className="admin-panel-heading">
-              <div><h2 id="user-directory-title">Identity accounts</h2><p>{page?.totalItems ?? 0} matching accounts</p></div>
-              <button className="button button--secondary" onClick={() => void loadAudit()} type="button">Security audit log</button>
-            </div>
-            <form className="admin-filters" onSubmit={applyFilters}>
-              <label>Search<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name, email, or mobile" /></label>
-              <label>Role
-                <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-                  <option value="">All roles</option>
-                  {roles.map((role) => <option key={role.roleCode} value={role.roleCode}>{role.displayName}</option>)}
-                </select>
-              </label>
-              <label>Status
-                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                  <option value="">All statuses</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="SUSPENDED">Suspended</option>
-                  <option value="DISABLED">Disabled</option>
-                </select>
-              </label>
-              <button className="button button--primary" type="submit">Filter</button>
-            </form>
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead><tr><th>Account</th><th>Status</th><th>Roles and scope</th><th>Verification</th><th>Actions</th></tr></thead>
-                <tbody>
-                  {users.map((target) => (
-                    <tr key={target.userId}>
-                      <td><strong>{target.fullName}</strong><span>{target.email}</span><span>{target.mobileNumber}</span></td>
-                      <td><span className={`admin-status admin-status--${target.status.toLowerCase()}`}>{target.status}</span></td>
-                      <td>{target.roles.map((role) => `${role.roleCode} (${role.scopeType}${role.scopeType === "GLOBAL" ? "" : `: ${role.scopeId}`})`).join(", ") || "No roles"}</td>
-                      <td>Email {target.emailVerified ? "verified" : "unverified"}<br />Mobile {target.mobileVerified ? "verified" : "unverified"}</td>
-                      <td>
-                        <div className="admin-row-actions">
-                          <button className="button button--secondary" onClick={() => beginRoleEdit(target)} type="button">Roles</button>
-                          <button className="button button--secondary" onClick={() => void openActivity(target)} type="button">Activity</button>
-                          <button className="button button--secondary" onClick={() => void changeStatus(target)} type="button">
-                            {target.status === "ACTIVE" ? "Suspend" : "Reactivate"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {users.length === 0 && <tr><td colSpan={5}>No accounts match these filters.</td></tr>}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section aria-labelledby="role-matrix-title" className="admin-panel">
-            <h2 id="role-matrix-title">Role and permission catalogue</h2>
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead><tr><th>Role</th><th>Granted permissions</th></tr></thead>
-                <tbody>{roles.map((role) => (
-                  <tr key={role.roleCode}>
-                    <td><strong>{role.displayName}</strong></td>
-                    <td>{role.permissions.join(", ") || "No permissions"}</td>
-                  </tr>
-                ))}</tbody>
-              </table>
-            </div>
-            <details className="admin-permission-details">
-              <summary>View permission descriptions</summary>
-              <ul>{permissions.map((permission) => (
-                <li key={permission.permissionCode}>
-                  <code>{permission.permissionCode}</code> — {permission.description}
-                </li>
-              ))}</ul>
-            </details>
-          </section>
-
-          {editingUser && (
-            <div className="admin-modal-backdrop" role="presentation">
-              <section aria-labelledby="role-editor-title" aria-modal="true" className="admin-role-dialog" role="dialog">
-                <h2 id="role-editor-title">Manage roles for {editingUser.fullName}</h2>
-                <form className="admin-form" onSubmit={saveRoles}>
+              </div>
+            <section aria-labelledby="create-staff-title" className="admin-panel">
+              <h2 id="create-staff-title">Provision staff account</h2>
+              <p>Never use passenger registration for staff. Share the temporary password out of band.</p>
+              <form className="admin-staff-form" onSubmit={createStaff}>
+                <label>Full name<input maxLength={120} minLength={2} name="fullName" required /></label>
+                <label>Email<input maxLength={254} name="email" required type="email" /></label>
+                <label>Mobile with country code<input name="mobileNumber" placeholder="+14155552671" required type="tel" /></label>
+                <label>Temporary password<input minLength={12} name="temporaryPassword" required type="password" /></label>
+                <fieldset>
+                  <legend>Assign roles</legend>
                   <div className="admin-role-options">
                     {staffRoles.map((roleCode) => (
                       <label key={roleCode}>
-                        <input
-                          checked={selectedRoles.includes(roleCode)}
-                          onChange={(event) => setSelectedRoles((current) =>
-                            event.target.checked
-                              ? [...current, roleCode]
-                              : current.filter((value) => value !== roleCode))}
-                          type="checkbox"
-                        />
+                        <input name="roles" type="checkbox" value={roleCode} />
                         {roleCode.replaceAll("_", " ")}
                       </label>
                     ))}
                   </div>
-                  {selectedRoles.includes("STATION_MANAGER") && (
-                    <label>Station scope identifier<input maxLength={100} onChange={(event) => setStationScope(event.target.value)} required value={stationScope} /></label>
-                  )}
-                  <p className="identity-note">Role changes revoke the account’s existing sessions. The last active Super Administrator is protected.</p>
-                  <div className="admin-row-actions">
-                    <button className="button button--primary" type="submit">Save role assignments</button>
-                    <button className="button button--secondary" onClick={() => setEditingUser(null)} type="button">Cancel</button>
-                  </div>
-                </form>
-              </section>
-            </div>
-          )}
+                </fieldset>
+                <label>Station scope (required for Station Manager)<input maxLength={100} name="stationScope" /></label>
+                <button className="button button--primary" type="submit">Create staff account</button>
+              </form>
+            </section>
 
-          {showAudit && (
-            <section aria-labelledby="audit-title" className="admin-panel">
+            <section aria-labelledby="user-directory-title" className="admin-panel">
               <div className="admin-panel-heading">
-                <h2 id="audit-title">Recent security audit events</h2>
-                <button className="button button--secondary" onClick={() => setShowAudit(false)} type="button">Close</button>
+                <div><h2 id="user-directory-title">Identity accounts</h2><p>{page?.totalItems ?? 0} matching accounts</p></div>
+                <button className="button button--secondary" onClick={() => void loadAudit()} type="button">Security audit log</button>
               </div>
+              <form className="admin-filters" onSubmit={applyFilters}>
+                <label>Search<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name, email, or mobile" /></label>
+                <label>Role
+                  <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+                    <option value="">All roles</option>
+                    {roles.map((role) => <option key={role.roleCode} value={role.roleCode}>{role.displayName}</option>)}
+                  </select>
+                </label>
+                <label>Status
+                  <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                    <option value="">All statuses</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="SUSPENDED">Suspended</option>
+                    <option value="DISABLED">Disabled</option>
+                  </select>
+                </label>
+                <button className="button button--primary" type="submit">Filter</button>
+              </form>
               <div className="admin-table-wrap">
                 <table className="admin-table">
-                  <thead><tr><th>Time</th><th>Event</th><th>Outcome</th><th>Actor</th><th>Target</th><th>Correlation</th></tr></thead>
-                  <tbody>{audit.map((entry) => (
-                    <tr key={entry.auditId}>
-                      <td>{new Date(entry.occurredAt).toLocaleString()}</td>
-                      <td>{entry.eventType}</td><td>{entry.outcome}</td>
-                      <td>{entry.actorName ?? (entry.actorUserId ? "Unknown user" : "System")}</td>
-                      <td>{entry.targetName ?? "—"}</td>
-                      <td title={`Correlation ID: ${entry.correlationId}`}>
-                        Security event · {new Date(entry.occurredAt).toLocaleString()}
-                      </td>
+                  <thead><tr><th>Account</th><th>Status</th><th>Roles and scope</th><th>Verification</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    {users.map((target) => (
+                      <tr key={target.userId}>
+                        <td><strong>{target.fullName}</strong><span>{target.email}</span><span>{target.mobileNumber}</span></td>
+                        <td><span className={`admin-status admin-status--${target.status.toLowerCase()}`}>{target.status}</span></td>
+                        <td>{target.roles.map((role) => `${role.roleCode} (${role.scopeType}${role.scopeType === "GLOBAL" ? "" : `: ${role.scopeId}`})`).join(", ") || "No roles"}</td>
+                        <td>Email {target.emailVerified ? "verified" : "unverified"}<br />Mobile {target.mobileVerified ? "verified" : "unverified"}</td>
+                        <td>
+                          <div className="admin-row-actions">
+                            <button className="button button--secondary" onClick={() => beginRoleEdit(target)} type="button">Roles</button>
+                            <button className="button button--secondary" onClick={() => void openActivity(target)} type="button">Activity</button>
+                            <button className="button button--secondary" onClick={() => void changeStatus(target)} type="button">
+                              {target.status === "ACTIVE" ? "Suspend" : "Reactivate"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && <tr><td colSpan={5}>No accounts match these filters.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section aria-labelledby="role-matrix-title" className="admin-panel">
+              <h2 id="role-matrix-title">Role and permission catalogue</h2>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead><tr><th>Role</th><th>Granted permissions</th></tr></thead>
+                  <tbody>{roles.map((role) => (
+                    <tr key={role.roleCode}>
+                      <td><strong>{role.displayName}</strong></td>
+                      <td>{role.permissions.join(", ") || "No permissions"}</td>
                     </tr>
                   ))}</tbody>
                 </table>
               </div>
+              <details className="admin-permission-details">
+                <summary>View permission descriptions</summary>
+                <ul>{permissions.map((permission) => (
+                  <li key={permission.permissionCode}>
+                    <code>{permission.permissionCode}</code> — {permission.description}
+                  </li>
+                ))}</ul>
+              </details>
             </section>
-          )}
 
-          {activityUser && (
-            <section aria-labelledby="activity-title" className="admin-panel">
-              <div className="admin-panel-heading">
-                <div><h2 id="activity-title">Account activity: {activityUser.fullName}</h2><p>Session references are opaque identifiers, never browser credentials.</p></div>
-                <button className="button button--secondary" onClick={() => setActivityUser(null)} type="button">Close</button>
+            {editingUser && (
+              <div className="admin-modal-backdrop" role="presentation">
+                <section aria-labelledby="role-editor-title" aria-modal="true" className="admin-role-dialog" role="dialog">
+                  <h2 id="role-editor-title">Manage roles for {editingUser.fullName}</h2>
+                  <form className="admin-form" onSubmit={saveRoles}>
+                    <div className="admin-role-options">
+                      {staffRoles.map((roleCode) => (
+                        <label key={roleCode}>
+                          <input
+                            checked={selectedRoles.includes(roleCode)}
+                            onChange={(event) => setSelectedRoles((current) =>
+                              event.target.checked
+                                ? [...current, roleCode]
+                                : current.filter((value) => value !== roleCode))}
+                            type="checkbox"
+                          />
+                          {roleCode.replaceAll("_", " ")}
+                        </label>
+                      ))}
+                    </div>
+                    {selectedRoles.includes("STATION_MANAGER") && (
+                      <label>Station scope identifier<input maxLength={100} onChange={(event) => setStationScope(event.target.value)} required value={stationScope} /></label>
+                    )}
+                    <p className="identity-note">Role changes revoke the account’s existing sessions. The last active Super Administrator is protected.</p>
+                    <div className="admin-row-actions">
+                      <button className="button button--primary" type="submit">Save role assignments</button>
+                      <button className="button button--secondary" onClick={() => setEditingUser(null)} type="button">Cancel</button>
+                    </div>
+                  </form>
+                </section>
               </div>
-              <h3>Active browser sessions</h3>
-              <div className="admin-table-wrap">
-                <table className="admin-table">
-                  <thead><tr><th>Last active</th><th>Browser</th><th>Action</th></tr></thead>
-                  <tbody>{activeSessions.map((session) => (
-                    <tr key={session.sessionId}>
-                      <td>{new Date(session.lastSeenAt).toLocaleString()}</td>
-                      <td>{session.userAgent || "Browser details unavailable"}</td>
-                      <td><button className="button button--secondary" onClick={() => void revokeAdminSession(session.sessionId)} type="button">Revoke</button></td>
-                    </tr>
-                  ))}{activeSessions.length === 0 && <tr><td colSpan={3}>No active sessions.</td></tr>}</tbody>
-                </table>
-              </div>
-              <h3>Authentication events</h3>
-              <div className="admin-table-wrap">
-                <table className="admin-table">
-                  <thead><tr><th>Time</th><th>Event</th><th>Outcome</th><th>Correlation</th></tr></thead>
-                  <tbody>{authEvents.map((entry) => (
-                    <tr key={entry.eventId}>
-                      <td>{new Date(entry.occurredAt).toLocaleString()}</td>
-                      <td>{entry.eventType}</td><td>{entry.outcome}</td><td>{entry.correlationId}</td>
-                    </tr>
-                  ))}{authEvents.length === 0 && <tr><td colSpan={4}>No authentication events found.</td></tr>}</tbody>
-                </table>
-              </div>
-            </section>
+            )}
+
+            {showAudit && (
+              <section aria-labelledby="audit-title" className="admin-panel">
+                <div className="admin-panel-heading">
+                  <h2 id="audit-title">Recent security audit events</h2>
+                  <button className="button button--secondary" onClick={() => setShowAudit(false)} type="button">Close</button>
+                </div>
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead><tr><th>Time</th><th>Event</th><th>Outcome</th><th>Actor</th><th>Target</th><th>Correlation</th></tr></thead>
+                    <tbody>{audit.map((entry) => (
+                      <tr key={entry.auditId}>
+                        <td>{new Date(entry.occurredAt).toLocaleString()}</td>
+                        <td>{entry.eventType}</td><td>{entry.outcome}</td>
+                        <td>{entry.actorName ?? (entry.actorUserId ? "Unknown user" : "System")}</td>
+                        <td>{entry.targetName ?? "—"}</td>
+                        <td title={`Correlation ID: ${entry.correlationId}`}>
+                          Security event · {new Date(entry.occurredAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+
+            {activityUser && (
+              <section aria-labelledby="activity-title" className="admin-panel">
+                <div className="admin-panel-heading">
+                  <div><h2 id="activity-title">Account activity: {activityUser.fullName}</h2><p>Session references are opaque identifiers, never browser credentials.</p></div>
+                  <button className="button button--secondary" onClick={() => setActivityUser(null)} type="button">Close</button>
+                </div>
+                <h3>Active browser sessions</h3>
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead><tr><th>Last active</th><th>Browser</th><th>Action</th></tr></thead>
+                    <tbody>{activeSessions.map((session) => (
+                      <tr key={session.sessionId}>
+                        <td>{new Date(session.lastSeenAt).toLocaleString()}</td>
+                        <td>{session.userAgent || "Browser details unavailable"}</td>
+                        <td><button className="button button--secondary" onClick={() => void revokeAdminSession(session.sessionId)} type="button">Revoke</button></td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+                <h3>Authentication events</h3>
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead><tr><th>Time</th><th>Event</th><th>Outcome</th><th>Correlation</th></tr></thead>
+                    <tbody>{authEvents.map((entry) => (
+                      <tr key={entry.eventId}>
+                        <td>{new Date(entry.occurredAt).toLocaleString()}</td>
+                        <td>{entry.eventType}</td><td>{entry.outcome}</td><td>{entry.correlationId}</td>
+                      </tr>
+                    ))}{authEvents.length === 0 && <tr><td colSpan={4}>No authentication events found.</td></tr>}</tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+            </>
           )}
-          </>
+        </div>
+        {(isSuperAdmin || isRailwayAdmin) && (
+          <div className={currentTab === "master-data" ? undefined : "admin-tab-content-hidden"}>
+            <AdminMasterDataConsole />
+          </div>
         )}
-        {currentTab === "master-data" && (isSuperAdmin || isRailwayAdmin) && (
-          <AdminMasterDataConsole />
+        {(isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && (
+          <div className={currentTab === "fares" ? undefined : "admin-tab-content-hidden"}>
+            <AdminFareConsole roles={user.roles} />
+          </div>
         )}
-        {currentTab === "fares" && (isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && (
-          <AdminFareConsole roles={user.roles} />
+        {(isSuperAdmin || isRailwayAdmin) && (
+          <div className={currentTab === "inventory" ? undefined : "admin-tab-content-hidden"}>
+            <AdminInventoryConsole />
+          </div>
         )}
-        {currentTab === "inventory" && (isSuperAdmin || isRailwayAdmin) && (
-          <AdminInventoryConsole />
+        {(isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
+          <div className={currentTab === "reservations" ? undefined : "admin-tab-content-hidden"}>
+            <AdminReservationConsole roles={user.roles} />
+          </div>
         )}
-        {currentTab === "reservations" && (isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
-          <AdminReservationConsole roles={user.roles} />
+        {(isSuperAdmin || isFinanceAdmin) && (
+          <div className={currentTab === "payments" ? undefined : "admin-tab-content-hidden"}>
+            <AdminPaymentConsole />
+          </div>
         )}
-        {currentTab === "payments" && (isSuperAdmin || isFinanceAdmin) && (
-          <AdminPaymentConsole />
-        )}
-        {currentTab === "tickets" && (isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
-          <TicketAdminConsole />
+        {(isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
+          <div className={currentTab === "tickets" ? undefined : "admin-tab-content-hidden"}>
+            <TicketAdminConsole />
+          </div>
         )}
       </main>
     </>

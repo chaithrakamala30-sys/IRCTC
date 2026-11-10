@@ -48,6 +48,12 @@
 .admin-portal-tab:hover,
 .admin-portal-tab.is-active {
   background: #fff;
+  color: #102b50;
+}
+
+.admin-tab-content-hidden {
+  display: none !important;
+}
   color: #104c91;
 }
 
