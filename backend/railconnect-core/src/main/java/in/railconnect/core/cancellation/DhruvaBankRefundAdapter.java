@@ -180,6 +180,59 @@ public class DhruvaBankRefundAdapter implements RefundProvider {
     }
 
     @Override
+    public PaymentRefundsResult queryPaymentRefunds(String paymentIntentId) {
+        if (!available()) {
+            return new PaymentRefundsResult(
+                    paymentIntentId,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    "INR",
+                    java.util.List.of(),
+                    "{}"
+            );
+        }
+
+        try {
+            PaymentRefundsResponse response = restClient.get()
+                    .uri("/api/v1/merchant/payments/{paymentId}/refunds", paymentIntentId)
+                    .headers(this::addCredentials)
+                    .retrieve()
+                    .body(PaymentRefundsResponse.class);
+
+            if (response == null || !response.success() || response.data() == null) {
+                throw new CancellationException(HttpStatus.BAD_GATEWAY, "PAYMENT_REFUNDS_EMPTY",
+                        "Dhruva Bank returned an empty response on payment refunds query");
+            }
+
+            PaymentRefundsData data = response.data();
+            var items = data.refunds() != null
+                    ? data.refunds().stream().map(r -> new PaymentRefundItem(
+                            r.refundId(),
+                            r.merchantRefundRef(),
+                            r.cancellationReference(),
+                            r.amount(),
+                            r.status(),
+                            r.completedAt() != null ? Instant.parse(r.completedAt()) : null
+                    )).toList()
+                    : java.util.List.<PaymentRefundItem>of();
+
+            return new PaymentRefundsResult(
+                    data.paymentIntentId(),
+                    data.originalAmount(),
+                    data.totalRefunded(),
+                    data.remainingRefundable(),
+                    data.currency(),
+                    items,
+                    response.toString()
+            );
+        } catch (Exception e) {
+            throw new CancellationException(HttpStatus.GATEWAY_TIMEOUT, "PAYMENT_REFUNDS_QUERY_FAILED",
+                    "Failed to query payment refunds from Dhruva Bank: " + e.getMessage());
+        }
+    }
+
+    @Override
     public RefundVerificationResult verifyRefund(String providerRefundId) {
         if (!available()) {
             Instant now = Instant.now();
@@ -278,6 +331,29 @@ public class DhruvaBankRefundAdapter implements RefundProvider {
     private record RefundVerifyResponse(
             boolean success,
             RefundVerifyData data
+    ) {}
+
+    private record PaymentRefundsResponse(
+            boolean success,
+            PaymentRefundsData data
+    ) {}
+
+    private record PaymentRefundsData(
+            @JsonProperty("payment_intent_id") String paymentIntentId,
+            @JsonProperty("original_amount") BigDecimal originalAmount,
+            @JsonProperty("total_refunded") BigDecimal totalRefunded,
+            @JsonProperty("remaining_refundable") BigDecimal remainingRefundable,
+            @JsonProperty("currency") String currency,
+            @JsonProperty("refunds") java.util.List<PaymentRefundItemData> refunds
+    ) {}
+
+    private record PaymentRefundItemData(
+            @JsonProperty("refund_id") String refundId,
+            @JsonProperty("merchant_refund_ref") String merchantRefundRef,
+            @JsonProperty("cancellation_reference") String cancellationReference,
+            @JsonProperty("amount") BigDecimal amount,
+            @JsonProperty("status") String status,
+            @JsonProperty("completed_at") String completedAt
     ) {}
 
     private record RefundVerifyData(

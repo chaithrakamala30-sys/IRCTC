@@ -13,6 +13,8 @@ public interface RefundProvider {
 
     RefundStatusResult queryRefund(String providerRefundId);
 
+    PaymentRefundsResult queryPaymentRefunds(String paymentIntentId);
+
     RefundVerificationResult verifyRefund(String providerRefundId);
 
     record RefundRequest(
@@ -51,6 +53,25 @@ public interface RefundProvider {
             String rawResponse
     ) {}
 
+    record PaymentRefundsResult(
+            String paymentIntentId,
+            BigDecimal originalAmount,
+            BigDecimal totalRefunded,
+            BigDecimal remainingRefundable,
+            String currency,
+            java.util.List<PaymentRefundItem> refunds,
+            String rawResponse
+    ) {}
+
+    record PaymentRefundItem(
+            String refundId,
+            String merchantRefundRef,
+            String cancellationReference,
+            BigDecimal amount,
+            String status,
+            Instant completedAt
+    ) {}
+
     record RefundVerificationResult(
             String providerRefundId,
             String merchantRefundRef,
@@ -66,3 +87,4 @@ public interface RefundProvider {
             String rawResponse
     ) {}
 }
+

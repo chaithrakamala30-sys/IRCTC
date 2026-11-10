@@ -191,3 +191,4 @@ public final class CancellationModels {
             String rulesJson
     ) {}
 }
+
