@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { apiFetch } from "../lib/api";
@@ -128,11 +126,33 @@ export function NotificationCenterView() {
       const perm = await Notification.requestPermission();
       setPushStatus(perm);
       if (perm === "granted") {
-        // Register mock / real web push token
+        let registrationToken = `web-push-${Date.now()}`;
+
+        // If WebPush service worker or FCM VAPID is configured
+        const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+        if ("serviceWorker" in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.register("/sw-push.js");
+            await navigator.serviceWorker.ready;
+            
+            // If VAPID key is provided, subscribe with pushManager
+            if (vapidKey && registration.pushManager) {
+              const sub = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: vapidKey,
+              });
+              registrationToken = JSON.stringify(sub);
+            }
+          } catch (swErr) {
+            console.warn("Service worker registration fallback:", swErr);
+          }
+        }
+
+        // Register token with RailConnect backend
         await apiFetch("/api/v1/notifications/devices", {
           method: "POST",
           body: JSON.stringify({
-            deviceToken: `web-push-${Date.now()}`,
+            deviceToken: registrationToken,
             platform: "WEB",
             metadata: { userAgent: navigator.userAgent },
           }),
