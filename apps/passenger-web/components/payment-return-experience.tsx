@@ -61,42 +61,100 @@ export function PaymentReturnExperience({ device }: { device: "mobile" | "laptop
   const statusText = payment?.requiresReconciliation
     ? "Needs reconciliation"
     : payment?.status.replaceAll("_", " ") ?? "Checking";
+  const isConfirmed = payment?.status === "SUCCEEDED" && booking?.status === "CONFIRMED";
+  const statusTitle = busy
+    ? "Checking your payment"
+    : isConfirmed
+      ? "Booking confirmed"
+      : payment?.requiresReconciliation
+        ? "Payment needs review"
+        : payment?.status === "FAILED" || payment?.status === "CANCELLED" || payment?.status === "EXPIRED"
+          ? "Payment not completed"
+          : error
+            ? "We couldn't confirm the payment"
+            : "You're back from checkout";
+  const statusMessage = busy
+    ? "We’re checking the latest status securely with RailConnect."
+    : isConfirmed
+      ? "Your demo payment was verified and your booking is confirmed."
+      : payment?.requiresReconciliation
+        ? "We couldn’t safely match the provider result. Please wait for support to review it."
+        : payment?.status === "FAILED" || payment?.status === "CANCELLED" || payment?.status === "EXPIRED"
+          ? "The latest server-side check says this payment did not complete."
+          : error
+            ? "We couldn’t retrieve a verified status just now. You can try checking again."
+            : "A checkout redirect alone does not confirm payment. Check the verified status below.";
 
   return (
-    <main className={`payment-return payment-return--${device}`}>
-      <p className="eyebrow">Dhruva Bank · DEMO PAYMENT</p>
-      <h1>Payment status</h1>
-      {busy && <p role="status">Verifying the payment with the server…</p>}
-      {error && <p className="identity-alert identity-alert--error" role="alert">{error}</p>}
-      {payment && (
-        <section className="booking-detail-card" aria-live="polite">
-          <p>RailConnect booking reference: <strong>{payment.bookingReference}</strong></p>
-          <p>Payment status: <strong>{statusText}</strong></p>
-          {booking && <p>Booking status: <strong>{booking.status.replaceAll("_", " ")}</strong></p>}
-          {payment.requiresReconciliation && (
-            <p role="status">
-              We could not safely match the provider result. Do not submit another payment. RailConnect support must review it.
-            </p>
-          )}
-          {payment.status === "SUCCEEDED" && booking?.status === "CONFIRMED" && (
-            <p role="status">Demo payment verified and booking confirmed. This is not a real-money ticket.</p>
-          )}
-          {!payment.requiresReconciliation && payment.status !== "SUCCEEDED" && (
-            <p role="status">
-              A return from the checkout page does not prove payment. This status came from a server-side provider check.
-            </p>
-          )}
-        </section>
-      )}
-      {!busy && paymentId && (
-        <button className="button button--secondary" onClick={() => void refresh(paymentId)} type="button">
-          Check status again
-        </button>
-      )}
-      <Link href={`/${device}/account#bookings`}>Return to passenger account</Link>
-      <p className="reservation-disclaimer">
-        DEMO ONLY — do not enter card, UPI, PIN, or bank credentials on RailConnect.
-      </p>
+    <main className={`payment-return-page payment-return-page--${device}`}>
+      <header className="payment-return__header">
+        <Link className="payment-return__brand" href={`/${device}`}>
+          <span className="payment-return__brand-mark" aria-hidden="true">R</span>
+          <span>RailConnect</span>
+        </Link>
+        <span className="payment-return__environment">Demo environment</span>
+      </header>
+
+      <section className="payment-return__card" aria-live="polite">
+        <div className={`payment-return__status payment-return__status--${isConfirmed ? "success" : payment?.requiresReconciliation ? "warning" : error ? "error" : "pending"}`}>
+          <span className="payment-return__status-icon" aria-hidden="true">
+            {busy ? "…" : isConfirmed ? "✓" : payment?.requiresReconciliation || error ? "!" : "•"}
+          </span>
+          <p className="eyebrow">Dhruva Bank · Demo checkout</p>
+          <h1>{statusTitle}</h1>
+          <p className="payment-return__message">{statusMessage}</p>
+        </div>
+
+        {error && <p className="identity-alert identity-alert--error" role="alert">{error}</p>}
+
+        {payment && (
+          <dl className="payment-return__details">
+            <div>
+              <dt>Booking reference</dt>
+              <dd>{payment.bookingReference}</dd>
+            </div>
+            <div>
+              <dt>Payment status</dt>
+              <dd><span className="payment-return__badge">{statusText}</span></dd>
+            </div>
+            {booking && (
+              <div>
+                <dt>Booking status</dt>
+                <dd>{booking.status.replaceAll("_", " ")}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+
+        {busy && (
+          <p className="payment-return__loading" role="status">
+            <span aria-hidden="true" />
+            Contacting the payment service…
+          </p>
+        )}
+
+        {!busy && (
+          <div className="payment-return__actions">
+            {paymentId && (
+              <button
+                className="button button--primary"
+                onClick={() => void refresh(paymentId)}
+                type="button"
+              >
+                Check status again
+              </button>
+            )}
+            <Link className="button button--secondary" href={`/${device}/account#bookings`}>
+              Return to bookings
+            </Link>
+          </div>
+        )}
+
+        <p className="payment-return__disclaimer">
+          Demo only. RailConnect never asks for your card number, UPI PIN, or bank password.
+        </p>
+      </section>
+      <p className="payment-return__help">Need help? Keep your booking reference available when contacting support.</p>
     </main>
   );
 }
