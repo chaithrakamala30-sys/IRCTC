@@ -70,8 +70,13 @@ html.dark .train-card {
   animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.animate-scaleUp {
-  animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .passenger-mobile,

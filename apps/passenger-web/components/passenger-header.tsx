@@ -12,6 +12,7 @@ import { ApiRequestError, apiFetch } from "../lib/api";
 import { TrainTrackingModal } from "./train-tracking-modal";
 import { NotificationBellDropdown } from "./notification-bell-dropdown";
 import { ThemeToggle } from "./theme-toggle";
+import { MobileNavDrawer } from "./mobile-nav-drawer";
 
 const navigationItems: NavigationItem[] = [
   { href: "/laptop", label: "Home" },
@@ -25,6 +26,7 @@ type PassengerHeaderProps = {
 };
 
 export function PassengerHeader({ experience }: PassengerHeaderProps) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [authStatus, setAuthStatus] = useState<
     "checking" | "signed-in" | "signed-out" | "error"
   >("checking");
@@ -73,24 +75,35 @@ export function PassengerHeader({ experience }: PassengerHeaderProps) {
         </div>
       ) : (
         <div className="passenger-header-actions">
-          <DeviceExperienceSwitch current={experience} />
           <NotificationBellDropdown />
-          <ThemeToggle />
-          {authStatus === "signed-in" ? (
-            <Link className="header-account-link" href="/mobile/account">Passenger account</Link>
-          ) : authStatus === "signed-out" ? (
-            <>
-              <Link className="header-account-link" href="/mobile/login">Sign in</Link>
-              <Link className="header-account-link" href="/mobile/register">Join</Link>
-            </>
-          ) : authStatus === "error" ? (
-            <>
-              <span role="status">Account status unavailable</span>
-              <Link className="header-account-link" href="/mobile/login">Sign in</Link>
-            </>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open mobile menu"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/80 bg-white/80 p-2 text-slate-700 shadow-sm transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
         </div>
       )}
+      <MobileNavDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        experience={experience}
+        authStatus={authStatus}
+      />
     </header>
   );
 }
