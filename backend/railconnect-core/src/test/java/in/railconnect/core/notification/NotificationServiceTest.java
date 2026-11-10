@@ -72,3 +72,4 @@ class NotificationServiceTest {
         verify(jdbcTemplate, times(1)).update(anyString(), eq(idempotencyKey), eq(eventType), eq(userId), anyString());
     }
 }
+

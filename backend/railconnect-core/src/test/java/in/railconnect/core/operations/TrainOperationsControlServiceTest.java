@@ -41,7 +41,7 @@ class TrainOperationsControlServiceTest {
                 runId, stationId, 2, "ARRIVAL", scheduled, actual, "1", 5, "Signal hold"
         );
 
-        when(jdbcTemplate.queryForObject(contains("INSERT INTO station_operational_updates"), eq(UUID.class), anyVararg()))
+        when(jdbcTemplate.queryForObject(contains("INSERT INTO station_operational_updates"), eq(UUID.class), any(Object[].class)))
                 .thenReturn(updateId);
         when(jdbcTemplate.queryForObject(contains("SELECT jsonb_array_length"), eq(Integer.class), eq(runId)))
                 .thenReturn(10); // 10 total stops -> stopIndex 2 is 30% progress
@@ -75,7 +75,7 @@ class TrainOperationsControlServiceTest {
         PlatformAssignmentInput input = new PlatformAssignmentInput(stationId, platformId, runId1, arrival, departure);
 
         // Conflicting assignment exists
-        when(jdbcTemplate.queryForList(contains("SELECT assignment_id FROM platform_assignments"), eq(UUID.class), anyVararg()))
+        when(jdbcTemplate.queryForList(contains("SELECT assignment_id FROM platform_assignments"), eq(UUID.class), any(Object[].class)))
                 .thenReturn(List.of(conflictAssignmentId));
 
         PlatformAssignmentView mockView = new PlatformAssignmentView(

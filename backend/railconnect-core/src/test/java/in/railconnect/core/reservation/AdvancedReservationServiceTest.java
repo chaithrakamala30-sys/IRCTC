@@ -56,7 +56,7 @@ class AdvancedReservationServiceTest {
         ReservationException ex = assertThrows(ReservationException.class, () ->
                 reservationService.configureQuotaAllocation(input)
         );
-        assertEquals("CAPACITY_EXCEEDED", ex.errorCode());
+        assertEquals("CAPACITY_EXCEEDED", ex.code());
     }
 
     @Test
