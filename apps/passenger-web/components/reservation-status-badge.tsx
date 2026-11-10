@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ApiRequestError, apiFetch } from "../lib/api";
+import { apiFetch } from "../lib/api";
 
 type PassengerStatusItem = {
   bookingPassengerId: string;
@@ -38,20 +38,16 @@ type ReservationStatusView = {
 
 export function ReservationStatusBadge({ bookingId }: { bookingId: string }) {
   const [data, setData] = useState<ReservationStatusView | null>(null);
-  const [loading, setLoading] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
 
   useEffect(() => {
     let active = true;
     async function loadStatus() {
-      setLoading(true);
       try {
         const res = await apiFetch<ReservationStatusView>(`/api/v1/bookings/${bookingId}/reservation-status`);
         if (active) setData(res.data);
       } catch {
         // Fallback silently if not available yet
-      } finally {
-        if (active) setLoading(false);
       }
     }
     void loadStatus();
