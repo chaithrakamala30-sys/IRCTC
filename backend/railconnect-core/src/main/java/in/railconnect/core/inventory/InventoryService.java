@@ -312,7 +312,16 @@ public class InventoryService {
                                          AND claim.train_run_id = :runId
                                          AND claim.segment_index >= :fromIndex AND claim.segment_index < :toIndex
                                          AND hold.status = 'ACTIVE' AND hold.expires_at > CURRENT_TIMESTAMP
-                                   ) AS held
+                                   ) AS held,
+                                   EXISTS (
+                                       SELECT 1 FROM inventory_segment_claims claim
+                                       JOIN reservation_allocations allocation
+                                         ON allocation.reservation_allocation_id = claim.reservation_allocation_id
+                                       WHERE claim.inventory_berth_id = berth.inventory_berth_id
+                                         AND claim.train_run_id = :runId
+                                         AND claim.segment_index >= :fromIndex AND claim.segment_index < :toIndex
+                                         AND allocation.status IN ('ALLOCATED_PENDING_BOOKING', 'CONFIRMED')
+                                   ) AS allocated
                             FROM inventory_berths berth
                             JOIN inventory_coaches coach ON coach.inventory_coach_id = berth.inventory_coach_id
                             WHERE berth.train_run_id = :runId
@@ -321,7 +330,9 @@ public class InventoryService {
                                    OR coach.coach_class_code = :classCode)
                         )
                         SELECT coach_class_code, coach_class_name, COUNT(*) AS total,
-                               COUNT(*) FILTER (WHERE base_status = 'AVAILABLE' AND NOT blocked AND NOT held) AS available,
+                               COUNT(*) FILTER (
+                                   WHERE base_status = 'AVAILABLE' AND NOT blocked AND NOT held AND NOT allocated
+                               ) AS available,
                                COUNT(*) FILTER (WHERE base_status = 'AVAILABLE' AND NOT blocked AND held) AS held,
                                COUNT(*) FILTER (WHERE base_status = 'AVAILABLE' AND blocked) AS blocked,
                                COUNT(*) FILTER (WHERE base_status = 'UNAVAILABLE') AS unavailable
@@ -363,6 +374,7 @@ public class InventoryService {
                 FROM inventory_berths berth
                 JOIN inventory_coaches coach ON coach.inventory_coach_id = berth.inventory_coach_id
                 WHERE berth.train_run_id = :runId
+                  AND berth.base_status = 'AVAILABLE'
                   AND (CAST(:classCode AS varchar) IS NULL
                        OR coach.coach_class_code = :classCode)
                   AND NOT EXISTS (
@@ -378,6 +390,15 @@ public class InventoryService {
                       WHERE claim.inventory_berth_id = berth.inventory_berth_id
                         AND claim.segment_index >= :fromIndex AND claim.segment_index < :toIndex
                         AND hold.status = 'ACTIVE' AND hold.expires_at > CURRENT_TIMESTAMP
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM inventory_segment_claims claim
+                      JOIN reservation_allocations allocation
+                        ON allocation.reservation_allocation_id = claim.reservation_allocation_id
+                      WHERE claim.inventory_berth_id = berth.inventory_berth_id
+                        AND claim.train_run_id = :runId
+                        AND claim.segment_index >= :fromIndex AND claim.segment_index < :toIndex
+                        AND allocation.status IN ('ALLOCATED_PENDING_BOOKING', 'CONFIRMED')
                   )
                 """;
         Long total = namedJdbc.queryForObject("SELECT COUNT(*) " + from, params, Long.class);
