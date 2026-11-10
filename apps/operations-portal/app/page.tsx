@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ApiRequestError, apiFetch } from "@railconnect/api";
 import { Brand } from "@railconnect/ui";
 import { TicketVerificationConsole } from "../components/ticket-verification-console";
+import { OperationalChartConsole } from "../components/operational-chart-console";
 
 type User = { userId: string; fullName: string; roles: string[]; mustChangePassword: boolean };
 type Run = {
@@ -295,6 +296,7 @@ export default function OperationsHomePage() {
         )}
         {user && canOperate && (
           <>
+            <OperationalChartConsole />
             <TicketVerificationConsole />
             {canInitialize && (
               <section className="ops-panel">

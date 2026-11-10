@@ -5,6 +5,7 @@ import { ApiRequestError, apiDownload, apiFetch } from "../lib/api";
 import { DemoPaymentAction } from "./demo-payment-action";
 import { TicketHistoryPanel } from "./ticket-history";
 import { CancellationAction } from "./cancellation-action";
+import { ReservationStatusBadge } from "./reservation-status-badge";
 
 type DeviceExperience = "mobile" | "laptop";
 type BookingSummary = {
@@ -234,6 +235,7 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
           <p><strong>{selected.trainNumber} · {selected.trainName}</strong></p>
           <p>{selected.originName} to {selected.destinationName} · {selected.journeyDate} · {selected.coachClassCode}</p>
           <p>Status: <strong>{selected.status.replaceAll("_", " ")}</strong></p>
+          <ReservationStatusBadge bookingId={selected.bookingId} />
           {selected.status === "AWAITING_PAYMENT" && (
             <DemoPaymentAction bookingId={selected.bookingId} device={device} />
           )}

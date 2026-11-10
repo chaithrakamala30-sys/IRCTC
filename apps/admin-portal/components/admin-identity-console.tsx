@@ -10,6 +10,7 @@ import { AdminReservationConsole } from "./admin-reservation-console";
 import { AdminPaymentConsole } from "./admin-payment-console";
 import { TicketAdminConsole } from "./ticket-admin-console";
 import { AdminCancellationConsole } from "./admin-cancellation-console";
+import { AdminQuotaConsole } from "./admin-quota-console";
 
 type AdminUser = {
   userId: string;
@@ -60,7 +61,7 @@ type AdminSession = {
   current: boolean;
 };
 
-type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "payments" | "tickets" | "cancellations";
+type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "quotas" | "payments" | "tickets" | "cancellations";
 
 type AdminTabItem = {
   id: AdminTab;
@@ -450,6 +451,7 @@ export function AdminIdentityConsole() {
       { id: "fares", label: "Fare management" },
       { id: "inventory", label: "Seat inventory" },
       { id: "reservations", label: "Reservations" },
+      { id: "quotas", label: "Quotas & Queues" },
       { id: "payments", label: "Payments" },
       { id: "tickets", label: "Ticket management" },
       { id: "cancellations", label: "Cancellations" },
@@ -460,6 +462,7 @@ export function AdminIdentityConsole() {
         { id: "fares", label: "Fare management" },
         { id: "inventory", label: "Seat inventory" },
         { id: "reservations", label: "Reservations" },
+        { id: "quotas", label: "Quotas & Queues" },
         { id: "tickets", label: "Ticket management" },
         { id: "cancellations", label: "Cancellations" },
       ]
@@ -713,6 +716,11 @@ export function AdminIdentityConsole() {
         {(isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
           <div className={currentTab === "reservations" ? undefined : "admin-tab-content-hidden"}>
             <AdminReservationConsole roles={user.roles} />
+          </div>
+        )}
+        {(isSuperAdmin || isRailwayAdmin) && (
+          <div className={currentTab === "quotas" ? undefined : "admin-tab-content-hidden"}>
+            <AdminQuotaConsole />
           </div>
         )}
         {(isSuperAdmin || isFinanceAdmin) && (
