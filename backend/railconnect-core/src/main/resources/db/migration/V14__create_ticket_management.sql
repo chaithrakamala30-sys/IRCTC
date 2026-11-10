@@ -151,16 +151,6 @@ CREATE TRIGGER ticket_audit_logs_immutable
     BEFORE UPDATE OR DELETE ON ticket_audit_logs
     FOR EACH ROW EXECUTE FUNCTION prevent_ticket_issue_history_mutation();
 
-INSERT INTO roles (role_code, display_name) VALUES
-    ('PASSENGER', 'Passenger'),
-    ('SUPER_ADMIN', 'Super Administrator'),
-    ('RAILWAY_ADMIN', 'Railway Administrator'),
-    ('STATION_MANAGER', 'Station Manager'),
-    ('OPERATIONS_MANAGER', 'Operations Manager'),
-    ('RESERVATION_OFFICER', 'Reservation Officer'),
-    ('TICKET_CHECKER', 'Ticket Checking Staff')
-ON CONFLICT (role_code) DO NOTHING;
-
 INSERT INTO permissions(permission_code, description) VALUES
     ('tickets:own:read', 'Read own RailConnect tickets and download own e-tickets'),
     ('tickets:own:verify', 'Verify own ticket records'),
@@ -192,8 +182,7 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO role_permissions(role_code, permission_code)
 SELECT roles.role_code, permissions.permission_code
-FROM (VALUES ('OPERATIONS_MANAGER'), ('TICKET_CHECKER'), ('RAILWAY_ADMIN'),
-('RESERVATION_OFFICER'), ('SUPER_ADMIN')) roles(role_code)
+FROM (VALUES ('OPERATIONS_MANAGER'), ('RAILWAY_ADMIN'), ('RESERVATION_OFFICER'), ('SUPER_ADMIN')) roles(role_code)
 CROSS JOIN permissions
 WHERE permissions.permission_code IN ('tickets:operations:verify', 'tickets:operations:read')
 ON CONFLICT DO NOTHING;

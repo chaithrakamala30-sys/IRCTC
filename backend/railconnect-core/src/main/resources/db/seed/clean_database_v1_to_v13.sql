@@ -26,7 +26,6 @@ BEGIN
           AND tablename NOT LIKE 'flyway_%'
           AND tablename NOT LIKE 'ticket%'
           AND tablename NOT LIKE 'spring_session%'
-          AND tablename NOT IN ('roles', 'permissions', 'role_permissions')
         ORDER BY tablename
     ) LOOP
         v_truncate_sql := v_truncate_sql || 'railconnect.' || quote_ident(r.tablename) || ', ';
