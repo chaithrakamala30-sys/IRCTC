@@ -157,9 +157,7 @@ INSERT INTO roles (role_code, display_name) VALUES
     ('RAILWAY_ADMIN', 'Railway Administrator'),
     ('STATION_MANAGER', 'Station Manager'),
     ('RESERVATION_OFFICER', 'Reservation Officer'),
-    ('FINANCE_ADMIN', 'Finance Administrator'),
-    ('CUSTOMER_SUPPORT', 'Customer Support'),
-    ('TICKET_EXAMINER', 'Ticket Examiner (TTE)')
+    ('TICKET_CHECKER', 'Ticket Checking Staff')
 ON CONFLICT (role_code) DO NOTHING;
 
 INSERT INTO permissions(permission_code, description) VALUES
@@ -169,13 +167,13 @@ INSERT INTO permissions(permission_code, description) VALUES
     ('tickets:admin:retry', 'Retry a previously queued ticket issuance job'),
     ('tickets:operations:verify', 'Verify RailConnect tickets for operational purposes'),
     ('tickets:operations:read', 'Read limited journey and allocation details for ticket checks')
-ON CONFLICT (permission_code) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 INSERT INTO role_permissions(role_code, permission_code)
 SELECT 'PASSENGER', permission_code
 FROM permissions
 WHERE permission_code IN ('tickets:own:read', 'tickets:own:verify')
-ON CONFLICT (role_code, permission_code) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 INSERT INTO role_permissions(role_code, permission_code)
 SELECT roles.role_code, permissions.permission_code
