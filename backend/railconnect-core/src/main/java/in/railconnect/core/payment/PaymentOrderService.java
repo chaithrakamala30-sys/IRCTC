@@ -197,6 +197,11 @@ public class PaymentOrderService {
         }
         if ("CREATED".equals(payment.status())) {
             transition(payment, INITIATED, PaymentTransitionSource.SYSTEM, "PROVIDER_INTENT_REQUESTED");
+            jdbc.update("""
+                    UPDATE payment_orders
+                    SET payment_status = 'INITIATED', updated_at = CURRENT_TIMESTAMP
+                    WHERE payment_order_id = ?
+                    """, paymentId);
         }
         jdbc.update("""
                 UPDATE payment_attempts
@@ -249,7 +254,12 @@ public class PaymentOrderService {
                     PaymentTransitionSource.PROVIDER_RESPONSE, "PROVIDER_INTENT_OUTCOME_UNKNOWN");
         }
         jdbc.update("""
-                UPDATE payment_orders SET failure_code = 'PROVIDER_OUTCOME_UNKNOWN',
+                UPDATE payment_orders
+                SET payment_status = CASE
+                        WHEN payment_status = 'INITIATED' THEN 'REQUIRES_RECONCILIATION'
+                        ELSE payment_status
+                    END,
+                    failure_code = 'PROVIDER_OUTCOME_UNKNOWN',
                     updated_at = CURRENT_TIMESTAMP
                 WHERE payment_order_id = ?
                 """, paymentId);
