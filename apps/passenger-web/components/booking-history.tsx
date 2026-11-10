@@ -6,6 +6,7 @@ import { DemoPaymentAction } from "./demo-payment-action";
 import { TicketHistoryPanel } from "./ticket-history";
 import { CancellationAction } from "./cancellation-action";
 import { ReservationStatusBadge } from "./reservation-status-badge";
+import { GlassModal } from "./glass-modal";
 
 type DeviceExperience = "mobile" | "laptop";
 type BookingSummary = {
@@ -226,98 +227,100 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
       </div>
       {detailLoading && <p role="status">Loading booking details…</p>}
       <TicketHistoryPanel device={device} />
-      {selected && (
-        <section className="booking-detail-card" aria-label={`Booking ${selected.bookingReference} details`}>
-          <div className="booking-history-heading">
-            <h3>{selected.bookingReference}</h3>
-            <button className="text-button" onClick={() => setSelected(null)} type="button">Close details</button>
-          </div>
-          <p><strong>{selected.trainNumber} · {selected.trainName}</strong></p>
-          <p>{selected.originName} to {selected.destinationName} · {selected.journeyDate} · {selected.coachClassCode}</p>
-          <p>Status: <strong>{selected.status.replaceAll("_", " ")}</strong></p>
-          <ReservationStatusBadge bookingId={selected.bookingId} />
-          {selected.status === "AWAITING_PAYMENT" && (
-            <DemoPaymentAction bookingId={selected.bookingId} device={device} />
-          )}
-          <p>Payment deadline: {new Date(selected.paymentDeadline).toLocaleString()}</p>
-          <div className="booking-detail-passengers">
-            {selected.passengers.map((passenger) => (
-              <article key={passenger.passengerNumber}>
-                <h4>Passenger {passenger.passengerNumber}: {passenger.displayName}</h4>
-                <p>{passenger.coachNumber} · berth {passenger.berthNumber} ({passenger.berthType.replaceAll("_", " ")})</p>
-                <ul>
-                  {passenger.fareItems.map((item, index) => (
-                    <li key={`${item.code}-${index}`}><span>{item.label}</span><strong>{money(item.amount, selected.currency)}</strong></li>
-                  ))}
-                </ul>
-                <p>Passenger total: <strong>{money(passenger.totalFare, selected.currency)}</strong></p>
-              </article>
-            ))}
-          </div>
-          <p className="booking-total">Total payable: <strong>{money(selected.totalPayable, selected.currency)}</strong></p>
-          <ol className="booking-state-history">
-            {selected.stateHistory.map((entry, index) => (
-              <li key={`${entry.newStatus}-${entry.occurredAt}-${index}`}>
-                <strong>{entry.newStatus.replaceAll("_", " ")}</strong>
-                <span>{entry.reasonCode.replaceAll("_", " ")}</span>
-                <time dateTime={entry.occurredAt}>{new Date(entry.occurredAt).toLocaleString()}</time>
-              </li>
-            ))}
-          </ol>
-          {selected.status !== "CONFIRMED" && (
-            <p className="identity-note">Awaiting payment does not mean paid or confirmed.</p>
-          )}
-          {selected.status === "CONFIRMED" && (
-            <section className="ticket-summary" aria-label="RailConnect ticket">
-              <p className="identity-note">
-                Payment verified and booking confirmed. RailConnect tickets are independent demo records, not official
-                Indian Railways or IRCTC tickets.
-              </p>
-              {!ticket && (
-                <button className="button button--primary" onClick={() => void loadTicket(selected.bookingId)} type="button">
-                  Check for RailConnect ticket
-                </button>
-              )}
-              {ticket && (
-                <div className="ticket-summary-card">
-                  <p className="eyebrow">RailConnect PNR</p>
-                  <strong className="ticket-pnr">{ticket.pnr}</strong>
-                  <p>{ticket.trainNumber} · {ticket.trainName}</p>
-                  <p>{ticket.boardingStation} to {ticket.destinationStation} · {ticket.journeyDate}</p>
-                  <p>Ticket: {ticket.ticketStatus.replaceAll("_", " ")} · Payment: {ticket.paymentStatus}</p>
-                  {ticket.paymentReference && <p>Payment reference: {ticket.paymentReference}</p>}
-                  <ol className="ticket-passenger-list">
-                    {ticket.passengers.map((passenger) => (
-                      <li key={passenger.ticketPassengerId}>
-                        <strong>{passenger.passengerName}</strong>
-                        <span>{passenger.coachNumber} · berth {passenger.berthNumber} ({passenger.berthType.replaceAll("_", " ")})</span>
-                      </li>
+      <GlassModal
+        isOpen={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        title={selected ? `Booking Reference: ${selected.bookingReference}` : undefined}
+      >
+        {selected && (
+          <div className="booking-detail-content">
+            <p><strong>{selected.trainNumber} · {selected.trainName}</strong></p>
+            <p>{selected.originName} to {selected.destinationName} · {selected.journeyDate} · {selected.coachClassCode}</p>
+            <p>Status: <strong>{selected.status.replaceAll("_", " ")}</strong></p>
+            <ReservationStatusBadge bookingId={selected.bookingId} />
+            {selected.status === "AWAITING_PAYMENT" && (
+              <DemoPaymentAction bookingId={selected.bookingId} device={device} />
+            )}
+            <p>Payment deadline: {new Date(selected.paymentDeadline).toLocaleString()}</p>
+            <div className="booking-detail-passengers">
+              {selected.passengers.map((passenger) => (
+                <article key={passenger.passengerNumber}>
+                  <h4>Passenger {passenger.passengerNumber}: {passenger.displayName}</h4>
+                  <p>{passenger.coachNumber} · berth {passenger.berthNumber} ({passenger.berthType.replaceAll("_", " ")})</p>
+                  <ul>
+                    {passenger.fareItems.map((item, index) => (
+                      <li key={`${item.code}-${index}`}><span>{item.label}</span><strong>{money(item.amount, selected.currency)}</strong></li>
                     ))}
-                  </ol>
-                  <button
-                    className="button button--secondary"
-                    onClick={() => void apiDownload(
-                      `/api/v1/tickets/${encodeURIComponent(ticket.ticketId)}/download`,
-                      `${ticket.pnr}.pdf`,
-                    ).catch((caught: unknown) => setError(errorText(caught)))}
-                    type="button"
-                  >
-                    Download e-ticket PDF
+                  </ul>
+                  <p>Passenger total: <strong>{money(passenger.totalFare, selected.currency)}</strong></p>
+                </article>
+              ))}
+            </div>
+            <p className="booking-total">Total payable: <strong>{money(selected.totalPayable, selected.currency)}</strong></p>
+            <ol className="booking-state-history">
+              {selected.stateHistory.map((entry, index) => (
+                <li key={`${entry.newStatus}-${entry.occurredAt}-${index}`}>
+                  <strong>{entry.newStatus.replaceAll("_", " ")}</strong>
+                  <span>{entry.reasonCode.replaceAll("_", " ")}</span>
+                  <time dateTime={entry.occurredAt}>{new Date(entry.occurredAt).toLocaleString()}</time>
+                </li>
+              ))}
+            </ol>
+            {selected.status !== "CONFIRMED" && (
+              <p className="identity-note">Awaiting payment does not mean paid or confirmed.</p>
+            )}
+            {selected.status === "CONFIRMED" && (
+              <section className="ticket-summary" aria-label="RailConnect ticket">
+                <p className="identity-note">
+                  Payment verified and booking confirmed. RailConnect tickets are independent demo records, not official
+                  Indian Railways or IRCTC tickets.
+                </p>
+                {!ticket && (
+                  <button className="button button--primary" onClick={() => void loadTicket(selected.bookingId)} type="button">
+                    Check for RailConnect ticket
                   </button>
-                  <CancellationAction
-                    bookingId={selected.bookingId}
-                    device={device}
-                    onCancelled={() => {
-                      void openBooking(selected.bookingId);
-                      void loadBookings();
-                    }}
-                  />
-                </div>
-              )}
-            </section>
-          )}
-        </section>
-      )}
+                )}
+                {ticket && (
+                  <div className="ticket-summary-card">
+                    <p className="eyebrow">RailConnect PNR</p>
+                    <strong className="ticket-pnr">{ticket.pnr}</strong>
+                    <p>{ticket.trainNumber} · {ticket.trainName}</p>
+                    <p>{ticket.boardingStation} to {ticket.destinationStation} · {ticket.journeyDate}</p>
+                    <p>Ticket: {ticket.ticketStatus.replaceAll("_", " ")} · Payment: {ticket.paymentStatus}</p>
+                    {ticket.paymentReference && <p>Payment reference: {ticket.paymentReference}</p>}
+                    <ol className="ticket-passenger-list">
+                      {ticket.passengers.map((passenger) => (
+                        <li key={passenger.ticketPassengerId}>
+                          <strong>{passenger.passengerName}</strong>
+                          <span>{passenger.coachNumber} · berth {passenger.berthNumber} ({passenger.berthType.replaceAll("_", " ")})</span>
+                        </li>
+                      ))}
+                    </ol>
+                    <button
+                      className="button button--secondary"
+                      onClick={() => void apiDownload(
+                        `/api/v1/tickets/${encodeURIComponent(ticket.ticketId)}/download`,
+                        `${ticket.pnr}.pdf`,
+                      ).catch((caught: unknown) => setError(errorText(caught)))}
+                      type="button"
+                    >
+                      Download e-ticket PDF
+                    </button>
+                    <CancellationAction
+                      bookingId={selected.bookingId}
+                      device={device}
+                      onCancelled={() => {
+                        void openBooking(selected.bookingId);
+                        void loadBookings();
+                      }}
+                    />
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
+        )}
+      </GlassModal>
     </section>
   );
 }
