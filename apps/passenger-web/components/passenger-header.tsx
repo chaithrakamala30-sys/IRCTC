@@ -16,6 +16,7 @@ const navigationItems: NavigationItem[] = [
   { href: "/laptop", label: "Home" },
   { href: "#journey", label: "Journey" },
   { href: "#status", label: "Service status" },
+  { href: "/support", label: "Support" },
 ];
 
 type PassengerHeaderProps = {

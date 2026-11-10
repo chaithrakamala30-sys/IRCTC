@@ -12,6 +12,7 @@ import { TicketAdminConsole } from "./ticket-admin-console";
 import { AdminCancellationConsole } from "./admin-cancellation-console";
 import { AdminQuotaConsole } from "./admin-quota-console";
 import { AdminNotificationConsole } from "./admin-notification-console";
+import { SupportStaffConsole } from "./support-staff-console";
 
 type AdminUser = {
   userId: string;
@@ -62,7 +63,7 @@ type AdminSession = {
   current: boolean;
 };
 
-type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "quotas" | "payments" | "tickets" | "cancellations" | "notifications";
+type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "quotas" | "payments" | "tickets" | "cancellations" | "notifications" | "support";
 
 type AdminTabItem = {
   id: AdminTab;
@@ -445,6 +446,7 @@ export function AdminIdentityConsole() {
   const isRailwayAdmin = user.roles.includes("RAILWAY_ADMIN");
   const isFinanceAdmin = user.roles.includes("FINANCE_ADMIN");
   const isReservationOfficer = user.roles.includes("RESERVATION_OFFICER");
+  const isCustomerSupport = user.roles.includes("CUSTOMER_SUPPORT");
   const tabs: AdminTabItem[] = isSuperAdmin
     ? [
       { id: "identity", label: "Identity administration" },
@@ -457,6 +459,7 @@ export function AdminIdentityConsole() {
       { id: "tickets", label: "Ticket management" },
       { id: "cancellations", label: "Cancellations" },
       { id: "notifications", label: "Notifications" },
+      { id: "support", label: "Customer Support" },
     ]
     : isRailwayAdmin
       ? [
@@ -468,7 +471,12 @@ export function AdminIdentityConsole() {
         { id: "tickets", label: "Ticket management" },
         { id: "cancellations", label: "Cancellations" },
         { id: "notifications", label: "Notifications" },
+        { id: "support", label: "Customer Support" },
       ]
+      : isCustomerSupport
+        ? [
+          { id: "support", label: "Customer Support" },
+        ]
       : isReservationOfficer
         ? [
           { id: "reservations", label: "Reservations" },
@@ -744,6 +752,11 @@ export function AdminIdentityConsole() {
         {(isSuperAdmin || isRailwayAdmin) && (
           <div className={currentTab === "notifications" ? undefined : "admin-tab-content-hidden"}>
             <AdminNotificationConsole />
+          </div>
+        )}
+        {(isSuperAdmin || isRailwayAdmin || isCustomerSupport) && (
+          <div className={currentTab === "support" ? undefined : "admin-tab-content-hidden"}>
+            <SupportStaffConsole />
           </div>
         )}
       </main>
