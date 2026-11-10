@@ -64,4 +64,24 @@ public class SecurityAuditService {
             );
         }
     }
+
+    @Transactional
+    public void recordAdminAction(UUID actorUserId, String actionType, String details) {
+        String correlationId = RequestIds.current();
+        jdbcTemplate.update(
+                """
+                        INSERT INTO security_audit_logs (
+                            audit_id, actor_user_id, target_user_id, event_type, outcome,
+                            correlation_id, metadata
+                        ) VALUES (?, ?, ?, ?, ?, ?, jsonb_build_object('details', ?::text))
+                        """,
+                UUID.randomUUID(),
+                actorUserId,
+                null,
+                actionType,
+                "SUCCESS",
+                correlationId,
+                details
+        );
+    }
 }

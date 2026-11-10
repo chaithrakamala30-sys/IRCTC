@@ -101,10 +101,10 @@ public class SecurityConfiguration {
                                 .policy(org.springframework.security.web.header.writers
                                         .ReferrerPolicyHeaderWriter.ReferrerPolicy
                                         .STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-                        .permissionsPolicy(permissions -> permissions
-                                .policy("camera=(), microphone=(), geolocation=(), payment=(self \"https://dhruva-bank.vercel.app\")"))
                         .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")))
+                                .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"))
+                        .permissionsPolicy(permissions -> permissions
+                                .policy("camera=(), microphone=(), geolocation=(), payment=(self \"https://dhruva-bank.vercel.app\")")))
                 .addFilterAfter(authenticatedSessionFilter, SecurityContextHolderFilter.class)
                 .build();
     }
