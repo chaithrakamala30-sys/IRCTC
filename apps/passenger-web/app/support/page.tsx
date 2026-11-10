@@ -1,19 +1,19 @@
-import { Metadata } from "next";
-import { PassengerSupportCenter } from "../../components/passenger-support-center";
 import { PassengerHeader } from "../../components/passenger-header";
+import { PassengerSupportCenter } from "../../components/passenger-support-center";
 
-export const metadata: Metadata = {
-  title: "Support & Helpdesk | RailConnect",
-  description: "Customer Support, Inquiries, Complaints, and Resolution Assistance",
+export const metadata = {
+  title: "Customer Support & Complaints | RailConnect",
+  description: "Raise disputes, track tickets, link bookings, and communicate with RailConnect support staff.",
 };
 
 export default function SupportPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <PassengerHeader experience="laptop" />
-      <main className="flex-1">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <PassengerSupportCenter />
       </main>
     </div>
   );
 }
+

@@ -13,6 +13,11 @@ import { AdminCancellationConsole } from "./admin-cancellation-console";
 import { AdminQuotaConsole } from "./admin-quota-console";
 import { AdminNotificationConsole } from "./admin-notification-console";
 import { SupportStaffConsole } from "./support-staff-console";
+import { AdminExecutiveDashboard } from "./admin-executive-dashboard";
+import { AdminApprovalConsole } from "./admin-approval-console";
+import { AdminFinanceConsole } from "./admin-finance-console";
+import { AdminReportsConsole } from "./admin-reports-console";
+import { AdminSystemConfigConsole } from "./admin-system-config-console";
 
 type AdminUser = {
   userId: string;
@@ -63,7 +68,7 @@ type AdminSession = {
   current: boolean;
 };
 
-type AdminTab = "identity" | "master-data" | "fares" | "inventory" | "reservations" | "quotas" | "payments" | "tickets" | "cancellations" | "notifications" | "support";
+type AdminTab = "dashboard" | "identity" | "approvals" | "finance" | "reports" | "master-data" | "fares" | "inventory" | "reservations" | "quotas" | "payments" | "tickets" | "cancellations" | "notifications" | "support" | "config";
 
 type AdminTabItem = {
   id: AdminTab;
@@ -449,26 +454,34 @@ export function AdminIdentityConsole() {
   const isCustomerSupport = user.roles.includes("CUSTOMER_SUPPORT");
   const tabs: AdminTabItem[] = isSuperAdmin
     ? [
-      { id: "identity", label: "Identity administration" },
-      { id: "master-data", label: "Railway master data" },
-      { id: "fares", label: "Fare management" },
-      { id: "inventory", label: "Seat inventory" },
+      { id: "dashboard", label: "Executive Dashboard" },
+      { id: "identity", label: "Identity & Staff" },
+      { id: "approvals", label: "Approvals (Maker-Checker)" },
+      { id: "finance", label: "Finance & Reconciliation" },
+      { id: "reports", label: "Reports & Analytics" },
+      { id: "master-data", label: "Railway Master Data" },
+      { id: "fares", label: "Fare Management" },
+      { id: "inventory", label: "Seat Inventory" },
       { id: "reservations", label: "Reservations" },
       { id: "quotas", label: "Quotas & Queues" },
       { id: "payments", label: "Payments" },
-      { id: "tickets", label: "Ticket management" },
+      { id: "tickets", label: "Ticket Management" },
       { id: "cancellations", label: "Cancellations" },
       { id: "notifications", label: "Notifications" },
       { id: "support", label: "Customer Support" },
+      { id: "config", label: "System Config" },
     ]
     : isRailwayAdmin
       ? [
-        { id: "master-data", label: "Railway master data" },
-        { id: "fares", label: "Fare management" },
-        { id: "inventory", label: "Seat inventory" },
+        { id: "dashboard", label: "Executive Dashboard" },
+        { id: "approvals", label: "Approvals (Maker-Checker)" },
+        { id: "reports", label: "Reports & Analytics" },
+        { id: "master-data", label: "Railway Master Data" },
+        { id: "fares", label: "Fare Management" },
+        { id: "inventory", label: "Seat Inventory" },
         { id: "reservations", label: "Reservations" },
         { id: "quotas", label: "Quotas & Queues" },
-        { id: "tickets", label: "Ticket management" },
+        { id: "tickets", label: "Ticket Management" },
         { id: "cancellations", label: "Cancellations" },
         { id: "notifications", label: "Notifications" },
         { id: "support", label: "Customer Support" },
@@ -485,7 +498,10 @@ export function AdminIdentityConsole() {
         ]
       : isFinanceAdmin
         ? [
-          { id: "fares", label: "Fare management" },
+          { id: "dashboard", label: "Executive Dashboard" },
+          { id: "finance", label: "Finance & Reconciliation" },
+          { id: "reports", label: "Reports & Analytics" },
+          { id: "fares", label: "Fare Management" },
           { id: "payments", label: "Payments" },
           { id: "cancellations", label: "Cancellations" },
         ]
@@ -507,6 +523,26 @@ export function AdminIdentityConsole() {
           <p className="admin-alert admin-alert--warning" role="status">
             Your account is authenticated but is not authorized to use this administration portal.
           </p>
+        )}
+        {(isSuperAdmin || isRailwayAdmin || isFinanceAdmin) && (
+          <div className={currentTab === "dashboard" ? undefined : "admin-tab-content-hidden"}>
+            <AdminExecutiveDashboard />
+          </div>
+        )}
+        {(isSuperAdmin || isRailwayAdmin) && (
+          <div className={currentTab === "approvals" ? undefined : "admin-tab-content-hidden"}>
+            <AdminApprovalConsole />
+          </div>
+        )}
+        {(isSuperAdmin || isFinanceAdmin) && (
+          <div className={currentTab === "finance" ? undefined : "admin-tab-content-hidden"}>
+            <AdminFinanceConsole />
+          </div>
+        )}
+        {(isSuperAdmin || isRailwayAdmin || isFinanceAdmin) && (
+          <div className={currentTab === "reports" ? undefined : "admin-tab-content-hidden"}>
+            <AdminReportsConsole />
+          </div>
         )}
         <div className={currentTab === "identity" && isSuperAdmin ? undefined : "admin-tab-content-hidden"}>
           {isSuperAdmin && (
@@ -757,6 +793,11 @@ export function AdminIdentityConsole() {
         {(isSuperAdmin || isRailwayAdmin || isCustomerSupport) && (
           <div className={currentTab === "support" ? undefined : "admin-tab-content-hidden"}>
             <SupportStaffConsole />
+          </div>
+        )}
+        {isSuperAdmin && (
+          <div className={currentTab === "config" ? undefined : "admin-tab-content-hidden"}>
+            <AdminSystemConfigConsole />
           </div>
         )}
       </main>
