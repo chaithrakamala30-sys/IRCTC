@@ -9,6 +9,7 @@ import in.railconnect.core.booking.BookingException;
 import in.railconnect.core.reservation.ReservationException;
 import in.railconnect.core.payment.PaymentException;
 import in.railconnect.core.payment.PaymentProviderUnavailableException;
+import in.railconnect.core.ticket.TicketException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -145,6 +146,11 @@ public class ApiExceptionHandler {
         LOGGER.warn("Payment provider request failed; requestId={}", RequestIds.current());
         return failure(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_PROVIDER_UNAVAILABLE",
                 "The payment provider is temporarily unavailable", List.of());
+    }
+
+    @ExceptionHandler(TicketException.class)
+    public ResponseEntity<ApiEnvelope<Void>> handleTicketException(TicketException exception) {
+        return failure(exception.status(), exception.code(), exception.getMessage(), List.of());
     }
 
     @ExceptionHandler(AccessDeniedException.class)

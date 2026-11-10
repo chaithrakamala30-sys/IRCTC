@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ApiRequestError, apiFetch } from "@railconnect/api";
 import { Brand } from "@railconnect/ui";
+import { TicketVerificationConsole } from "../components/ticket-verification-console";
 
 type User = { userId: string; fullName: string; roles: string[]; mustChangePassword: boolean };
 type Run = {
@@ -294,6 +295,7 @@ export default function OperationsHomePage() {
         )}
         {user && canOperate && (
           <>
+            <TicketVerificationConsole />
             {canInitialize && (
               <section className="ops-panel">
                 <h2>Initialize a dated train run</h2>

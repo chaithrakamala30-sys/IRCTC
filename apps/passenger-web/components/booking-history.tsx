@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { ApiRequestError, apiFetch } from "../lib/api";
+import { ApiRequestError, apiDownload, apiFetch } from "../lib/api";
 import { DemoPaymentAction } from "./demo-payment-action";
+import { TicketHistoryPanel } from "./ticket-history";
 
 type DeviceExperience = "mobile" | "laptop";
 type BookingSummary = {
@@ -47,6 +48,26 @@ type Booking = BookingSummary & {
   }[];
 };
 type BookingPage = { items: BookingSummary[]; page: number; size: number; total: number };
+type Ticket = {
+  ticketId: string;
+  pnr: string;
+  ticketStatus: string;
+  trainNumber: string;
+  trainName: string;
+  journeyDate: string;
+  boardingStation: string;
+  destinationStation: string;
+  paymentReference: string | null;
+  paymentStatus: string;
+  passengers: {
+    ticketPassengerId: string;
+    passengerNumber: number;
+    passengerName: string;
+    coachNumber: string;
+    berthNumber: string;
+    berthType: string;
+  }[];
+};
 
 function errorText(error: unknown): string {
   return error instanceof ApiRequestError ? error.message : "Bookings could not be loaded.";
@@ -59,6 +80,7 @@ function money(amount: string, currency: string): string {
 export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
   const [bookings, setBookings] = useState<BookingSummary[]>([]);
   const [selected, setSelected] = useState<Booking | null>(null);
+  const [ticket, setTicket] = useState<Ticket | null>(null);
   const [status, setStatus] = useState("");
   const [reference, setReference] = useState("");
   const [query, setQuery] = useState("");
@@ -91,6 +113,7 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
 
   async function openBooking(bookingId: string) {
     setSelected(null);
+    setTicket(null);
     setDetailLoading(true);
     setError("");
     try {
@@ -100,6 +123,19 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
       setError(errorText(caught));
     } finally {
       setDetailLoading(false);
+    }
+  }
+
+  async function loadTicket(bookingId: string) {
+    setTicket(null);
+    setError("");
+    try {
+      const response = await apiFetch<Ticket>(`/api/v1/bookings/${encodeURIComponent(bookingId)}/ticket`);
+      setTicket(response.data);
+    } catch (caught) {
+      setError(caught instanceof ApiRequestError && caught.status === 404
+        ? "The booking is confirmed. Its RailConnect ticket is still being prepared; check again shortly."
+        : errorText(caught));
     }
   }
 
@@ -115,7 +151,7 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
       <div className="booking-history-heading">
         <div>
           <p className="eyebrow">Passenger booking management</p>
-          <h2>My bookings</h2>
+          <h2>My bookings &amp; tickets</h2>
         </div>
         <button className="button button--secondary" onClick={() => void loadBookings()} type="button">
           Refresh
@@ -187,6 +223,7 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
         </div>
       </div>
       {detailLoading && <p role="status">Loading booking details…</p>}
+      <TicketHistoryPanel device={device} />
       {selected && (
         <section className="booking-detail-card" aria-label={`Booking ${selected.bookingReference} details`}>
           <div className="booking-history-heading">
@@ -228,7 +265,45 @@ export function BookingHistoryPanel({ device }: { device: DeviceExperience }) {
             <p className="identity-note">Awaiting payment does not mean paid or confirmed.</p>
           )}
           {selected.status === "CONFIRMED" && (
-            <p className="identity-note">Demo payment verified. This is not a real-money ticket.</p>
+            <section className="ticket-summary" aria-label="RailConnect ticket">
+              <p className="identity-note">
+                Payment verified and booking confirmed. RailConnect tickets are independent demo records, not official
+                Indian Railways or IRCTC tickets.
+              </p>
+              {!ticket && (
+                <button className="button button--primary" onClick={() => void loadTicket(selected.bookingId)} type="button">
+                  Check for RailConnect ticket
+                </button>
+              )}
+              {ticket && (
+                <div className="ticket-summary-card">
+                  <p className="eyebrow">RailConnect PNR</p>
+                  <strong className="ticket-pnr">{ticket.pnr}</strong>
+                  <p>{ticket.trainNumber} · {ticket.trainName}</p>
+                  <p>{ticket.boardingStation} to {ticket.destinationStation} · {ticket.journeyDate}</p>
+                  <p>Ticket: {ticket.ticketStatus.replaceAll("_", " ")} · Payment: {ticket.paymentStatus}</p>
+                  {ticket.paymentReference && <p>Payment reference: {ticket.paymentReference}</p>}
+                  <ol className="ticket-passenger-list">
+                    {ticket.passengers.map((passenger) => (
+                      <li key={passenger.ticketPassengerId}>
+                        <strong>{passenger.passengerName}</strong>
+                        <span>{passenger.coachNumber} · berth {passenger.berthNumber} ({passenger.berthType.replaceAll("_", " ")})</span>
+                      </li>
+                    ))}
+                  </ol>
+                  <button
+                    className="button button--secondary"
+                    onClick={() => void apiDownload(
+                      `/api/v1/tickets/${encodeURIComponent(ticket.ticketId)}/download`,
+                      `${ticket.pnr}.pdf`,
+                    ).catch((caught: unknown) => setError(errorText(caught)))}
+                    type="button"
+                  >
+                    Download e-ticket PDF
+                  </button>
+                </div>
+              )}
+            </section>
           )}
         </section>
       )}
