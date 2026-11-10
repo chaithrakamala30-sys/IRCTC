@@ -2,13 +2,14 @@ package in.railconnect.core.admin;
 
 import in.railconnect.core.admin.AdminModels.*;
 import in.railconnect.core.identity.RailConnectPrincipal;
-import in.railconnect.core.identity.audit.SecurityAuditService;
+import in.railconnect.core.identity.SecurityAuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.List;
 import java.util.UUID;
@@ -43,7 +44,14 @@ class AdminControlCenterServiceTest {
     void testSelfApprovalPrevention() {
         UUID userId = UUID.randomUUID();
         UUID requestId = UUID.randomUUID();
-        RailConnectPrincipal principal = new RailConnectPrincipal(userId, "test@railconnect.in", List.of("ROLE_SUPER_ADMIN"));
+        RailConnectPrincipal principal = new RailConnectPrincipal(
+                userId,
+                "test@railconnect.in",
+                "Super Admin",
+                "ACTIVE",
+                false,
+                List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"))
+        );
 
         ApprovalRequestRecord req = new ApprovalRequestRecord(
                 requestId, "FARE_RULE_CHANGE", "Reduce 2A Fare", "Test", "{}", "PENDING_APPROVAL",
