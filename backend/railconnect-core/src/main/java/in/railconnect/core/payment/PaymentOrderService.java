@@ -180,7 +180,7 @@ public class PaymentOrderService {
                 WHERE owner_user_id = ? AND idempotency_key = ? AND payment_order_id IS NULL
                 """, paymentId, ownerId, key);
         PaymentRecord created = new PaymentRecord(
-                paymentId, bookingId, ownerId, merchantReference, null, null, null,
+                paymentId, bookingId, ownerId, booking.bookingReference(), null, null, null,
                 amountMinor, booking.currency(), "CREATED", booking.paymentDeadline(), createdAt,
                 null, booking.fareQuoteId(), booking.trainNumber(), booking.trainName(),
                 booking.coachClassCode(), booking.passengerCount(), booking.paymentDeadline());
