@@ -89,37 +89,192 @@ function AdminPortalHeader({
   onTabSelect?: (tab: AdminTab) => void;
   onSignOut?: () => void;
 }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [openSection, setOpenSection] = useState<string>("core");
+
   return (
-    <header className="admin-header">
-      <Brand href="/" />
-      {tabs.length > 0 && (
-        <nav aria-label="Administration sections" className="admin-portal-tabs">
-          {tabs.map((tab) => (
+    <>
+      <header className="admin-header">
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {tabs.length > 0 && (
             <button
-              aria-current={activeTab === tab.id ? "page" : undefined}
-              className={activeTab === tab.id ? "admin-portal-tab is-active" : "admin-portal-tab"}
-              key={tab.id}
-              onClick={() => onTabSelect?.(tab.id)}
+              aria-label={drawerOpen ? "Close administration menu" : "Open administration menu"}
+              className="admin-mobile-nav-toggle"
+              onClick={() => setDrawerOpen(!drawerOpen)}
               type="button"
             >
-              {tab.label}
+              <svg fill="none" height="24" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="24">
+                <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
-          ))}
-        </nav>
-      )}
-      {user && onSignOut && (
-        <div className="admin-header-actions">
-          <ThemeToggle />
-          <span>{user.fullName}</span>
-          <button className="button button--secondary" onClick={onSignOut} type="button">Sign out</button>
+          )}
+          <Brand href="/" />
         </div>
-      )}
-      {!user && (
-        <div className="admin-header-actions">
-          <ThemeToggle />
+        {tabs.length > 0 && (
+          <nav aria-label="Administration sections" className="admin-portal-tabs">
+            {tabs.map((tab) => (
+              <button
+                aria-current={activeTab === tab.id ? "page" : undefined}
+                className={activeTab === tab.id ? "admin-portal-tab is-active" : "admin-portal-tab"}
+                key={tab.id}
+                onClick={() => onTabSelect?.(tab.id)}
+                type="button"
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        )}
+        {user && onSignOut && (
+          <div className="admin-header-actions">
+            <ThemeToggle />
+            <span style={{ fontSize: "0.88rem" }}>{user.fullName}</span>
+            <button className="button button--secondary" onClick={onSignOut} style={{ minHeight: "44px" }} type="button">Sign out</button>
+          </div>
+        )}
+        {!user && (
+          <div className="admin-header-actions">
+            <ThemeToggle />
+          </div>
+        )}
+      </header>
+
+      {/* Responsive Hamburger Mobile Drawer */}
+      <div
+        aria-hidden={!drawerOpen}
+        className={`admin-mobile-drawer-overlay ${drawerOpen ? "is-open" : ""}`}
+        onClick={() => setDrawerOpen(false)}
+      />
+      <aside
+        aria-label="Admin Navigation Drawer"
+        aria-modal="true"
+        className={`admin-mobile-drawer ${drawerOpen ? "is-open" : ""}`}
+        role="dialog"
+      >
+        <div className="admin-mobile-drawer-header">
+          <Brand href="/" />
+          <button
+            aria-label="Close navigation drawer"
+            className="admin-mobile-drawer-close"
+            onClick={() => setDrawerOpen(false)}
+            type="button"
+          >
+            <svg fill="none" height="24" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" width="24">
+              <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
-      )}
-    </header>
+
+        <div className="admin-mobile-drawer-content">
+          <div>
+            <button
+              className="admin-drawer-accordion-btn"
+              onClick={() => setOpenSection(openSection === "core" ? "" : "core")}
+              type="button"
+            >
+              <span>Governance & Overview</span>
+              <span>{openSection === "core" ? "▲" : "▼"}</span>
+            </button>
+            {openSection === "core" && (
+              <div className="admin-drawer-items">
+                {tabs.filter(t => ["dashboard", "identity", "approvals", "finance", "reports", "config"].includes(t.id)).map(tab => (
+                  <button
+                    aria-current={activeTab === tab.id ? "page" : undefined}
+                    className={`admin-drawer-tab-link ${activeTab === tab.id ? "is-active" : ""}`}
+                    key={tab.id}
+                    onClick={() => {
+                      onTabSelect?.(tab.id);
+                      setDrawerOpen(false);
+                    }}
+                    type="button"
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <button
+              className="admin-drawer-accordion-btn"
+              onClick={() => setOpenSection(openSection === "inventory" ? "" : "inventory")}
+              type="button"
+            >
+              <span>Railway & Reservations</span>
+              <span>{openSection === "inventory" ? "▲" : "▼"}</span>
+            </button>
+            {openSection === "inventory" && (
+              <div className="admin-drawer-items">
+                {tabs.filter(t => ["master-data", "fares", "inventory", "reservations", "quotas", "tickets", "cancellations"].includes(t.id)).map(tab => (
+                  <button
+                    aria-current={activeTab === tab.id ? "page" : undefined}
+                    className={`admin-drawer-tab-link ${activeTab === tab.id ? "is-active" : ""}`}
+                    key={tab.id}
+                    onClick={() => {
+                      onTabSelect?.(tab.id);
+                      setDrawerOpen(false);
+                    }}
+                    type="button"
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <button
+              className="admin-drawer-accordion-btn"
+              onClick={() => setOpenSection(openSection === "support" ? "" : "support")}
+              type="button"
+            >
+              <span>Support & Payments</span>
+              <span>{openSection === "support" ? "▲" : "▼"}</span>
+            </button>
+            {openSection === "support" && (
+              <div className="admin-drawer-items">
+                {tabs.filter(t => ["payments", "notifications", "support"].includes(t.id)).map(tab => (
+                  <button
+                    aria-current={activeTab === tab.id ? "page" : undefined}
+                    className={`admin-drawer-tab-link ${activeTab === tab.id ? "is-active" : ""}`}
+                    key={tab.id}
+                    onClick={() => {
+                      onTabSelect?.(tab.id);
+                      setDrawerOpen(false);
+                    }}
+                    type="button"
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: "auto", paddingTop: "20px", borderTop: "1px solid var(--color-border)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>Interface Theme</span>
+              <ThemeToggle />
+            </div>
+            {user && onSignOut && (
+              <button
+                className="button button--secondary"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  onSignOut();
+                }}
+                style={{ width: "100%", minHeight: "44px" }}
+                type="button"
+              >
+                Sign out ({user.fullName})
+              </button>
+            )}
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }
 
