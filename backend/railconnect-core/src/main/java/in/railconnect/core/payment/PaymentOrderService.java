@@ -95,7 +95,8 @@ public class PaymentOrderService {
         }
         PaymentRecord existing = jdbc.query("""
                 SELECT payment_orders.payment_order_id, payment_orders.booking_id,
-                       payment_orders.owner_user_id, payment_orders.merchant_reference,
+                       payment_orders.owner_user_id, bookings.booking_reference AS booking_reference,
+                       payment_orders.merchant_reference,
                        payment_orders.provider_payment_intent_id, payment_orders.provider_session_id,
                        payment_orders.checkout_url, payment_orders.amount_minor, payment_orders.currency,
                        payment_orders.payment_status, payment_orders.expires_at, payment_orders.created_at,
@@ -266,12 +267,16 @@ public class PaymentOrderService {
     @Transactional(readOnly = true)
     public PaymentOrderResponse readOwn(UUID paymentId, UUID ownerId) {
         PaymentRecord payment = jdbc.query("""
-                SELECT payment_order_id, booking_id, owner_user_id, merchant_reference,
-                       provider_payment_intent_id, provider_session_id, checkout_url,
-                       amount_minor, currency, payment_status, expires_at, created_at, failure_code,
-                       fare_quote_id, NULL::text AS train_number, NULL::text AS train_name,
+                SELECT payment_orders.payment_order_id, payment_orders.booking_id,
+                       payment_orders.owner_user_id, bookings.booking_reference AS booking_reference,
+                       payment_orders.merchant_reference, payment_orders.provider_payment_intent_id,
+                       payment_orders.provider_session_id, payment_orders.checkout_url,
+                       payment_orders.amount_minor, payment_orders.currency, payment_orders.payment_status,
+                       payment_orders.expires_at, payment_orders.created_at, payment_orders.failure_code,
+                       payment_orders.fare_quote_id, NULL::text AS train_number, NULL::text AS train_name,
                        NULL::text AS coach_class_code, 0 AS passenger_count, expires_at AS payment_deadline
-                FROM payment_orders WHERE payment_order_id = ? AND owner_user_id = ?
+                FROM payment_orders JOIN bookings USING (booking_id)
+                WHERE payment_orders.payment_order_id = ? AND payment_orders.owner_user_id = ?
                 """, result -> result.next() ? payment(result) : null, paymentId, ownerId);
         if (payment == null) {
             throw new PaymentException(HttpStatus.NOT_FOUND, "PAYMENT_NOT_FOUND", "Payment was not found");
@@ -282,12 +287,16 @@ public class PaymentOrderService {
     @Transactional(readOnly = true)
     public PaymentRecord readForRefresh(UUID paymentId, UUID ownerId) {
         PaymentRecord payment = jdbc.query("""
-                SELECT payment_order_id, booking_id, owner_user_id, merchant_reference,
-                       provider_payment_intent_id, provider_session_id, checkout_url,
-                       amount_minor, currency, payment_status, expires_at, created_at, failure_code,
-                       fare_quote_id, NULL::text AS train_number, NULL::text AS train_name,
+                SELECT payment_orders.payment_order_id, payment_orders.booking_id,
+                       payment_orders.owner_user_id, bookings.booking_reference AS booking_reference,
+                       payment_orders.merchant_reference, payment_orders.provider_payment_intent_id,
+                       payment_orders.provider_session_id, payment_orders.checkout_url,
+                       payment_orders.amount_minor, payment_orders.currency, payment_orders.payment_status,
+                       payment_orders.expires_at, payment_orders.created_at, payment_orders.failure_code,
+                       payment_orders.fare_quote_id, NULL::text AS train_number, NULL::text AS train_name,
                        NULL::text AS coach_class_code, 0 AS passenger_count, expires_at AS payment_deadline
-                FROM payment_orders WHERE payment_order_id = ? AND owner_user_id = ?
+                FROM payment_orders JOIN bookings USING (booking_id)
+                WHERE payment_orders.payment_order_id = ? AND payment_orders.owner_user_id = ?
                 """, result -> result.next() ? payment(result) : null, paymentId, ownerId);
         if (payment == null) {
             throw new PaymentException(HttpStatus.NOT_FOUND, "PAYMENT_NOT_FOUND", "Payment was not found");
@@ -416,10 +425,13 @@ public class PaymentOrderService {
 
     private PaymentRecord loadPayment(UUID paymentId) {
         return jdbc.query("""
-                SELECT payment_order_id, booking_id, owner_user_id, merchant_reference,
-                       provider_payment_intent_id, provider_session_id, checkout_url,
-                       amount_minor, currency, payment_status, expires_at, created_at, failure_code,
-                       fare_quote_id, train_snapshot ->> 'trainNumber' AS train_number,
+                SELECT payment_orders.payment_order_id, payment_orders.booking_id,
+                       payment_orders.owner_user_id, bookings.booking_reference AS booking_reference,
+                       payment_orders.merchant_reference, payment_orders.provider_payment_intent_id,
+                       payment_orders.provider_session_id, payment_orders.checkout_url,
+                       payment_orders.amount_minor, payment_orders.currency, payment_orders.payment_status,
+                       payment_orders.expires_at, payment_orders.created_at, payment_orders.failure_code,
+                       payment_orders.fare_quote_id, train_snapshot ->> 'trainNumber' AS train_number,
                        train_snapshot ->> 'trainName' AS train_name,
                        journey_snapshot ->> 'coachClassCode' AS coach_class_code,
                        (SELECT COUNT(*) FROM booking_passengers p
@@ -452,7 +464,8 @@ public class PaymentOrderService {
     private PaymentRecord lockPayment(UUID paymentId) {
         PaymentRecord payment = jdbc.query("""
                 SELECT payment_orders.payment_order_id, payment_orders.booking_id,
-                       payment_orders.owner_user_id, payment_orders.merchant_reference,
+                       payment_orders.owner_user_id, bookings.booking_reference AS booking_reference,
+                       payment_orders.merchant_reference,
                        payment_orders.provider_payment_intent_id, payment_orders.provider_session_id,
                        payment_orders.checkout_url, payment_orders.amount_minor, payment_orders.currency,
                        payment_orders.payment_status, payment_orders.expires_at, payment_orders.created_at,
@@ -581,12 +594,11 @@ public class PaymentOrderService {
     }
 
     private PaymentRecord payment(ResultSet result) throws SQLException {
-        String reference = result.getString("merchant_reference");
         return new PaymentRecord(
                 result.getObject("payment_order_id", UUID.class),
                 result.getObject("booking_id", UUID.class),
                 result.getObject("owner_user_id", UUID.class),
-                reference.startsWith("RC-PAY-") ? reference.substring(7) : reference,
+                result.getString("booking_reference"),
                 result.getString("provider_payment_intent_id"),
                 result.getString("provider_session_id"),
                 result.getString("checkout_url"),
