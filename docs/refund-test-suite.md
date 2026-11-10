@@ -33,3 +33,4 @@ This document describes the 17 comprehensive test scenarios executed to verify t
 RailConnect tests this integration via:
 - [`CancellationPolicyEngineTest.java`](file:///c:/xampp/htdocs/IRCTC/backend/railconnect-core/src/test/java/in/railconnect/core/cancellation/CancellationPolicyEngineTest.java): Verifies tiered deductions, flat-rate minimums, and strict zero-refund thresholds under 4 hours before departure.
 - [`DhruvaBankRefundAdapterTest.java`](file:///c:/xampp/htdocs/IRCTC/backend/railconnect-core/src/test/java/in/railconnect/core/cancellation/DhruvaBankRefundAdapterTest.java): Validates provider initialization, payload construction, header generation (`x-merchant-key`, `x-merchant-secret`), idempotency simulation, and `/verify` response parsing.
+

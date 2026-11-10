@@ -64,3 +64,4 @@ $$\text{ExpectedSig} = \text{HMAC-SHA256}(\text{timestamp} + \text{"."} + \text{
 - Exponential backoff with up to 5 retries.
 - Webhook retries never duplicate financial credit or debit operations because the refund record is uniquely identified by `merchant_refund_ref` and `event_id`.
 - Duplicate delivery attempts for an already settled refund order return HTTP 200 OK without re-executing transitions.
+
