@@ -452,7 +452,7 @@ export function AdminIdentityConsole() {
       { id: "reservations", label: "Reservations" },
       { id: "payments", label: "Payments" },
       { id: "tickets", label: "Ticket management" },
-      { id: "cancellations", label: "Cancellations & Refunds" },
+      { id: "cancellations", label: "Cancellations" },
     ]
     : isRailwayAdmin
       ? [
@@ -461,18 +461,19 @@ export function AdminIdentityConsole() {
         { id: "inventory", label: "Seat inventory" },
         { id: "reservations", label: "Reservations" },
         { id: "tickets", label: "Ticket management" },
-        { id: "cancellations", label: "Cancellations & Refunds" },
+        { id: "cancellations", label: "Cancellations" },
       ]
       : isReservationOfficer
         ? [
           { id: "reservations", label: "Reservations" },
           { id: "tickets", label: "Ticket management" },
+          { id: "cancellations", label: "Cancellations" },
         ]
       : isFinanceAdmin
         ? [
           { id: "fares", label: "Fare management" },
           { id: "payments", label: "Payments" },
-          { id: "cancellations", label: "Cancellations & Refunds" },
+          { id: "cancellations", label: "Cancellations" },
         ]
         : [];
   const currentTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : tabs[0]?.id ?? activeTab;
@@ -724,7 +725,7 @@ export function AdminIdentityConsole() {
             <TicketAdminConsole />
           </div>
         )}
-        {(isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && (
+        {(isSuperAdmin || isFinanceAdmin || isRailwayAdmin || isReservationOfficer) && (
           <div className={currentTab === "cancellations" ? undefined : "admin-tab-content-hidden"}>
             <AdminCancellationConsole />
           </div>
