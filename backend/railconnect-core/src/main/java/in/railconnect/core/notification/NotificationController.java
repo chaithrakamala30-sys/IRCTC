@@ -1,6 +1,7 @@
 package in.railconnect.core.notification;
 
 import in.railconnect.core.api.ApiEnvelope;
+import in.railconnect.core.api.RequestIds;
 import in.railconnect.core.identity.RailConnectPrincipal;
 import in.railconnect.core.notification.NotificationModels.*;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,10 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
+    private static <T> ApiEnvelope<T> success(T data) {
+        return ApiEnvelope.success(data, RequestIds.current());
+    }
+
     // ==========================================
     // PASSENGER NOTIFICATION ENDPOINTS
     // ==========================================
@@ -35,7 +40,7 @@ public class NotificationController {
     ) {
         UUID userId = principal != null ? principal.userId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
         List<InAppNotificationView> list = notificationService.getUserNotifications(userId, category, unreadOnly, limit, offset);
-        return ResponseEntity.ok(ApiEnvelope.success(list));
+        return ResponseEntity.ok(success(list));
     }
 
     @GetMapping("/notifications/unread-count")
@@ -44,7 +49,7 @@ public class NotificationController {
     ) {
         UUID userId = principal != null ? principal.userId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
         long count = notificationService.getUnreadCount(userId);
-        return ResponseEntity.ok(ApiEnvelope.success(Map.of("unreadCount", count)));
+        return ResponseEntity.ok(success(Map.of("unreadCount", count)));
     }
 
     @PatchMapping("/notifications/{id}/read")
@@ -54,7 +59,7 @@ public class NotificationController {
     ) {
         UUID userId = principal != null ? principal.userId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
         boolean updated = notificationService.markAsRead(id, userId);
-        return ResponseEntity.ok(ApiEnvelope.success(Map.of("success", updated)));
+        return ResponseEntity.ok(success(Map.of("success", updated)));
     }
 
     @PatchMapping("/notifications/read-all")
@@ -63,7 +68,7 @@ public class NotificationController {
     ) {
         UUID userId = principal != null ? principal.userId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
         int count = notificationService.markAllAsRead(userId);
-        return ResponseEntity.ok(ApiEnvelope.success(Map.of("updatedCount", count)));
+        return ResponseEntity.ok(success(Map.of("updatedCount", count)));
     }
 
     @DeleteMapping("/notifications/{id}")
@@ -73,7 +78,7 @@ public class NotificationController {
     ) {
         UUID userId = principal != null ? principal.userId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
         boolean deleted = notificationService.deleteNotification(id, userId);
-        return ResponseEntity.ok(ApiEnvelope.success(Map.of("deleted", deleted)));
+        return ResponseEntity.ok(success(Map.of("deleted", deleted)));
     }
 
     @GetMapping("/notifications/preferences")
@@ -81,7 +86,7 @@ public class NotificationController {
             @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
         UUID userId = principal != null ? principal.userId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
-        return ResponseEntity.ok(ApiEnvelope.success(notificationService.getPreferences(userId)));
+        return ResponseEntity.ok(success(notificationService.getPreferences(userId)));
     }
 
     @PutMapping("/notifications/preferences")
@@ -90,7 +95,7 @@ public class NotificationController {
             @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
         UUID userId = principal != null ? principal.userId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
-        return ResponseEntity.ok(ApiEnvelope.success(notificationService.updatePreferences(userId, request)));
+        return ResponseEntity.ok(success(notificationService.updatePreferences(userId, request)));
     }
 
     @PostMapping("/notifications/devices")
@@ -100,7 +105,7 @@ public class NotificationController {
     ) {
         UUID userId = principal != null ? principal.userId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
         notificationService.registerDevice(userId, request);
-        return ResponseEntity.ok(ApiEnvelope.success(Map.of("status", "REGISTERED")));
+        return ResponseEntity.ok(success(Map.of("status", "REGISTERED")));
     }
 
     @DeleteMapping("/notifications/devices/{token}")
@@ -110,7 +115,7 @@ public class NotificationController {
     ) {
         UUID userId = principal != null ? principal.userId() : UUID.fromString("00000000-0000-0000-0000-000000000001");
         boolean removed = notificationService.deregisterDevice(userId, token);
-        return ResponseEntity.ok(ApiEnvelope.success(Map.of("removed", removed)));
+        return ResponseEntity.ok(success(Map.of("removed", removed)));
     }
 
     @PostMapping("/notifications/test")
@@ -129,7 +134,7 @@ public class NotificationController {
                 "/notifications",
                 Map.of("source", "test_action")
         );
-        return ResponseEntity.ok(ApiEnvelope.success(Map.of("notificationId", notifId, "status", "DISPATCHED")));
+        return ResponseEntity.ok(success(Map.of("notificationId", (Object) notifId, "status", "DISPATCHED")));
     }
 
     // ==========================================
@@ -138,12 +143,12 @@ public class NotificationController {
 
     @GetMapping("/admin/notifications/statistics")
     public ResponseEntity<ApiEnvelope<DeliveryStatsView>> getStats() {
-        return ResponseEntity.ok(ApiEnvelope.success(notificationService.getDeliveryStats()));
+        return ResponseEntity.ok(success(notificationService.getDeliveryStats()));
     }
 
     @GetMapping("/admin/notifications/templates")
     public ResponseEntity<ApiEnvelope<List<NotificationTemplateView>>> getTemplates() {
-        return ResponseEntity.ok(ApiEnvelope.success(notificationService.getTemplates()));
+        return ResponseEntity.ok(success(notificationService.getTemplates()));
     }
 
     // ==========================================
@@ -155,8 +160,8 @@ public class NotificationController {
             @RequestBody OperationalAnnouncementRequest request,
             @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
-        String publishedBy = principal != null ? principal.username() : "OPERATIONS_OFFICER";
+        String publishedBy = principal != null ? principal.email() : "OPERATIONS_OFFICER";
         UUID announcementId = notificationService.publishOperationalAnnouncement(request, publishedBy);
-        return ResponseEntity.ok(ApiEnvelope.success(Map.of("announcementId", announcementId, "status", "PUBLISHED")));
+        return ResponseEntity.ok(success(Map.of("announcementId", (Object) announcementId, "status", "PUBLISHED")));
     }
 }
