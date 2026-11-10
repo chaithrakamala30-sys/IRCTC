@@ -10,6 +10,8 @@ RailConnect integrates only with the supplied Dhruva Bank Merchant Payment API v
 
 The configured base URL is restricted to `https://dhruva-bank.vercel.app` or loopback HTTP for local development. Checkout URLs must match that exact origin and `/checkout/{session_id}` path. Requests and responses use the contract's INR decimal amount, translated exactly to integer paise inside RailConnect. Provider intent creation carries the stable provider idempotency key in the documented request body.
 
+RailConnect subtracts a 30-second safety buffer from the remaining booking payment window when setting `expires_in_seconds`. The returned provider expiry is still validated against the booking deadline; Dhruva must not extend an intent beyond that deadline.
+
 The adapter never exposes the merchant secret to a browser or stores it in PostgreSQL. It does not call the transaction-details or merchant-account-summary endpoints. Provider status `SUCCEEDED` is not accepted as proof by itself: RailConnect calls `/verify` and checks the intent/reference/amount/currency, `verified`, `COMPLETED` transaction, transaction reference, and verification timestamps.
 
 ## Enablement
