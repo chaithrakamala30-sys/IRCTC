@@ -9,3 +9,4 @@ Each frontend portal is deployed as an independent Next.js application on Vercel
 ## 2. Static Asset Caching & Core Web Vitals
 - Initial JS payload: < 115 kB per portal.
 - Static assets cached globally at the edge with immutable Cache-Control headers.
+

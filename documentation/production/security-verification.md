@@ -9,3 +9,4 @@
 - [x] Four-Eye Maker-Checker constraint active (`chk_no_self_approval`).
 - [x] Content Security Policy, HSTS, and X-Frame-Options DENY active.
 - [x] Rate limiting active on login and registration endpoints.
+

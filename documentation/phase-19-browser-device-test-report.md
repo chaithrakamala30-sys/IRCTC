@@ -12,3 +12,4 @@
 ## 2. Responsive Layout Verification
 - Both desktop (`experience="laptop"`) and mobile (`experience="mobile"`) navigation modes verified.
 - Touch target sizes conform to WCAG 2.1 AA recommendations ($\ge 44 \times 44$ px).
+

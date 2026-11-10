@@ -17,3 +17,4 @@ Maps the end-to-end integration topology across all 14 core modules, defining en
 | **Operations (OCC)** | Notification Service | Event Outbox Dispatch | Train delays and platform changes fan-out to affected ticket owners. |
 | **Support Desk** | Identity & Booking | REST `/api/v1/support/*` | Ticket lifecycle tracking, strict confidential internal note filtering. |
 | **Admin Control** | Governance & Finance | REST `/api/v1/admin/*` | Four-eye maker-checker enforcement, daily reconciliation against Dhruva Bank. |
+

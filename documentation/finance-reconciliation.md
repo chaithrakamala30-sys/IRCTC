@@ -20,3 +20,4 @@ Reconciles RailConnect internal payment and refund entries against Dhruva Bank d
 2. Settlement engine audits day's payments and refunds.
 3. Generates reconciliation summary (`run_code`) with matched and discrepancy tallies.
 4. Exportable to CSV via `GET /api/v1/admin/reports/export?reportType=FINANCE`.
+

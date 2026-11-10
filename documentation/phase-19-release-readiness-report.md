@@ -17,3 +17,4 @@
 1. **Demonstration Banking**: Dhruva Bank is an educational demonstration banking platform; all transactions represent simulated values.
 2. **Free-Tier Infrastructure**: Deployment on Render free tier entails a 15-minute sleep period with ~30-45s cold start times upon initial request.
 3. **Independent Operation**: Platform operates as an independent railway simulation; it does not issue official IRCTC tickets or interface with live CRIS servers.
+

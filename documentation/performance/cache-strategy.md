@@ -8,3 +8,4 @@
 - Station Autocomplete (`stations:query:{prefix}`): TTL 1 hour.
 - Static Train Schedule (`train:schedule:{number}`): TTL 24 hours.
 - Authoritative seat booking and payments are **never cached**; they always transact directly against PostgreSQL.
+

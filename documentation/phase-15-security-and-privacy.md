@@ -6,3 +6,4 @@
 3. **Audit Immutability**: All status transitions, staff assignments, and escalation events record timestamps and acting operator user IDs.
 4. **Attachment Safety**: File uploads validated for approved MIME types (PNG, JPG, PDF) with max size caps (5MB).
 5. **PII Masking**: Payment identifiers and phone numbers are logged in compliance with data privacy mandates.
+

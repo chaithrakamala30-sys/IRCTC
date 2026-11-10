@@ -9,3 +9,4 @@
 2. **Browse & Search** (`browse-and-search.js`): 25 to 50 VUs exercising read-heavy public endpoints.
 3. **High-Concurrency Reservation** (`concurrent-booking.js`): 20 to 40 VUs competing for seat inventory and fare quotes.
 4. **Stress & Spike**: Ramp-up past nominal limits to observe graceful degradation.
+

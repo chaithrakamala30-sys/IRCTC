@@ -8,3 +8,4 @@
 - **Zero Overselling**: Database unique constraints on `(train_run_id, coach_code, berth_number, segment_index)` strictly reject conflicting concurrent reservations.
 - **Temporary Hold Expiry**: Redis/in-memory hold locks expire after 10 minutes, releasing unconfirmed berths automatically.
 - **Idempotent Confirmations**: Payment confirmations verify existing reservation state, preventing duplicate ticket generation upon webhook retries.
+

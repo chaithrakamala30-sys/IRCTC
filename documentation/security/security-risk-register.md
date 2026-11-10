@@ -9,3 +9,4 @@
 | **SEC-05** | Credential stuffing on login endpoints | Medium | IP and identifier throttling tables (`login_throttles`) | Low | Mitigated |
 | **SEC-06** | Browser framing & clickjacking | Medium | `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'` | Low | Mitigated |
 | **SEC-07** | Free-tier host infrastructure outage | Medium | Automated zero-cost health checks & container restart | Medium | Accepted |
+

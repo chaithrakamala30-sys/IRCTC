@@ -8,3 +8,4 @@
 ## 2. Bottleneck Analysis
 - Initial bottleneck under extreme load is database connection pool exhaustion ($\ge 60$ concurrent booking transactions).
 - Handled safely via HTTP 429 / 503 backpressure and client-side retry-after prompts.
+

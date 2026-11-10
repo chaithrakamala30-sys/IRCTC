@@ -10,3 +10,4 @@
 - Public Health: `GET /actuator/health` returns `{"status":"UP"}`.
 - Detailed Health: `GET /api/v1/health` verifies database connectivity and connection pool status without exposing credentials.
 - Graceful Shutdown: Enabled with 30s timeout allowing in-flight reservation transactions to conclude cleanly.
+

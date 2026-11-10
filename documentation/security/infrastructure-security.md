@@ -10,3 +10,4 @@
 - Container runs as non-privileged non-root user.
 - Minimal Linux base image minimizing package attack surface.
 - Docker ports expose only internal application communication; debug and profiling tools are stripped from release images.
+

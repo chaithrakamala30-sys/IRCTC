@@ -16,3 +16,4 @@
 | **P95 Latency** | 420 ms | 840 ms |
 | **P99 Latency** | 680 ms | 1,150 ms |
 | **Error Rate** | 0.00% | 0.14% (safe conflict rejection) |
+

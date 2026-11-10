@@ -14,3 +14,4 @@
 - **Insecure Direct Object Reference (IDOR)**: Addressed. All passenger endpoints enforce `user_id = principal.userId()`.
 - **Cross-Site Request Forgery (CSRF)**: Mitigated using Spring Security `CookieCsrfTokenRepository.withHttpOnlyFalse()` with Lax SameSite cookies.
 - **Credentials & Secrets**: No production secrets or private keys committed to Git. Demo banking URLs clearly marked as non-monetary.
+

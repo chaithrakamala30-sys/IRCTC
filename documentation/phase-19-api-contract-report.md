@@ -15,3 +15,4 @@
 ## 2. Backward Compatibility
 - All DTOs adhere strictly to defined schemas; optional fields allow additive enhancements without breaking existing web clients.
 - Error handling standardized across all controllers via `SecurityErrorHandlers` and global controller advice.
+

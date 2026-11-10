@@ -9,3 +9,4 @@
 - Generic error responses: Internal stack traces, raw SQL exceptions, and class paths are suppressed using `SecurityErrorHandlers` and standard API envelope wrappers (`ApiEnvelope`).
 - Rate limiting and throttle tables prevent brute-force attacks against `/api/v1/auth/login`.
 - CORS configured explicitly to allow only approved origin domains.
+

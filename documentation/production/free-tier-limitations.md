@@ -11,3 +11,4 @@
 
 ## 2. Zero-Cost Policy Enforcement
 No credit card has been linked, no paid subscriptions activated, and no automatic paid scaling rules enabled.
+

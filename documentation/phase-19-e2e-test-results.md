@@ -13,3 +13,4 @@
 | **E2E-03: Cancellation & Refund** | 6 | **PASSED** | Refund calculation applied; seat released back into available inventory pool. |
 | **E2E-04: Maker-Checker Approval** | 4 | **PASSED** | Independent checker approved change; self-approval threw `SecurityException`. |
 | **E2E-05: Customer Support Lifecycle** | 7 | **PASSED** | Ticket raised, staff posted internal note (hidden from customer), public reply sent, resolved, CSAT rating 5 stars logged. |
+

@@ -7,3 +7,4 @@
   - `security.yml`: Gitleaks secret scanning and npm dependency vulnerability scans.
 - **Automated Deployment**:
   - Pushes to `main` branch trigger automated zero-downtime deployments to Vercel and Render.
+

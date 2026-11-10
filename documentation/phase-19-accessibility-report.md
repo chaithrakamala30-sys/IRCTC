@@ -8,3 +8,4 @@
 - **Color Contrast**: Text contrast ratios meet or exceed 4.5:1 on light and dark backgrounds.
 - **Form Controls**: Explicit `<label>` elements linked with form inputs.
 - **Screen Reader Semantics**: ARIA roles, `aria-current="page"` on active navigation tabs, and `role="alert"` on error banners properly implemented.
+

@@ -8,3 +8,4 @@
 ## 2. Supply Chain Policies
 - Critical packages are pinned with exact semantic versions.
 - Lockfiles (`package-lock.json`) are committed to ensure deterministic reproducible builds.
+

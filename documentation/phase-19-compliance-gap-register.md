@@ -6,3 +6,4 @@
 | **CMP-02** | Official Railway Authorization | Independent platform disclaimer banner | **Compliant** | Clearly states platform is independent and does not issue official IRCTC tickets. |
 | **CMP-03** | RBI Payment Aggregator Guidelines | Demonstration gateway integration | **Educational** | Uses Dhruva Bank demonstration platform; real commercial operations would require licensed gateway. |
 | **CMP-04** | Data Retention & Deletion | Retention flags and soft deletion workflows | **Ready** | Operational retention policy established. |
+

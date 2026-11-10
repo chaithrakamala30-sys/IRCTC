@@ -7,3 +7,4 @@
 
 ## 2. Safe Operational Thresholds
 - To maintain ₹0 cost indefinitely, synthetic load testing is executed strictly in local development or isolated container environments, never exhausting free-tier quotas on public deployments.
+

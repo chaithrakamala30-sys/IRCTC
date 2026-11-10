@@ -31,3 +31,4 @@ All administrative endpoints are secured with Spring Security `@PreAuthorize` an
 ### 7. System Configurations
 - `GET /api/v1/admin/configurations`: Fetch operational flags and thresholds.
 - `POST /api/v1/admin/configurations/{key}`: Update system parameter with audit justification.
+

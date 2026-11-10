@@ -10,3 +10,4 @@
 - Server-to-server webhook verification using signed payloads.
 - All requests stamped with unique `Idempotency-Key` headers.
 - Prominent banners remind passengers that all transactions are simulated demo payments. Real money is never transferred.
+

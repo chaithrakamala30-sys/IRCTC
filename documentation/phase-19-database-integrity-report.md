@@ -9,3 +9,4 @@
 
 ## 2. Migration Consistency
 - Migrations `V1` through `V21` apply cleanly in sequential order without errors or foreign key violations.
+

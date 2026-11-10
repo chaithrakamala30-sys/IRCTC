@@ -6,3 +6,4 @@
 
 ## 2. Redaction & Privacy Safeguards
 - PII (passwords, card CVVs, net banking MPINs, bearer tokens) are explicitly redacted before reaching stdout or disk.
+

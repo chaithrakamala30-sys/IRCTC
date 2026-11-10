@@ -6,3 +6,4 @@
 
 ## 2. Telemetry Privacy
 - Telemetry logs explicitly filter out sensitive parameters, avoiding collection of passwords, session cookies, or passenger personal data.
+

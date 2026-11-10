@@ -10,3 +10,4 @@
 | **Information Disclosure** | Passenger PII & Support Notes | IDOR on booking/ticket endpoints, internal staff notes | Strict ownership queries (`user_id = principal.userId()`), `is_internal_note = false` filter. |
 | **Denial of Service** | Reservation holds & Login | Automated seat locking, brute-force login | Redis TTL hold expiration (10 mins), rate-limiting login throttles. |
 | **Elevation of Privilege** | Administrative portals | Role manipulation via API requests | Default-deny `@PreAuthorize` authorization, server-side role validation. |
+

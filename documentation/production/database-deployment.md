@@ -11,3 +11,4 @@
 ## 2. Invariant & Data Safety
 - Unique constraints on `email`, `mobile_number`, `pnr_number`, and `(train_run_id, coach_code, berth_number, segment_index)` are active.
 - Maker-checker constraint `chk_no_self_approval` blocks unauthorized self-approval.
+

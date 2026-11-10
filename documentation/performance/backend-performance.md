@@ -12,3 +12,4 @@
 - Memory limits tuned for container limits ($\le 512$ MB on free container hosting).
 - G1 Garbage Collector configured with target pause times $< 50$ ms.
 - Asynchronous non-blocking dispatch for Phase 14 passenger notification fan-out.
+

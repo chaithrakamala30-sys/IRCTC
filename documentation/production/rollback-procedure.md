@@ -6,3 +6,4 @@
 
 ## 2. Database Recovery Strategy
 - Forward recovery via corrective Flyway migrations is preferred over destructive rollbacks to protect existing production transaction history.
+

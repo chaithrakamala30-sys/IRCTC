@@ -12,3 +12,4 @@
   - `SameSite=Lax`: Protects against Cross-Site Request Forgery (CSRF).
   - `Secure`: Transmitted solely over HTTPS in production.
 - **Session Revocation**: User sessions tracked in `user_sessions` and revocable immediately upon logout or password reset.
+

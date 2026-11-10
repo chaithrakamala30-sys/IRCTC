@@ -3,12 +3,12 @@ package in.railconnect.core.admin;
 import in.railconnect.core.admin.AdminModels.*;
 import in.railconnect.core.api.ApiEnvelope;
 import in.railconnect.core.api.RequestIds;
-import in.railconnect.core.identity.CurrentUser;
 import in.railconnect.core.identity.RailConnectPrincipal;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,7 +46,7 @@ public class AdminControlCenterController {
     public ApiEnvelope<String> updatePassengerStatus(
             @PathVariable UUID userId,
             @RequestBody PassengerStatusUpdateRequest request,
-            @CurrentUser RailConnectPrincipal principal
+            @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
         adminService.updatePassengerStatus(userId, request, principal);
         return ApiEnvelope.success("Passenger status updated successfully", RequestIds.current());
@@ -69,7 +69,7 @@ public class AdminControlCenterController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ApiEnvelope<StaffProfileRecord> createStaff(
             @RequestBody CreateStaffRequest request,
-            @CurrentUser RailConnectPrincipal principal
+            @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
         return ApiEnvelope.success(adminService.createStaffAccount(request, principal), RequestIds.current());
     }
@@ -87,7 +87,7 @@ public class AdminControlCenterController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'RAILWAY_ADMIN', 'FINANCE_ADMIN', 'CUSTOMER_SUPPORT')")
     public ApiEnvelope<ApprovalRequestRecord> createApprovalRequest(
             @RequestBody CreateApprovalRequest request,
-            @CurrentUser RailConnectPrincipal principal
+            @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
         return ApiEnvelope.success(adminService.createApprovalRequest(request, principal), RequestIds.current());
     }
@@ -97,7 +97,7 @@ public class AdminControlCenterController {
     public ApiEnvelope<String> reviewApproval(
             @PathVariable UUID requestId,
             @RequestBody ReviewApprovalRequest review,
-            @CurrentUser RailConnectPrincipal principal
+            @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
         adminService.reviewApprovalRequest(requestId, review, principal);
         return ApiEnvelope.success("Approval review processed successfully", RequestIds.current());
@@ -113,7 +113,7 @@ public class AdminControlCenterController {
     @PostMapping("/finance/reconciliation/run")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'FINANCE_ADMIN')")
     public ApiEnvelope<ReconciliationRunSummary> runReconciliation(
-            @CurrentUser RailConnectPrincipal principal
+            @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
         return ApiEnvelope.success(adminService.runReconciliation(principal), RequestIds.current());
     }
@@ -143,7 +143,7 @@ public class AdminControlCenterController {
     public ApiEnvelope<String> updateConfiguration(
             @PathVariable String key,
             @RequestBody UpdateSystemConfigRequest request,
-            @CurrentUser RailConnectPrincipal principal
+            @AuthenticationPrincipal RailConnectPrincipal principal
     ) {
         adminService.updateSystemConfiguration(key, request, principal);
         return ApiEnvelope.success("Configuration updated successfully", RequestIds.current());

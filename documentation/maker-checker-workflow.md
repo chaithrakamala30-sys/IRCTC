@@ -14,3 +14,4 @@ To enforce the Four-Eye Principle across all critical commercial, administrative
    - On approval, the record transitions to `APPROVED` and `applied_at` is set.
    - On rejection, reviewer remarks are captured and status transitions to `REJECTED`.
    - Immutable audit logs record both maker and checker actions.
+

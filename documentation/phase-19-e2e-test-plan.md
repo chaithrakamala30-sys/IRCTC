@@ -12,3 +12,4 @@ Validate full user journeys across Passenger, Administration, and Operations por
    - OCC reports 45-minute delay on active train run $\rightarrow$ Event outbox records disruption $\rightarrow$ In-app notification delivered to ticket holders.
 4. **Admin Maker-Checker & Governance Flow**:
    - Maker proposes fare adjustment $\rightarrow$ Checker approves proposal $\rightarrow$ Proposer attempting self-approval is rejected.
+

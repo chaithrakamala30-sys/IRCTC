@@ -14,3 +14,4 @@ RailConnect implements a zero-trust multi-portal security architecture adhering 
 - Strict HTTPS enforcement in production with HSTS (`max-age=31536000`).
 - Content Security Policy (CSP) blocking unauthorized script injection and framing.
 - SameSite Lax, HttpOnly, and Secure cookie flags for session tokens and CSRF prevention.
+

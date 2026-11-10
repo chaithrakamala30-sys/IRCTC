@@ -2,7 +2,7 @@ package in.railconnect.core.admin;
 
 import in.railconnect.core.admin.AdminModels.*;
 import in.railconnect.core.identity.RailConnectPrincipal;
-import in.railconnect.core.identity.audit.SecurityAuditService;
+import in.railconnect.core.identity.SecurityAuditService;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

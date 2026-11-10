@@ -10,3 +10,4 @@
 - **Database**: Cloud PostgreSQL (Supabase / Render Managed Free Tier)
   - Secure TLS connection (`sslmode=require`), automated schema migration via Flyway.
 - **Payment Simulator**: Vercel-hosted Dhruva Bank (`https://dhruva-bank.vercel.app`).
+

@@ -12,3 +12,4 @@ Spring Security configuration specifies `.anyRequest().authenticated()`. Public 
 | **FINANCE_ADMIN** | Inspect demo payment ledger, execute daily Dhruva Bank reconciliation, export financial CSVs. |
 | **RAILWAY_ADMIN** | Manage stations, trains, routes, inventory schedules, approve maker requests. |
 | **SUPER_ADMIN** | Global governance, staff provisioning, system configuration overrides, security audit inspection. |
+

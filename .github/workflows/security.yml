@@ -57,3 +57,4 @@ jobs:
         run: |
           cd backend/railconnect-core
           ./gradlew test -x checkstyleMain || true
+

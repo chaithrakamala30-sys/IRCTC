@@ -13,3 +13,4 @@
 | **TC-03: SQL Injection via Search** | Injected `' OR 1=1 --` into train query | **BLOCKED** | Handled safely by bind variables in `JdbcClient`. |
 | **TC-04: XSS via Support Message** | Injected `<script>alert(1)</script>` | **BLOCKED** | Next.js JSX escaped tags; CSP blocked script execution. |
 | **TC-05: Brute Force on Admin Login** | Fired 25 consecutive incorrect passwords | **THROTTLED** | Account locked out temporarily by `login_throttles`. |
+

@@ -10,3 +10,4 @@
 - **Largest Contentful Paint (LCP)**: ~1.4s
 - **Cumulative Layout Shift (CLS)**: 0.01 (Stable)
 - **Interaction to Next Paint (INP)**: ~95 ms
+

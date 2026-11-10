@@ -8,3 +8,4 @@
 ## 2. Emergency Maintenance Mode
 - **Activation**: Execute `POST /api/v1/admin/configurations/MAINTENANCE_MODE_ENABLED` with `configValue: "true"`.
 - **Effect**: Halts new booking attempts gracefully; active in-flight transactions are allowed to conclude; displays user-friendly maintenance banner.
+

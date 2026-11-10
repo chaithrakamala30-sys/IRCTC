@@ -11,3 +11,4 @@ Flyway migration `V21__optimize_database_indexes_for_performance.sql` added the 
 ## 2. Query Plan Improvements
 - `EXPLAIN ANALYZE` on booking lookups shifted from Sequential Scan (cost ~480.00) to Index Scan using `idx_bookings_user_created` (cost ~8.45).
 - Read latency on high-volume queries dropped by over 60%.
+

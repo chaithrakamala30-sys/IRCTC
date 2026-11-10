@@ -12,3 +12,4 @@
 ## 2. Recovery Objectives
 - **RPO (Recovery Point Objective)**: $\le 24$ hours (nightly snapshots).
 - **RTO (Recovery Time Objective)**: $\le 30$ minutes (automated CI/CD rebuild and redeploy).
+

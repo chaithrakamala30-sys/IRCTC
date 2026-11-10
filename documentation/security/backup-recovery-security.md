@@ -8,3 +8,4 @@
 ## 2. Disaster Recovery Parameters
 - **Recovery Point Objective (RPO)**: $\le 24$ hours (nightly automated backups).
 - **Recovery Time Objective (RTO)**: $\le 30$ minutes (automated container deployment on Render and Vercel edge networks).
+

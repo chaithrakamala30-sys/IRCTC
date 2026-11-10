@@ -12,3 +12,4 @@ Executed full end-to-end smoke verification using synthetic accounts and demo ba
 | **Flow 3: OCC Delay Update** | Train Run Update $\rightarrow$ Live Passenger Status $\rightarrow$ In-App Alert | **PASSED** | 30m delay reflected immediately across passenger views. |
 | **Flow 4: Maker-Checker Governance**| Change Proposal $\rightarrow$ Self-Approval Attempt $\rightarrow$ Checker Approval | **PASSED** | Self-approval blocked; independent checker approval applied. |
 | **Flow 5: Customer Support Lifecycle**| Ticket Raised $\rightarrow$ Private Note $\rightarrow$ Public Reply $\rightarrow$ CSAT 5★ | **PASSED** | Private note remained completely hidden from customer. |
+

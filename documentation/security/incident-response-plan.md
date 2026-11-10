@@ -10,3 +10,4 @@
 2. **Containment**: Revoke compromised sessions in `user_sessions`, isolate the user profile, or activate `MAINTENANCE_MODE_ENABLED` in `system_configurations`.
 3. **Eradication & Recovery**: Rotate affected credentials and deploy hotfix via Git CI/CD.
 4. **Post-Mortem**: Document root cause, timeline, impact, and preventive controls in `security-remediation-report.md`.
+

@@ -13,3 +13,4 @@
 | `admin:reports:export` | Download CSV analytics and transaction dumps | Yes | Yes | Yes | No |
 | `admin:audit:view` | Audit log inspection and security monitoring | Yes | Yes | No | No |
 | `admin:config:manage` | Modify system configurations and feature flags | Yes | No | No | No |
+
