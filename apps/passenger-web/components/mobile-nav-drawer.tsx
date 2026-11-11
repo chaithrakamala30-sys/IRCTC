@@ -64,7 +64,7 @@ export function MobileNavDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex animate-fadeIn"
+      className="fixed inset-0 z-[1100] flex animate-fadeIn"
       style={{
         backgroundColor: "rgba(10, 15, 29, 0.65)",
         backdropFilter: "blur(10px)",
@@ -78,7 +78,7 @@ export function MobileNavDrawer({
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative flex h-full w-full max-w-xs flex-col overflow-y-auto border-r border-slate-200/80 bg-white/95 p-6 shadow-2xl backdrop-blur-xl transition-all dark:border-slate-800/80 dark:bg-slate-900/95 dark:text-slate-100 animate-slideInLeft sm:max-w-sm">
+      <div className="relative flex h-full w-full max-w-xs flex-col overflow-y-auto border-r border-slate-200/80 bg-white/95 p-6 pb-24 shadow-2xl backdrop-blur-xl transition-all dark:border-slate-800/80 dark:bg-slate-900/95 dark:text-slate-100 animate-slideInLeft sm:max-w-sm">
         {/* Drawer Header */}
         <div className="flex items-center justify-between border-b border-slate-200/80 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-2">

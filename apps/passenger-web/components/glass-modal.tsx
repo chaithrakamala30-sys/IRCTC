@@ -44,7 +44,7 @@ export function GlassModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 animate-fadeIn"
+      className="fixed inset-0 z-[1200] flex items-center justify-center p-4 sm:p-6 md:p-8 animate-fadeIn"
       style={{
         backgroundColor: "rgba(10, 15, 29, 0.65)",
         backdropFilter: "blur(12px)",
