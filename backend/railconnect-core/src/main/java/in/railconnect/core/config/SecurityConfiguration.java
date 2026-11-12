@@ -87,6 +87,7 @@ public class SecurityConfiguration {
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/fares/quotes").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/tracking/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/ticket-verification/**").permitAll()
                         .requestMatchers("/actuator/**").authenticated()
                         .anyRequest().authenticated())

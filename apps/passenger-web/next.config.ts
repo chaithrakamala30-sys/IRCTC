@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), payment=(self 'https://dhruva-bank.vercel.app')",
+            value: 'camera=(), microphone=(), geolocation=(), payment=(self "https://dhruva-bank.vercel.app")',
           },
           {
             key: "Strict-Transport-Security",
