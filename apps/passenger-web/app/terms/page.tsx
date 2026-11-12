@@ -1,13 +1,18 @@
 import Link from "next/link";
+import { ReferenceHeader } from "../../components/reference-header";
 
 export const metadata = { title: "Passenger terms" };
 
 export default function PassengerTermsPage() {
   return (
-    <main className="legal-page">
-      <Link href="/mobile">Back to RailConnect</Link>
-      <p className="eyebrow">Version phase2-2026-11</p>
-      <h1>Passenger account terms</h1>
+    <div className="page-shell bg-[#040914] text-[#eaf3ff] min-h-screen">
+      <ReferenceHeader experience="laptop" />
+      <main className="legal-page max-w-4xl mx-auto px-4 py-8">
+        <Link href="/laptop" className="text-[#38bdf8] hover:underline mb-4 inline-block">
+          ← Back to RailConnect
+        </Link>
+        <p className="eyebrow">Version phase2-2026-11</p>
+        <h1>Passenger account terms</h1>
       <p>
         RailConnect is an independent passenger-platform project and is not an
         official railway or IRCTC service. No live train search, reservation,
@@ -39,5 +44,6 @@ export default function PassengerTermsPage() {
         about account and security data.
       </p>
     </main>
+  </div>
   );
 }

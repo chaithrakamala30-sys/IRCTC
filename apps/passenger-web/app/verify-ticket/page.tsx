@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { TicketVerificationRoute } from "../../components/ticket-verification-route";
+import { ReferenceHeader } from "../../components/reference-header";
 
 export const metadata = {
   title: "Verify RailConnect ticket",
@@ -9,7 +10,8 @@ export const metadata = {
 
 export default function TicketVerificationPage() {
   return (
-    <div className="page-shell">
+    <div className="page-shell bg-[#040914] text-[#eaf3ff]">
+      <ReferenceHeader experience="laptop" activeTab="pnr" />
       <Suspense fallback={<main className="ticket-verify-shell"><p role="status">Loading verification…</p></main>}>
         <TicketVerificationRoute />
       </Suspense>

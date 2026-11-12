@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { NotificationCenterView } from "../../components/notification-center-view";
-import { PassengerHeader } from "../../components/passenger-header";
+import { ReferenceHeader } from "../../components/reference-header";
 
 export const metadata: Metadata = {
   title: "Notifications & Alerts | RailConnect",
@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function NotificationsPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <PassengerHeader experience="laptop" />
+    <div className="min-h-screen bg-[#040914] text-slate-100 flex flex-col">
+      <ReferenceHeader experience="laptop" activeTab="more" />
       <main className="flex-1">
         <NotificationCenterView />
       </main>

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
-import { ThemeToggle } from "./theme-toggle";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
 import { GoogleIcon } from "./google-icon";
 
@@ -143,10 +142,8 @@ export function ReferenceHeader({ experience, activeTab = "home" }: HeaderProps)
           </nav>
         )}
 
-        {/* Right: Theme Toggle + Login / Register Buttons */}
+        {/* Right: Quick Links / Mobile Drawer Toggle / Login & Register */}
         <div className="ref-right-actions">
-          <ThemeToggle />
-
           {experience === "laptop" ? (
             authStatus === "signed-in" ? (
               <Link className="ref-btn-login" href="/laptop/account">
@@ -165,14 +162,34 @@ export function ReferenceHeader({ experience, activeTab = "home" }: HeaderProps)
               </div>
             )
           ) : (
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Open mobile menu"
-              className="ref-mobile-hamburger"
-            >
-              <GoogleIcon name="menu" size={24} />
-            </button>
+            <div className="ref-mobile-header-actions">
+              {authStatus === "signed-in" ? (
+                <Link
+                  className="ref-mobile-user-btn"
+                  href="/mobile/account"
+                  aria-label="User Account"
+                >
+                  <GoogleIcon name="account_circle" size={22} color="#73dfff" />
+                </Link>
+              ) : (
+                <Link
+                  className="ref-mobile-login-pill"
+                  href="/mobile/login"
+                >
+                  <GoogleIcon name="login" size={16} />
+                  <span>Login</span>
+                </Link>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Open mobile menu"
+                className="ref-mobile-hamburger"
+              >
+                <GoogleIcon name="menu" size={22} />
+              </button>
+            </div>
           )}
         </div>
 

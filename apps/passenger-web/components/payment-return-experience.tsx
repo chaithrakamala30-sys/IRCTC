@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
+import { ReferenceHeader } from "./reference-header";
 
 type PaymentOrder = {
   paymentId: string;
@@ -63,7 +64,9 @@ export function PaymentReturnExperience({ device }: { device: "mobile" | "laptop
     : payment?.status.replaceAll("_", " ") ?? "Checking";
 
   return (
-    <main className={`payment-return payment-return--${device}`}>
+    <div className={`page-shell bg-[#040914] text-[#eaf3ff] min-h-screen`}>
+      <ReferenceHeader experience={device} />
+      <main className={`payment-return payment-return--${device} max-w-3xl mx-auto px-4 py-8`}>
       <p className="eyebrow">Dhruva Bank · DEMO PAYMENT</p>
       <h1>Payment status</h1>
       {busy && <p role="status">Verifying the payment with the server…</p>}
@@ -98,5 +101,6 @@ export function PaymentReturnExperience({ device }: { device: "mobile" | "laptop
         DEMO ONLY — do not enter card, UPI, PIN, or bank credentials on RailConnect.
       </p>
     </main>
+  </div>
   );
 }

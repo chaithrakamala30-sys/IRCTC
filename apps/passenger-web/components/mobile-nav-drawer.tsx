@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
-import { ThemeToggle } from "./theme-toggle";
+import { GoogleIcon } from "./google-icon";
 
 type MobileNavDrawerProps = {
   isOpen: boolean;
@@ -92,7 +92,7 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">🏠</span>
+            <GoogleIcon name="home" size={20} color="#38bdf8" />
             <span>Home</span>
           </Link>
 
@@ -101,7 +101,7 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">🎫</span>
+            <GoogleIcon name="confirmation_number" size={20} color="#38bdf8" />
             <span>Book Tickets</span>
           </Link>
 
@@ -110,7 +110,7 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">🔍</span>
+            <GoogleIcon name="search_check" size={20} color="#38bdf8" />
             <span>PNR Status</span>
           </Link>
 
@@ -119,7 +119,7 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">📍</span>
+            <GoogleIcon name="radar" size={20} color="#38bdf8" />
             <span>Live Train Status</span>
           </Link>
 
@@ -128,7 +128,7 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">📅</span>
+            <GoogleIcon name="calendar_month" size={20} color="#38bdf8" />
             <span>Train Schedule</span>
           </Link>
 
@@ -137,8 +137,8 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">💺</span>
-            <span>Coach Position</span>
+            <GoogleIcon name="airline_seat_recline_extra" size={20} color="#38bdf8" />
+            <span>Seat Availability</span>
           </Link>
 
           <Link
@@ -146,7 +146,7 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">📜</span>
+            <GoogleIcon name="receipt_long" size={20} color="#38bdf8" />
             <span>My Bookings</span>
           </Link>
 
@@ -155,8 +155,8 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">🔔</span>
-            <span>Notifications</span>
+            <GoogleIcon name="notifications" size={20} color="#38bdf8" />
+            <span>Notifications & Alerts</span>
           </Link>
 
           <Link
@@ -164,7 +164,7 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">👤</span>
+            <GoogleIcon name="account_circle" size={20} color="#38bdf8" />
             <span>User Profile</span>
           </Link>
 
@@ -173,18 +173,21 @@ export function MobileNavDrawer({
             onClick={onClose}
             className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span className="text-lg">💬</span>
+            <GoogleIcon name="support_agent" size={20} color="#38bdf8" />
             <span>Help and Support</span>
           </Link>
         </nav>
 
-        {/* Drawer Footer: Theme Selector & Auth Actions */}
+        {/* Drawer Footer: Auth Actions */}
         <div className="mt-auto border-t border-[#258bff]/20 pt-4">
-          <div className="flex items-center justify-between pb-4">
-            <span className="text-xs font-semibold text-[#8fa3c7]">
-              Interface Theme
+          <div className="flex items-center justify-between pb-3 text-xs text-[#8fa3c7]">
+            <span className="flex items-center gap-1.5 font-semibold">
+              <GoogleIcon name="dark_mode" size={16} color="#73dfff" />
+              <span>Theme: Dark Mode</span>
             </span>
-            <ThemeToggle />
+            <span className="rounded-full bg-[#1877f2]/20 px-2 py-0.5 text-[10px] font-bold text-[#73dfff] border border-[#258bff]/30">
+              ALWAYS ON
+            </span>
           </div>
 
           {authStatus === "signed-in" ? (

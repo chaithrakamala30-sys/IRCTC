@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
 import { TrainTrackingModal } from "./train-tracking-modal";
 import { NotificationBellDropdown } from "./notification-bell-dropdown";
-import { ThemeToggle } from "./theme-toggle";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
 import { GlassModal } from "./glass-modal";
 
@@ -94,7 +93,6 @@ export function PassengerHeader({ experience }: PassengerHeaderProps) {
           </div>
 
           <NotificationBellDropdown />
-          <ThemeToggle />
 
           {experience === "laptop" ? (
             authStatus === "signed-in" ? (

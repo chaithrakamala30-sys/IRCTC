@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { apiFetch, ApiRequestError } from "../lib/api";
 import { BookingHistoryPanel } from "./booking-history";
+import { ReferenceHeader } from "./reference-header";
 
 type DeviceExperience = "mobile" | "laptop";
 type AuthMode = "login" | "register";
@@ -118,16 +119,8 @@ export function PassengerIdentityExperience({
   }
 
   return (
-    <div className={`identity-page identity-page--${device}`}>
-      <header className="identity-header">
-        <Link className="identity-brand" href={`/${device}`}>
-          RailConnect
-        </Link>
-        <nav aria-label="Account navigation">
-          <Link href={`/${device}/login`}>Sign in</Link>
-          <Link href={`/${device}/register`}>Create account</Link>
-        </nav>
-      </header>
+    <div className={`identity-page identity-page--${device} bg-[#040914] text-[#eaf3ff]`}>
+      <ReferenceHeader experience={device} />
       <main className="identity-layout">
         {device === "laptop" && (
           <aside className="identity-aside">
@@ -397,18 +390,8 @@ export function PassengerAccountExperience({
   }
 
   return (
-    <div className={`identity-page identity-page--${device}`}>
-      <header className="identity-header">
-        <Link className="identity-brand" href={`/${device}`}>RailConnect</Link>
-        <nav aria-label="Account navigation">
-          <Link href={`/${device}`}>Passenger home</Link>
-          {loading ? null : user ? (
-            <button className="text-button" onClick={logout} type="button">Sign out</button>
-          ) : (
-            <Link href={`/${device}/login`}>Sign in</Link>
-          )}
-        </nav>
-      </header>
+    <div className={`identity-page identity-page--${device} bg-[#040914] text-[#eaf3ff]`}>
+      <ReferenceHeader experience={device} />
       <main className="account-layout">
         {device === "laptop" && (
           <aside className="account-sidebar">
