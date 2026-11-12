@@ -5,6 +5,9 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { ApiRequestError, apiFetch } from "../lib/api";
 import { StationAutocomplete } from "./station-autocomplete";
 import { RailwayGlossaryTooltip } from "./railway-glossary-tooltip";
+import { LocomotiveHeroCanvas } from "./locomotive-hero-canvas";
+import { QuickServicesDock } from "./quick-services-dock";
+import { IndianRailwaysShowcase } from "./indian-railways-showcase";
 import type {
   SearchFilters,
   SearchPage,
@@ -314,17 +317,15 @@ export function TrainSearchExperience({ device }: { device: DeviceExperience }) 
   return (
     <div className={`train-search-page train-search-page--${device}`}>
       <section aria-labelledby="train-search-title" className="train-search-hero">
+        <LocomotiveHeroCanvas isMobile={device === "mobile"} />
         <div className="train-search-hero-copy">
-          <p className="eyebrow">Passenger train search</p>
-          <h1 id="train-search-title">Find your next train journey.</h1>
-          <p>Search published RailConnect routes and schedules. Search is open to everyone; no account is needed.</p>
-        </div>
-        <div aria-hidden="true" className="search-route-art">
-          <span />
-          <span />
-          <span />
+          <p className="eyebrow">National Railway Portal</p>
+          <h1 id="train-search-title">Book Indian Railways Express & Superfast Trains</h1>
+          <p>Authoritative reservation, real-time seat inventory, and dynamic fare engine across the national rail network.</p>
         </div>
       </section>
+
+      <QuickServicesDock />
 
       <form className="journey-search-form" onSubmit={submitSearch}>
         <div className="station-fields">
@@ -677,6 +678,8 @@ export function TrainSearchExperience({ device }: { device: DeviceExperience }) 
           )}
         </section>
       )}
+
+      <IndianRailwaysShowcase />
     </div>
   );
 }
