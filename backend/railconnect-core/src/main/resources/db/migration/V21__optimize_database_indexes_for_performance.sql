@@ -16,13 +16,13 @@ CREATE INDEX IF NOT EXISTS idx_inventory_berths_run_coach
 
 -- 3. Optimize Payment Lookups & Reconciliation
 CREATE INDEX IF NOT EXISTS idx_payment_orders_booking_status 
-    ON payment_orders(booking_id, status);
+    ON payment_orders(booking_id, payment_status);
 
 CREATE INDEX IF NOT EXISTS idx_payment_orders_provider_status 
-    ON payment_orders(provider_code, status);
+    ON payment_orders(provider_code, payment_status);
 
 CREATE INDEX IF NOT EXISTS idx_refund_orders_payment_status 
-    ON refund_orders(payment_order_id, status);
+    ON refund_orders(payment_order_id, refund_status);
 
 -- 4. Optimize Train Runs & Journey Schedules
 CREATE INDEX IF NOT EXISTS idx_inventory_train_runs_lookup 
