@@ -55,6 +55,23 @@ export function ReferenceBookingEngine({
 
   const handleBookSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (fromStation && toStation) {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("railconnect.recent-searches") ?? "[]");
+        const next = [
+          { from: fromStation, to: toStation, journeyDate },
+          ...(Array.isArray(stored) ? stored : []).filter(
+            (r: { from?: { stationId?: string }; to?: { stationId?: string }; journeyDate?: string }) =>
+              r?.from?.stationId !== fromStation.stationId ||
+              r?.to?.stationId !== toStation.stationId ||
+              r?.journeyDate !== journeyDate
+          ),
+        ].slice(0, 5);
+        window.localStorage.setItem("railconnect.recent-searches", JSON.stringify(next));
+      } catch {
+        // Ignore storage errors
+      }
+    }
     onSearch(fromStation, toStation, journeyDate, coachClass, quota);
   };
 
@@ -72,6 +89,11 @@ export function ReferenceBookingEngine({
     if (e) e.preventDefault();
     const query = (trainCode || scheduleTrainInput).trim();
     if (query) {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("railconnect.recent-train-queries") ?? "[]");
+        const next = [query, ...(Array.isArray(stored) ? stored : []).filter((q: string) => q !== query)].slice(0, 5);
+        window.localStorage.setItem("railconnect.recent-train-queries", JSON.stringify(next));
+      } catch {}
       window.location.href = `/laptop/train-details?trainNo=${encodeURIComponent(query)}`;
     } else {
       window.location.href = `/laptop/train-details`;
@@ -81,6 +103,13 @@ export function ReferenceBookingEngine({
   const handleSeatSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const query = seatTrainInput.trim();
+    if (query) {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("railconnect.recent-train-queries") ?? "[]");
+        const next = [query, ...(Array.isArray(stored) ? stored : []).filter((q: string) => q !== query)].slice(0, 5);
+        window.localStorage.setItem("railconnect.recent-train-queries", JSON.stringify(next));
+      } catch {}
+    }
     const params = new URLSearchParams();
     if (query) params.set("query", query);
     if (seatDate) params.set("journeyDate", seatDate);
@@ -93,6 +122,11 @@ export function ReferenceBookingEngine({
     e.preventDefault();
     const query = liveTrainInput.trim();
     if (query) {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("railconnect.recent-train-queries") ?? "[]");
+        const next = [query, ...(Array.isArray(stored) ? stored : []).filter((q: string) => q !== query)].slice(0, 5);
+        window.localStorage.setItem("railconnect.recent-train-queries", JSON.stringify(next));
+      } catch {}
       window.location.href = `/laptop/train-details?trainNo=${encodeURIComponent(query)}&day=${liveDay}&tab=live`;
     } else {
       window.location.href = `/laptop/train-details`;
