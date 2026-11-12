@@ -290,3 +290,4 @@ export function ReferenceLocomotiveScene({ isMobile = false }: WAP7CanvasProps) 
     </div>
   );
 }
+

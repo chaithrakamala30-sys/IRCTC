@@ -3324,6 +3324,67 @@ html.dark .train-card {
   padding: 0 20px;
 }
 
+@media (max-width: 768px) {
+  .ref-hero-banner {
+    min-height: unset;
+    padding: 20px 16px 24px;
+  }
+
+  .ref-hero-text-block {
+    margin-bottom: 16px;
+  }
+
+  .ref-hero-h1 {
+    font-size: 1.85rem;
+    line-height: 1.15;
+    margin-bottom: 10px;
+  }
+
+  .ref-hero-p {
+    font-size: 0.86rem;
+    margin-bottom: 16px;
+  }
+
+  .ref-booking-widget-wrapper {
+    margin: 12px auto 24px;
+    padding: 0 12px;
+  }
+
+  .ref-widget-tabs {
+    border-radius: 14px 14px 0 0;
+    padding: 4px 8px;
+    overflow-x: auto;
+    max-width: 100%;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ref-widget-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ref-widget-tab {
+    padding: 7px 12px;
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+
+  .ref-booking-form-box {
+    border-radius: 0 16px 16px 16px;
+    padding: 16px;
+  }
+
+  .ref-swap-btn {
+    align-self: center;
+    margin: 4px auto;
+    transform: rotate(90deg);
+  }
+
+  .ref-swap-btn:hover {
+    transform: rotate(270deg);
+  }
+}
+
 .ref-widget-tabs {
   display: flex;
   align-items: center;
@@ -4344,6 +4405,12 @@ html.dark .train-card {
   justify-content: space-around;
   align-items: center;
   box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+}
+
+/* Hide bottom navigation when sidebar drawer or fullscreen modals are active */
+body.is-drawer-open .mobile-bottom-nav,
+body.has-modal-open .mobile-bottom-nav {
+  display: none !important;
 }
 
 .dark .mobile-bottom-nav {

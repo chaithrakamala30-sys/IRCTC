@@ -124,6 +124,17 @@ export function TrainSearchExperience({ device }: { device: DeviceExperience }) 
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
 
+  useEffect(() => {
+    if (filtersOpen) {
+      document.body.classList.add("has-modal-open");
+    } else {
+      document.body.classList.remove("has-modal-open");
+    }
+    return () => {
+      document.body.classList.remove("has-modal-open");
+    };
+  }, [filtersOpen]);
+
   const executeSearch = useCallback(async (request: SearchRequest, page = 0) => {
     setLoading(true);
     setError("");
