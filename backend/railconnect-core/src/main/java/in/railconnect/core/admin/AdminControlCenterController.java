@@ -32,7 +32,7 @@ public class AdminControlCenterController {
     }
 
     // 2. User & Passenger Management
-    @GetMapping("/users")
+    @GetMapping("/passengers")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'RAILWAY_ADMIN', 'CUSTOMER_SUPPORT')")
     public ApiEnvelope<List<PassengerAccountSummary>> searchPassengers(
             @RequestParam(required = false) String query,
@@ -41,7 +41,7 @@ public class AdminControlCenterController {
         return ApiEnvelope.success(adminService.searchPassengers(query, status), RequestIds.current());
     }
 
-    @PostMapping("/users/{userId}/status")
+    @PostMapping("/passengers/{userId}/status")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'RAILWAY_ADMIN')")
     public ApiEnvelope<String> updatePassengerStatus(
             @PathVariable UUID userId,
