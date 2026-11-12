@@ -6,22 +6,28 @@ import type { StationSuggestion } from "./train-search-types";
 
 type StationAutocompleteProps = {
   id: string;
-  label: string;
+  label?: string;
   value: string;
   selectedStation: StationSuggestion | null;
   otherStationId?: string;
   onValueChange: (value: string) => void;
   onSelect: (station: StationSuggestion) => void;
+  placeholder?: string;
+  inputClassName?: string;
+  wrapperClassName?: string;
 };
 
 export function StationAutocomplete({
   id,
-  label,
+  label = "",
   value,
   selectedStation,
   otherStationId,
   onValueChange,
   onSelect,
+  placeholder = "Enter station name or code",
+  inputClassName = "",
+  wrapperClassName = "",
 }: StationAutocompleteProps) {
   const listId = useId();
   const [suggestions, setSuggestions] = useState<StationSuggestion[]>([]);
@@ -111,8 +117,8 @@ export function StationAutocomplete({
   const showList = open && value.trim().length >= 2;
 
   return (
-    <div className="station-picker">
-      <label htmlFor={id}>{label}</label>
+    <div className={`station-picker ${wrapperClassName}`.trim()}>
+      {label ? <label htmlFor={id}>{label}</label> : null}
       <input
         aria-activedescendant={
           showList && activeIndex >= 0
@@ -124,7 +130,9 @@ export function StationAutocomplete({
         aria-expanded={showList}
         aria-haspopup="listbox"
         autoComplete="off"
+        className={inputClassName}
         id={id}
+        placeholder={placeholder}
         onChange={(event) => {
           onValueChange(event.target.value);
           setOpen(true);

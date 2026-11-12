@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { GoogleIcon } from "./google-icon";
 
 export function ReferenceFooter() {
   return (
@@ -25,12 +26,12 @@ export function ReferenceFooter() {
         </nav>
 
         <div className="ref-footer-ir-notice">
-          <span className="text-xs text-[#73dfff] font-semibold">
-            Indian Railways 🇮🇳 | A Government of India Initiative
-          </span>
+          <div className="flex items-center gap-1.5 text-xs text-[#73dfff] font-semibold">
+            <GoogleIcon name="flag" size={15} color="#38bdf8" />
+            <span>Indian Railways • A Government of India Initiative</span>
+          </div>
         </div>
       </div>
     </footer>
   );
 }
-

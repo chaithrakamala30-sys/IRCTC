@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { GoogleIcon } from "./google-icon";
 
 export function ReferencePopularSection() {
   const popularTrains = [
-    { code: "22436", name: "Vande Bharat Express", speed: "160 km/h", icon: "🚄" },
-    { code: "12951", name: "Rajdhani Express", speed: "130 km/h", icon: "👑" },
-    { code: "12002", name: "Shatabdi Express", speed: "130 km/h", icon: "⚡" },
-    { code: "12260", name: "Duronto Express", speed: "120 km/h", icon: "🚀" },
+    { code: "22436", name: "Vande Bharat Express", speed: "160 km/h", icon: "train" },
+    { code: "12951", name: "Rajdhani Express", speed: "130 km/h", icon: "hotel_class" },
+    { code: "12002", name: "Shatabdi Express", speed: "130 km/h", icon: "bolt" },
+    { code: "12260", name: "Duronto Express", speed: "120 km/h", icon: "rocket_launch" },
   ];
 
   return (
@@ -17,10 +18,14 @@ export function ReferencePopularSection() {
         <div className="ref-panel-header">
           <div className="flex items-center gap-2">
             <span className="ref-panel-title">Live Train Status</span>
-            <span className="ref-live-indicator">● Live</span>
+            <span className="ref-live-indicator">
+              <span className="ref-pulse-dot" style={{ display: "inline-block", marginRight: "4px" }}></span>
+              Live
+            </span>
           </div>
           <Link href="/laptop/train-details" className="ref-view-link">
-            View Details →
+            <span>View Details</span>
+            <GoogleIcon name="arrow_forward" size={14} />
           </Link>
         </div>
 
@@ -38,7 +43,9 @@ export function ReferencePopularSection() {
             <small>New Delhi</small>
           </div>
           <div className="ref-timeline-line">
-            <span className="ref-train-marker">🚆</span>
+            <span className="ref-train-marker">
+              <GoogleIcon name="train" size={20} color="#73dfff" />
+            </span>
           </div>
           <div className="ref-timeline-station">
             <strong>BPL</strong>
@@ -57,7 +64,8 @@ export function ReferencePopularSection() {
         <div className="ref-panel-header">
           <span className="ref-panel-title">Popular Trains</span>
           <Link href="/laptop#journey" className="ref-view-link">
-            View All →
+            <span>View All</span>
+            <GoogleIcon name="arrow_forward" size={14} />
           </Link>
         </div>
 
@@ -68,7 +76,9 @@ export function ReferencePopularSection() {
               href="/laptop/train-details"
               className="ref-popular-item"
             >
-              <span className="ref-popular-icon">{train.icon}</span>
+              <span className="ref-popular-icon">
+                <GoogleIcon name={train.icon} size={22} color="#73dfff" />
+              </span>
               <strong className="ref-popular-name">{train.name}</strong>
               <small className="ref-popular-speed">{train.speed}</small>
             </Link>
@@ -83,19 +93,27 @@ export function ReferencePopularSection() {
         </div>
         <ul className="ref-why-list">
           <li>
-            <span className="ref-check-icon">✓</span>
+            <span className="ref-check-icon">
+              <GoogleIcon name="check" size={16} color="#73dfff" />
+            </span>
             <span>Secure & Reliable Booking</span>
           </li>
           <li>
-            <span className="ref-check-icon">✓</span>
+            <span className="ref-check-icon">
+              <GoogleIcon name="check" size={16} color="#73dfff" />
+            </span>
             <span>Real-Time PNR & Chart Updates</span>
           </li>
           <li>
-            <span className="ref-check-icon">✓</span>
+            <span className="ref-check-icon">
+              <GoogleIcon name="check" size={16} color="#73dfff" />
+            </span>
             <span>Fast & Easy Digital Refunds</span>
           </li>
           <li>
-            <span className="ref-check-icon">✓</span>
+            <span className="ref-check-icon">
+              <GoogleIcon name="check" size={16} color="#73dfff" />
+            </span>
             <span>Authorized by Indian Railway System</span>
           </li>
         </ul>
@@ -103,4 +121,3 @@ export function ReferencePopularSection() {
     </div>
   );
 }
-

@@ -1,69 +1,89 @@
 "use client";
 
 import Link from "next/link";
-import { TrainTrackingModal } from "./train-tracking-modal";
+import { GoogleIcon } from "./google-icon";
 
 export function ReferenceServicesRow() {
   return (
     <div className="ref-services-row-container">
-      {/* 1. Six Service Feature Cards */}
+      {/* 6 Square Feature Action Buttons */}
       <div className="ref-feature-cards-grid">
         <Link href="/laptop#journey" className="ref-service-square-card">
-          <div className="ref-service-circle-icon">⚡</div>
-          <span className="ref-service-name">Tatkal Booking</span>
-          <span className="ref-service-arrow">→</span>
-        </Link>
-
-        <div className="ref-service-square-card">
-          <div className="ref-service-circle-icon">🕒</div>
-          <span className="ref-service-name">Train Live Status</span>
-          <div className="ref-tracking-trigger">
-            <TrainTrackingModal />
+          <div className="ref-service-circle-icon">
+            <GoogleIcon name="bolt" size={24} color="#73dfff" />
           </div>
-        </div>
+          <span className="ref-service-name">Tatkal Booking</span>
+          <span className="ref-service-arrow">
+            <GoogleIcon name="arrow_forward" size={16} />
+          </span>
+        </Link>
 
         <Link href="/laptop/train-details" className="ref-service-square-card">
-          <div className="ref-service-circle-icon">💺</div>
+          <div className="ref-service-circle-icon">
+            <GoogleIcon name="schedule" size={24} color="#73dfff" />
+          </div>
+          <span className="ref-service-name">Train Live Status</span>
+          <span className="ref-service-arrow">
+            <GoogleIcon name="arrow_forward" size={16} />
+          </span>
+        </Link>
+
+        <Link href="/laptop/train-details" className="ref-service-square-card">
+          <div className="ref-service-circle-icon">
+            <GoogleIcon name="airline_seat_recline_extra" size={24} color="#73dfff" />
+          </div>
           <span className="ref-service-name">Coach Position</span>
-          <span className="ref-service-arrow">→</span>
+          <span className="ref-service-arrow">
+            <GoogleIcon name="arrow_forward" size={16} />
+          </span>
         </Link>
 
         <Link href="/laptop/train-details" className="ref-service-square-card">
-          <div className="ref-service-circle-icon">📍</div>
+          <div className="ref-service-circle-icon">
+            <GoogleIcon name="my_location" size={24} color="#73dfff" />
+          </div>
           <span className="ref-service-name">Track Your Train</span>
-          <span className="ref-service-arrow">→</span>
+          <span className="ref-service-arrow">
+            <GoogleIcon name="arrow_forward" size={16} />
+          </span>
         </Link>
 
         <Link href="/support" className="ref-service-square-card">
-          <div className="ref-service-circle-icon">🏷️</div>
+          <div className="ref-service-circle-icon">
+            <GoogleIcon name="sell" size={24} color="#73dfff" />
+          </div>
           <span className="ref-service-name">Offers & Schemes</span>
-          <span className="ref-service-arrow">→</span>
+          <span className="ref-service-arrow">
+            <GoogleIcon name="arrow_forward" size={16} />
+          </span>
         </Link>
 
         <Link href="/support" className="ref-service-square-card">
-          <div className="ref-service-circle-icon">🎧</div>
+          <div className="ref-service-circle-icon">
+            <GoogleIcon name="support_agent" size={24} color="#73dfff" />
+          </div>
           <span className="ref-service-name">24x7 Helpline</span>
-          <span className="ref-service-arrow">→</span>
+          <span className="ref-service-arrow">
+            <GoogleIcon name="arrow_forward" size={16} />
+          </span>
         </Link>
       </div>
 
-      {/* 2. Vande Bharat Express Highlighting Banner (Right Side) */}
-      <div className="ref-vande-bharat-banner">
-        <div className="ref-vb-content">
-          <span className="ref-vb-badge">— Introducing —</span>
-          <h3 className="ref-vb-title">Vande Bharat Express</h3>
-          <p className="ref-vb-subtitle">Faster. Smarter. Greener.</p>
-          <Link href="/laptop/train-details" className="ref-vb-link">
-            Know More →
-          </Link>
+      {/* Promotional Vande Bharat Showcase Card */}
+      <div className="ref-vb-promo-banner">
+        <div className="ref-vb-glow-badge">
+          <GoogleIcon name="verified" size={15} color="#38bdf8" />
+          <span>NextGen Train 18</span>
         </div>
-        <div className="ref-vb-image-box" aria-hidden="true">
-          <div className="ref-vb-train-silhouette">
-            <span className="ref-vb-badge-pill">160 km/h</span>
-          </div>
-        </div>
+        <h3 className="ref-vb-title">Vande Bharat Express</h3>
+        <p className="ref-vb-tagline">
+          Experience ultra-fast semi-high speed transit with world-class executive interiors & Wi-Fi infotainment.
+        </p>
+        <Link href="/laptop#journey" className="ref-vb-cta">
+          <span>Book Vande Bharat</span>
+          <GoogleIcon name="arrow_forward" size={16} />
+        </Link>
       </div>
     </div>
   );
 }
-

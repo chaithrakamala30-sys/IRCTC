@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "../lib/api";
 import { ThemeToggle } from "./theme-toggle";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
-import { TrainTrackingModal } from "./train-tracking-modal";
+import { GoogleIcon } from "./google-icon";
 
 type HeaderProps = {
   experience: "laptop" | "mobile";
@@ -15,7 +15,6 @@ type HeaderProps = {
 export function ReferenceHeader({ experience, activeTab = "home" }: HeaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [authStatus, setAuthStatus] = useState<"checking" | "signed-in" | "signed-out" | "error">("checking");
-  const [pnrOpen, setPnrOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -91,14 +90,14 @@ export function ReferenceHeader({ experience, activeTab = "home" }: HeaderProps)
           </Link>
         </div>
 
-        {/* Center: Desktop Top Pill Navigation Bar matching Reference */}
+        {/* Center: Desktop Top Pill Navigation Bar */}
         {experience === "laptop" && (
           <nav aria-label="Main Navigation" className="ref-center-nav">
             <Link
               href="/laptop"
               className={`ref-pill-link ${activeTab === "home" ? "is-active" : ""}`}
             >
-              <span className="ref-pill-icon">🏠</span>
+              <GoogleIcon name="home" size={17} className="ref-pill-icon" />
               <span>Home</span>
             </Link>
 
@@ -106,62 +105,62 @@ export function ReferenceHeader({ experience, activeTab = "home" }: HeaderProps)
               href="/laptop#journey"
               className={`ref-pill-link ${activeTab === "booking" ? "is-active" : ""}`}
             >
+              <GoogleIcon name="confirmation_number" size={17} className="ref-pill-icon" />
               <span>Book Tickets</span>
-              <span className="ref-chevron-down">▾</span>
             </Link>
 
-            <button
-              type="button"
-              onClick={() => setPnrOpen(true)}
+            <Link
+              href="/verify-ticket"
               className={`ref-pill-link ${activeTab === "pnr" ? "is-active" : ""}`}
             >
+              <GoogleIcon name="search_check" size={17} className="ref-pill-icon" />
               <span>PNR Status</span>
-            </button>
+            </Link>
 
             <Link
               href="/laptop/train-details"
               className={`ref-pill-link ${activeTab === "train-info" ? "is-active" : ""}`}
             >
+              <GoogleIcon name="train" size={17} className="ref-pill-icon" />
               <span>Train Info</span>
-              <span className="ref-chevron-down">▾</span>
             </Link>
 
             <Link
               href="/support"
               className={`ref-pill-link ${activeTab === "services" ? "is-active" : ""}`}
             >
+              <GoogleIcon name="room_service" size={17} className="ref-pill-icon" />
               <span>Services</span>
-              <span className="ref-chevron-down">▾</span>
             </Link>
 
             <Link
               href="/notifications"
               className={`ref-pill-link ${activeTab === "more" ? "is-active" : ""}`}
             >
-              <span>More</span>
-              <span className="ref-chevron-down">▾</span>
+              <GoogleIcon name="notifications" size={17} className="ref-pill-icon" />
+              <span>Alerts</span>
             </Link>
           </nav>
         )}
 
-        {/* Right: Theme Toggle + Login / Register Buttons matching Reference */}
+        {/* Right: Theme Toggle + Login / Register Buttons */}
         <div className="ref-right-actions">
           <ThemeToggle />
 
           {experience === "laptop" ? (
             authStatus === "signed-in" ? (
               <Link className="ref-btn-login" href="/laptop/account">
-                <span className="ref-user-glyph">👤</span>
+                <GoogleIcon name="account_circle" size={19} className="ref-user-glyph" />
                 <span>My Account</span>
               </Link>
             ) : (
               <div className="ref-auth-buttons">
                 <Link className="ref-btn-login" href="/laptop/login">
-                  <span className="ref-user-glyph">👤</span>
+                  <GoogleIcon name="login" size={18} className="ref-user-glyph" />
                   <span>Login</span>
                 </Link>
                 <Link className="ref-btn-register" href="/laptop/register">
-                  Register
+                  <span>Register</span>
                 </Link>
               </div>
             )
@@ -172,9 +171,7 @@ export function ReferenceHeader({ experience, activeTab = "home" }: HeaderProps)
               aria-label="Open mobile menu"
               className="ref-mobile-hamburger"
             >
-              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <GoogleIcon name="menu" size={24} />
             </button>
           )}
         </div>
@@ -189,4 +186,3 @@ export function ReferenceHeader({ experience, activeTab = "home" }: HeaderProps)
     </>
   );
 }
-
