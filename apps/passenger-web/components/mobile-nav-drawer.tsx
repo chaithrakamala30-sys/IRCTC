@@ -4,18 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
 
-type NavLink = {
-  label: string;
-  href: string;
-  icon?: string;
-};
-
-type NavGroup = {
-  title: string;
-  icon?: string;
-  items: NavLink[];
-};
-
 type MobileNavDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -31,16 +19,6 @@ export function MobileNavDrawer({
   authStatus,
   onSignOut,
 }: MobileNavDrawerProps) {
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    journeys: false,
-    support: false,
-    settings: false,
-  });
-
-  const toggleGroup = (groupKey: string) => {
-    setExpandedGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
-  };
-
   useEffect(() => {
     if (!isOpen) return;
 
@@ -66,9 +44,9 @@ export function MobileNavDrawer({
     <div
       className="fixed inset-0 z-[1100] flex animate-fadeIn"
       style={{
-        backgroundColor: "rgba(10, 15, 29, 0.65)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
+        backgroundColor: "rgba(5, 11, 24, 0.8)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -78,124 +56,131 @@ export function MobileNavDrawer({
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative flex h-full w-full max-w-xs flex-col overflow-y-auto border-r border-slate-200/80 bg-white/95 p-6 pb-24 shadow-2xl backdrop-blur-xl transition-all dark:border-slate-800/80 dark:bg-slate-900/95 dark:text-slate-100 animate-slideInLeft sm:max-w-sm">
+      <div className="relative flex h-full w-full max-w-xs flex-col overflow-y-auto border-r border-[#258bff]/30 bg-[#050b18]/95 p-6 pb-28 shadow-2xl backdrop-blur-2xl transition-all text-[#eaf3ff] animate-slideInLeft sm:max-w-sm">
         {/* Drawer Header */}
-        <div className="flex items-center justify-between border-b border-slate-200/80 pb-4 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-600 text-base font-extrabold text-white shadow-md">
+        <div className="flex items-center justify-between border-b border-[#258bff]/20 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1264c5] text-base font-extrabold text-white shadow-lg shadow-[#258bff]/30 border border-[#73dfff]/40">
               RC
-            </span>
+            </div>
             <div>
-              <p className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
+              <p className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
                 RailConnect
               </p>
-              <p className="text-[10px] font-medium text-orange-600 dark:text-orange-400">
-                Enterprise Express
+              <p className="text-[11px] font-medium text-[#73dfff]">
+                भारतीय रेल • INDIAN RAILWAYS
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-[#8fa3c7] hover:bg-white/10 hover:text-white"
             aria-label="Close navigation menu"
           >
-            ✕
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        {/* User Identity Banner (if logged in) */}
-        {authStatus === "signed-in" && (
-          <div className="mt-4 rounded-xl border border-orange-200/60 bg-orange-50/50 p-3.5 dark:border-orange-500/20 dark:bg-orange-950/20">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-orange-700 dark:text-orange-400">
-              Authenticated Passenger
-            </p>
-            <p className="mt-0.5 text-xs font-medium text-slate-800 dark:text-slate-200">
-              Access your digital reservations
-            </p>
-            <Link
-              href={`/${experience}/account`}
-              onClick={onClose}
-              className="mt-2 inline-flex items-center text-xs font-semibold text-orange-600 hover:underline dark:text-orange-400"
-            >
-              Open Dashboard →
-            </Link>
-          </div>
-        )}
-
-        {/* Navigation Links & Accordions */}
-        <nav className="mt-6 flex-1 space-y-1.5 text-sm font-medium">
+        {/* Navigation Items Matching Reference Image */}
+        <nav aria-label="Mobile Drawer Navigation" className="mt-5 flex flex-col gap-1.5">
           <Link
-            href={`/${experience}`}
+            href="/mobile"
             onClick={onClose}
-            className="flex h-11 items-center gap-3 rounded-lg px-3 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span>🚆</span>
+            <span className="text-lg">🏠</span>
+            <span>Home</span>
+          </Link>
+
+          <Link
+            href="/mobile#journey"
+            onClick={onClose}
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
+          >
+            <span className="text-lg">🎫</span>
             <span>Book Tickets</span>
           </Link>
 
-          {/* Accordion: My Journeys */}
-          <div>
-            <button
-              onClick={() => toggleGroup("journeys")}
-              className="flex h-11 w-full items-center justify-between rounded-lg px-3 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              <div className="flex items-center gap-3">
-                <span>🎫</span>
-                <span>My Journeys</span>
-              </div>
-              <span className="text-xs">{expandedGroups.journeys ? "▲" : "▼"}</span>
-            </button>
-            {expandedGroups.journeys && (
-              <div className="ml-7 mt-1 space-y-1 border-l-2 border-slate-200 pl-3 dark:border-slate-800">
-                <Link
-                  href={`/${experience}/account#bookings`}
-                  onClick={onClose}
-                  className="block py-1.5 text-xs text-slate-600 hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400"
-                >
-                  Upcoming Bookings
-                </Link>
-                <Link
-                  href={`/${experience}/account#history`}
-                  onClick={onClose}
-                  className="block py-1.5 text-xs text-slate-600 hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400"
-                >
-                  Past Journeys
-                </Link>
-                <Link
-                  href="/verify-ticket"
-                  onClick={onClose}
-                  className="block py-1.5 text-xs text-slate-600 hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400"
-                >
-                  Verify PNR & Ticket
-                </Link>
-              </div>
-            )}
-          </div>
+          <Link
+            href="/verify-ticket"
+            onClick={onClose}
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
+          >
+            <span className="text-lg">🔍</span>
+            <span>PNR Status</span>
+          </Link>
+
+          <Link
+            href="/mobile/train-details"
+            onClick={onClose}
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
+          >
+            <span className="text-lg">📍</span>
+            <span>Live Train Status</span>
+          </Link>
+
+          <Link
+            href="/mobile/train-details"
+            onClick={onClose}
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
+          >
+            <span className="text-lg">📅</span>
+            <span>Train Schedule</span>
+          </Link>
+
+          <Link
+            href="/mobile/train-details"
+            onClick={onClose}
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
+          >
+            <span className="text-lg">💺</span>
+            <span>Coach Position</span>
+          </Link>
+
+          <Link
+            href="/mobile/account"
+            onClick={onClose}
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
+          >
+            <span className="text-lg">📜</span>
+            <span>My Bookings</span>
+          </Link>
 
           <Link
             href="/notifications"
             onClick={onClose}
-            className="flex h-11 items-center gap-3 rounded-lg px-3 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span>🔔</span>
-            <span>Notifications & Alerts</span>
+            <span className="text-lg">🔔</span>
+            <span>Notifications</span>
+          </Link>
+
+          <Link
+            href="/mobile/account"
+            onClick={onClose}
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
+          >
+            <span className="text-lg">👤</span>
+            <span>User Profile</span>
           </Link>
 
           <Link
             href="/support"
             onClick={onClose}
-            className="flex h-11 items-center gap-3 rounded-lg px-3 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            className="flex h-12 items-center gap-3.5 rounded-xl px-3.5 text-sm font-semibold text-[#eaf3ff] transition-all hover:bg-[#1264c5]/25 hover:text-[#73dfff]"
           >
-            <span>💬</span>
-            <span>Customer Support</span>
+            <span className="text-lg">💬</span>
+            <span>Help and Support</span>
           </Link>
         </nav>
 
         {/* Drawer Footer: Theme Selector & Auth Actions */}
-        <div className="mt-auto border-t border-slate-200/80 pt-4 dark:border-slate-800">
+        <div className="mt-auto border-t border-[#258bff]/20 pt-4">
           <div className="flex items-center justify-between pb-4">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              Appearance
+            <span className="text-xs font-semibold text-[#8fa3c7]">
+              Interface Theme
             </span>
             <ThemeToggle />
           </div>
@@ -206,7 +191,7 @@ export function MobileNavDrawer({
                 onClose();
                 onSignOut?.();
               }}
-              className="flex h-11 w-full items-center justify-center rounded-xl bg-slate-100 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:bg-slate-800 dark:text-rose-400 dark:hover:bg-rose-950/40"
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-rose-950/40 border border-rose-500/30 text-xs font-semibold text-rose-400 hover:bg-rose-900/50"
             >
               Sign out of account
             </button>
@@ -215,16 +200,16 @@ export function MobileNavDrawer({
               <Link
                 href={`/${experience}/login`}
                 onClick={onClose}
-                className="flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="flex h-11 items-center justify-center rounded-xl border border-[#258bff]/40 bg-[#0a1730] text-xs font-semibold text-[#eaf3ff] hover:bg-[#1264c5]/20"
               >
-                Sign in
+                Login
               </Link>
               <Link
                 href={`/${experience}/register`}
                 onClick={onClose}
-                className="flex h-11 items-center justify-center rounded-xl bg-orange-600 text-xs font-semibold text-white shadow-sm hover:bg-orange-700"
+                className="flex h-11 items-center justify-center rounded-xl bg-[#258bff] text-xs font-semibold text-white shadow-lg shadow-[#258bff]/30 hover:bg-[#1264c5]"
               >
-                Create account
+                Register
               </Link>
             </div>
           )}
@@ -233,4 +218,3 @@ export function MobileNavDrawer({
     </div>
   );
 }
-
