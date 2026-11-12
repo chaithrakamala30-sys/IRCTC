@@ -3521,7 +3521,13 @@ html.dark .train-card {
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  flex-wrap: wrap;
+  width: 100%;
+}
+
+@media (max-width: 1280px) {
+  .ref-form-row {
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -3541,25 +3547,29 @@ html.dark .train-card {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  flex: 1;
-  min-width: 160px;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .ref-from-field,
 .ref-to-field {
-  flex: 1.45;
-  min-width: 210px;
+  flex: 1.4 1 0;
+  min-width: 170px;
 }
 
 .ref-date-field {
-  flex: 1.1;
-  min-width: 160px;
+  flex: 1.25 1 0;
+  min-width: 180px;
 }
 
-.ref-class-field,
+.ref-class-field {
+  flex: 1.1 1 0;
+  min-width: 140px;
+}
+
 .ref-quota-field {
-  flex: 1;
-  min-width: 145px;
+  flex: 1 1 0;
+  min-width: 130px;
 }
 
 .ref-field-caption {
@@ -3578,10 +3588,11 @@ html.dark .train-card {
   background: rgba(10, 24, 52, 0.92);
   border: 1px solid rgba(37, 139, 255, 0.28);
   border-radius: 14px;
-  padding: 0 14px;
+  padding: 0 12px;
   min-height: 52px;
   position: relative;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 .ref-input-inner:focus-within {
@@ -3772,17 +3783,21 @@ html.dark .train-card {
   background: transparent;
   border: none;
   color: #ffffff;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   width: 100%;
+  min-width: 0;
   outline: none;
   color-scheme: dark;
+  padding: 0;
 }
 
 .ref-date-picker::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
   opacity: 0.85;
+  margin-left: 4px;
+  padding: 2px;
   transition: opacity 0.15s ease;
 }
 
@@ -3794,11 +3809,15 @@ html.dark .train-card {
   background: transparent;
   border: none;
   color: #ffffff;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   width: 100%;
+  min-width: 0;
   outline: none;
   cursor: pointer;
+  padding: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ref-select-picker option {
