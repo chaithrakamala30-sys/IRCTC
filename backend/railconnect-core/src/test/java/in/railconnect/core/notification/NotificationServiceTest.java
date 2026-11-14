@@ -1,5 +1,6 @@
 package in.railconnect.core.notification;
 
+import in.railconnect.core.kafka.KafkaEventPublisher;
 import in.railconnect.core.notification.NotificationModels.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,13 +24,16 @@ class NotificationServiceTest {
     @Mock
     private JdbcTemplate jdbcTemplate;
 
+    @Mock
+    private KafkaEventPublisher kafkaEventPublisher;
+
     private ObjectMapper objectMapper;
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        notificationService = new NotificationService(jdbcTemplate, objectMapper);
+        notificationService = new NotificationService(jdbcTemplate, objectMapper, kafkaEventPublisher);
     }
 
     @Test

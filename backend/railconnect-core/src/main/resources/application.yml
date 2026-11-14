@@ -106,6 +106,14 @@ railconnect:
     verification-requests-per-minute: ${RAILCONNECT_TICKET_VERIFICATION_REQUESTS_PER_MINUTE:20}
   redis:
     enabled: ${RAILCONNECT_REDIS_ENABLED:false}
+  kafka:
+    enabled: ${RAILCONNECT_KAFKA_ENABLED:false}
+    bootstrap-servers: ${RAILCONNECT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer-group: ${RAILCONNECT_KAFKA_CONSUMER_GROUP:railconnect-core-group}
+    topics:
+      notifications: ${RAILCONNECT_KAFKA_TOPIC_NOTIFICATIONS:railconnect.notifications}
+      bookings: ${RAILCONNECT_KAFKA_TOPIC_BOOKINGS:railconnect.bookings}
+      train-telemetry: ${RAILCONNECT_KAFKA_TOPIC_TELEMETRY:railconnect.telemetry}
   supabase:
     url: ${RAILCONNECT_SUPABASE_URL:}
     anon-key: ${RAILCONNECT_SUPABASE_ANON_KEY:}

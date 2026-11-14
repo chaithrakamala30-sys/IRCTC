@@ -2,6 +2,7 @@ package in.railconnect.core.notification;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import in.railconnect.core.kafka.KafkaEventPublisher;
 import in.railconnect.core.notification.NotificationModels.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +24,16 @@ public class NotificationService {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final KafkaEventPublisher kafkaEventPublisher;
 
-    public NotificationService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public NotificationService(
+            JdbcTemplate jdbcTemplate,
+            ObjectMapper objectMapper,
+            KafkaEventPublisher kafkaEventPublisher
+    ) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.kafkaEventPublisher = kafkaEventPublisher;
     }
 
     // ==========================================
@@ -272,6 +279,22 @@ public class NotificationService {
                         notificationId, "{\"targetToken\": \"" + (token.length() > 8 ? token.substring(0, 8) + "..." : token) + "\", \"status\": \"DISPATCHED\"}"
                 );
             }
+        }
+
+        // 3. Publish to Kafka Queue (asynchronous fanout)
+        try {
+            Map<String, Object> eventPayload = new HashMap<>();
+            eventPayload.put("notificationId", notificationId.toString());
+            eventPayload.put("targetUserId", userId.toString());
+            eventPayload.put("category", category.name());
+            eventPayload.put("eventType", eventType);
+            eventPayload.put("title", title);
+            eventPayload.put("message", message);
+            eventPayload.put("priority", priority.name());
+            eventPayload.put("timestamp", Instant.now().toString());
+            kafkaEventPublisher.publishNotificationEvent(userId.toString(), eventPayload);
+        } catch (Exception e) {
+            log.warn("Kafka notification event publish skipped: {}", e.getMessage());
         }
 
         return notificationId;
