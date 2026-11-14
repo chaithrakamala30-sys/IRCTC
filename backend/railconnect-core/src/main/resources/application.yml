@@ -107,7 +107,7 @@ railconnect:
   redis:
     enabled: ${RAILCONNECT_REDIS_ENABLED:false}
   kafka:
-    enabled: ${RAILCONNECT_KAFKA_ENABLED:true}
+    enabled: ${RAILCONNECT_KAFKA_ENABLED:false}
     bootstrap-servers: ${RAILCONNECT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer-group: ${RAILCONNECT_KAFKA_CONSUMER_GROUP:railconnect-core-group}
     topics:
