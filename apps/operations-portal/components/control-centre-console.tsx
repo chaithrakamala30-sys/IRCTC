@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "@railconnect/api";
+import { TrainRunSearchSelect, type TrainRunOption } from "./train-run-search-select";
+import { StationSearchSelect, type StationSuggestion } from "./station-search-select";
 
 type DashboardSummary = {
   totalScheduledRuns: number;
@@ -349,24 +351,37 @@ export function ControlCentreConsole() {
 
           <form onSubmit={submitStationUpdate} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <div>
-              <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block" }}>Train Run UUID</label>
-              <input
-                value={updateRunId}
-                onChange={(e) => setUpdateRunId(e.target.value)}
-                placeholder="Enter Train Run UUID"
-                style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #475569", background: "#0f172a", color: "#f8fafc" }}
+              <TrainRunSearchSelect
+                label="Train Run"
+                placeholder="Search train by number or name (e.g. 12650)..."
+                selectedTrainRunId={updateRunId}
+                initialRuns={summary?.activeRuns ?? []}
+                onSelectRun={(run: TrainRunOption | null) => {
+                  setUpdateRunId(run?.trainRunId ?? "");
+                }}
                 required
               />
+              {updateRunId && (
+                <span style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.25rem", display: "block" }}>
+                  Run ID: {updateRunId}
+                </span>
+              )}
             </div>
             <div>
-              <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block" }}>Station UUID</label>
-              <input
-                value={updateStationId}
-                onChange={(e) => setUpdateStationId(e.target.value)}
-                placeholder="Enter Station UUID"
-                style={{ width: "100%", padding: "0.5rem", borderRadius: "4px", border: "1px solid #475569", background: "#0f172a", color: "#f8fafc" }}
+              <StationSearchSelect
+                label="Station"
+                placeholder="Search station by name or code (e.g. NDLS)..."
+                selectedStationId={updateStationId}
+                onSelectStation={(station: StationSuggestion | null) => {
+                  setUpdateStationId(station?.stationId ?? "");
+                }}
                 required
               />
+              {updateStationId && (
+                <span style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.25rem", display: "block" }}>
+                  Station ID: {updateStationId}
+                </span>
+              )}
             </div>
             <div>
               <label style={{ fontSize: "0.8rem", color: "#94a3b8", display: "block" }}>Stop Index</label>

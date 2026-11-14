@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "@railconnect/api";
+import { TrainRunSearchSelect, type TrainRunOption } from "./train-run-search-select";
 
 type ChartPassengerView = {
   chartPassengerId: string;
@@ -164,15 +165,32 @@ export function OperationalChartConsole() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1.5rem", marginTop: "1rem" }}>
         <div>
           <h3>Departure Charts</h3>
-          <form onSubmit={prepareNewChart} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-            <input
-              placeholder="Train Run UUID"
-              value={trainRunIdInput}
-              onChange={(e) => setTrainRunIdInput(e.target.value)}
-              style={{ flex: 1, padding: "0.4rem 0.6rem", borderRadius: "4px", border: "1px solid #cbd5e1", fontSize: "0.85rem" }}
+          <p style={{ fontSize: "0.8rem", color: "#64748b", margin: "0.25rem 0 0.75rem 0" }}>
+            Select a scheduled train run by train number or name to prepare passenger charts and process RAC/WL promotions.
+          </p>
+          <form onSubmit={prepareNewChart} style={{ display: "grid", gap: "0.5rem", marginBottom: "1rem" }}>
+            <TrainRunSearchSelect
+              label="Select Scheduled Train Run"
+              placeholder="Search train by number or name (e.g. 12650)..."
+              selectedTrainRunId={trainRunIdInput}
+              onSelectRun={(run: TrainRunOption | null) => {
+                setTrainRunIdInput(run?.trainRunId ?? "");
+              }}
               required
             />
-            <button className="button button--primary" type="submit" disabled={actionBusy}>Prepare</button>
+            {trainRunIdInput && (
+              <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
+                Selected Run ID: {trainRunIdInput}
+              </span>
+            )}
+            <button
+              className="button button--primary"
+              type="submit"
+              disabled={actionBusy || !trainRunIdInput}
+              style={{ justifySelf: "start", marginTop: "0.25rem" }}
+            >
+              Prepare Chart
+            </button>
           </form>
 
           {loading && <p>Loading charts…</p>}
