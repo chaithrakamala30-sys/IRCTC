@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ReferenceHeader } from "../../components/reference-header";
 import { ReferenceLocomotiveScene } from "../../components/reference-locomotive-scene";
 import { ReferenceBookingEngine } from "../../components/reference-booking-engine";
+import { ReferenceSearchResults } from "../../components/reference-search-results";
 import { ReferenceServicesRow } from "../../components/reference-services-row";
 import { ReferencePopularSection } from "../../components/reference-popular-section";
 import { ReferenceFooter } from "../../components/reference-footer";
@@ -60,6 +61,9 @@ export default function PassengerMobilePage() {
         onSearch={handleSearch}
         loading={loading}
       />
+
+      {/* 3.5. Train Search Results for Mobile */}
+      <ReferenceSearchResults device="mobile" />
 
       {/* 4. Service Icons Grid */}
       <ReferenceServicesRow />
