@@ -686,36 +686,27 @@ export function AdminIdentityConsole() {
             Your account is authenticated but is not authorized to use this administration portal.
           </p>
         )}
-        {(isSuperAdmin || isRailwayAdmin || isFinanceAdmin) && (
-          <div className={currentTab === "dashboard" ? undefined : "admin-tab-content-hidden"}>
-            <AdminExecutiveDashboard />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin || isFinanceAdmin) && currentTab === "dashboard" && (
+          <AdminExecutiveDashboard />
         )}
-        {(isSuperAdmin || isRailwayAdmin) && (
-          <div className={currentTab === "approvals" ? undefined : "admin-tab-content-hidden"}>
-            <AdminApprovalConsole />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin) && currentTab === "approvals" && (
+          <AdminApprovalConsole />
         )}
-        {(isSuperAdmin || isFinanceAdmin) && (
-          <div className={currentTab === "finance" ? undefined : "admin-tab-content-hidden"}>
-            <AdminFinanceConsole />
-          </div>
+        {(isSuperAdmin || isFinanceAdmin) && currentTab === "finance" && (
+          <AdminFinanceConsole />
         )}
-        {(isSuperAdmin || isRailwayAdmin || isFinanceAdmin) && (
-          <div className={currentTab === "reports" ? undefined : "admin-tab-content-hidden"}>
-            <AdminReportsConsole />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin || isFinanceAdmin) && currentTab === "reports" && (
+          <AdminReportsConsole />
         )}
-        <div className={currentTab === "identity" && isSuperAdmin ? undefined : "admin-tab-content-hidden"}>
-          {isSuperAdmin && (
-            <>
-              <div className="admin-title-row">
-                <div>
-                  <p className="eyebrow">Identity and access</p>
-                  <h1>Administrator console</h1>
-                  <p>Signed in as {user.fullName}. Changes to staff access require a recent sign-in.</p>
-                </div>
+        {currentTab === "identity" && isSuperAdmin && (
+          <div>
+            <div className="admin-title-row">
+              <div>
+                <p className="eyebrow">Identity and access</p>
+                <h1>Administrator console</h1>
+                <p>Signed in as {user.fullName}. Changes to staff access require a recent sign-in.</p>
               </div>
+            </div>
             <section aria-labelledby="create-staff-title" className="admin-panel">
               <h2 id="create-staff-title">Provision staff account</h2>
               <p>Never use passenger registration for staff. Share the temporary password out of band.</p>
@@ -904,63 +895,40 @@ export function AdminIdentityConsole() {
                 </div>
               </section>
             )}
-            </>
-          )}
-        </div>
-        {(isSuperAdmin || isRailwayAdmin) && (
-          <div className={currentTab === "master-data" ? undefined : "admin-tab-content-hidden"}>
-            <AdminMasterDataConsole />
           </div>
         )}
-        {(isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && (
-          <div className={currentTab === "fares" ? undefined : "admin-tab-content-hidden"}>
-            <AdminFareConsole roles={user.roles} />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin) && currentTab === "master-data" && (
+          <AdminMasterDataConsole />
         )}
-        {(isSuperAdmin || isRailwayAdmin) && (
-          <div className={currentTab === "inventory" ? undefined : "admin-tab-content-hidden"}>
-            <AdminInventoryConsole />
-          </div>
+        {(isSuperAdmin || isFinanceAdmin || isRailwayAdmin) && currentTab === "fares" && (
+          <AdminFareConsole roles={user.roles} />
         )}
-        {(isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
-          <div className={currentTab === "reservations" ? undefined : "admin-tab-content-hidden"}>
-            <AdminReservationConsole roles={user.roles} />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin) && currentTab === "inventory" && (
+          <AdminInventoryConsole />
         )}
-        {(isSuperAdmin || isRailwayAdmin) && (
-          <div className={currentTab === "quotas" ? undefined : "admin-tab-content-hidden"}>
-            <AdminQuotaConsole />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin || isReservationOfficer) && currentTab === "reservations" && (
+          <AdminReservationConsole roles={user.roles} />
         )}
-        {(isSuperAdmin || isFinanceAdmin) && (
-          <div className={currentTab === "payments" ? undefined : "admin-tab-content-hidden"}>
-            <AdminPaymentConsole />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin) && currentTab === "quotas" && (
+          <AdminQuotaConsole />
         )}
-        {(isSuperAdmin || isRailwayAdmin || isReservationOfficer) && (
-          <div className={currentTab === "tickets" ? undefined : "admin-tab-content-hidden"}>
-            <TicketAdminConsole />
-          </div>
+        {(isSuperAdmin || isFinanceAdmin) && currentTab === "payments" && (
+          <AdminPaymentConsole />
         )}
-        {(isSuperAdmin || isFinanceAdmin || isRailwayAdmin || isReservationOfficer) && (
-          <div className={currentTab === "cancellations" ? undefined : "admin-tab-content-hidden"}>
-            <AdminCancellationConsole />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin || isReservationOfficer) && currentTab === "tickets" && (
+          <TicketAdminConsole />
         )}
-        {(isSuperAdmin || isRailwayAdmin) && (
-          <div className={currentTab === "notifications" ? undefined : "admin-tab-content-hidden"}>
-            <AdminNotificationConsole />
-          </div>
+        {(isSuperAdmin || isFinanceAdmin || isRailwayAdmin || isReservationOfficer) && currentTab === "cancellations" && (
+          <AdminCancellationConsole />
         )}
-        {(isSuperAdmin || isRailwayAdmin || isCustomerSupport) && (
-          <div className={currentTab === "support" ? undefined : "admin-tab-content-hidden"}>
-            <SupportStaffConsole />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin) && currentTab === "notifications" && (
+          <AdminNotificationConsole />
         )}
-        {isSuperAdmin && (
-          <div className={currentTab === "config" ? undefined : "admin-tab-content-hidden"}>
-            <AdminSystemConfigConsole />
-          </div>
+        {(isSuperAdmin || isRailwayAdmin || isCustomerSupport) && currentTab === "support" && (
+          <SupportStaffConsole />
+        )}
+        {isSuperAdmin && currentTab === "config" && (
+          <AdminSystemConfigConsole />
         )}
       </main>
     </>
