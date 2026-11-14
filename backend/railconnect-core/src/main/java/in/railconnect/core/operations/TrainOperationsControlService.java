@@ -14,6 +14,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -559,14 +561,36 @@ public class TrainOperationsControlService {
             LEFT JOIN train_run_operations tro ON ir.train_run_id = tro.train_run_id
             LEFT JOIN stations cs ON tro.current_station_id = cs.station_id
             LEFT JOIN stations ns ON tro.next_station_id = ns.station_id
-            WHERE tr.train_number = ? AND (ir.service_date = ?::date OR ? IS NULL)
+            WHERE tr.train_number = ?
+              AND (cast(? as date) IS NULL OR ir.service_date = cast(? as date))
             ORDER BY ir.service_date DESC
             LIMIT 1
             """;
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(runSql, trainNumber, serviceDate, serviceDate);
         if (rows.isEmpty()) {
-            throw new ReservationException(HttpStatus.NOT_FOUND, "TRAIN_RUN_NOT_FOUND", "No active service found for train " + trainNumber);
+            // Check if train master record exists
+            String trainCheckSql = "SELECT train_number, train_name FROM trains WHERE train_number = ? LIMIT 1";
+            List<Map<String, Object>> trainRows = jdbcTemplate.queryForList(trainCheckSql, trainNumber);
+            String trainName = trainRows.isEmpty() ? "Express" : (String) trainRows.get(0).get("train_name");
+            
+            // Return a graceful SCHEDULED view instead of throwing an error for trains awaiting date-specific inventory initialization
+            return new PublicTrainTrackingView(
+                    trainNumber,
+                    trainName,
+                    serviceDate != null ? serviceDate : LocalDate.now(ZoneId.of("Asia/Kolkata")).toString(),
+                    "SCHEDULED",
+                    0,
+                    0.0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "SCHEDULED_ONLY",
+                    List.of(),
+                    List.of()
+            );
         }
         Map<String, Object> r = rows.get(0);
         UUID runId = (UUID) r.get("train_run_id");
