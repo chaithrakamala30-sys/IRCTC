@@ -127,15 +127,15 @@ function AdminPortalHeader({
         )}
         {user && onSignOut && (
           <div className="admin-header-actions">
-            <ThemeToggle />
-            <span style={{ fontSize: "0.88rem" }}>{user.fullName}</span>
-            <button className="button button--secondary" onClick={onSignOut} style={{ minHeight: "44px" }} type="button">Sign out</button>
+            <div className="admin-header-user-badge">
+              <span style={{ display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: "#4ade80" }}></span>
+              <span>{user.fullName}</span>
+            </div>
+            <button className="admin-signout-btn" onClick={onSignOut} type="button">Sign out</button>
           </div>
         )}
         {!user && (
-          <div className="admin-header-actions">
-            <ThemeToggle />
-          </div>
+          <div className="admin-header-actions" />
         )}
       </header>
 

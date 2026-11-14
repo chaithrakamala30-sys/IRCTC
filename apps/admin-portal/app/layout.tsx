@@ -24,11 +24,10 @@ export default function AdminLayout({
             __html: `
               (function() {
                 try {
-                  var saved = localStorage.getItem('railconnect_theme');
-                  var pref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  var resolved = (saved === 'dark' || saved === 'light') ? saved : pref;
-                  document.documentElement.classList.add(resolved);
-                  document.documentElement.style.colorScheme = resolved;
+                  localStorage.setItem('railconnect_theme', 'dark');
+                  document.documentElement.classList.remove('light');
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.style.colorScheme = 'dark';
                 } catch (e) {}
               })();
             `,

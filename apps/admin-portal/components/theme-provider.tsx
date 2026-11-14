@@ -2,59 +2,34 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-type Theme = "light" | "dark" | "system";
+type Theme = "dark";
 
 type ThemeContextType = {
   theme: Theme;
-  effectiveTheme: "light" | "dark";
+  effectiveTheme: "dark";
   setTheme: (theme: Theme) => void;
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: "system",
-  effectiveTheme: "light",
+  theme: "dark",
+  effectiveTheme: "dark",
   setTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [effectiveTheme, setEffectiveTheme] = useState<"light" | "dark">("light");
+  const [theme] = useState<Theme>("dark");
+  const effectiveTheme = "dark";
 
   useEffect(() => {
-    const saved = localStorage.getItem("railconnect_theme") as Theme | null;
-    if (saved && (saved === "light" || saved === "dark" || saved === "system")) {
-      setThemeState(saved);
-    }
+    localStorage.setItem("railconnect_theme", "dark");
+    const root = document.documentElement;
+    root.classList.remove("light");
+    root.classList.add("dark");
+    root.style.colorScheme = "dark";
   }, []);
 
-  useEffect(() => {
-    const root = document.documentElement;
-
-    function applyTheme(resolved: "light" | "dark") {
-      setEffectiveTheme(resolved);
-      root.classList.remove("light", "dark");
-      root.classList.add(resolved);
-      root.style.colorScheme = resolved;
-    }
-
-    if (theme === "system") {
-      const media = window.matchMedia("(prefers-color-scheme: dark)");
-      applyTheme(media.matches ? "dark" : "light");
-
-      const listener = (e: MediaQueryListEvent) => {
-        applyTheme(e.matches ? "dark" : "light");
-      };
-
-      media.addEventListener("change", listener);
-      return () => media.removeEventListener("change", listener);
-    } else {
-      applyTheme(theme);
-    }
-  }, [theme]);
-
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem("railconnect_theme", newTheme);
+  const setTheme = (_newTheme: Theme) => {
+    localStorage.setItem("railconnect_theme", "dark");
   };
 
   return (
@@ -67,4 +42,5 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export function useTheme() {
   return useContext(ThemeContext);
 }
+
 
