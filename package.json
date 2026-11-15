@@ -23,7 +23,7 @@
     "check:frontend": "npm run lint && npm run typecheck && npm run build"
   },
   "devDependencies": {
-    "autoprefixer": "10.4.22",
+    "autoprefixer": "10.6.2",
     "@types/node": "22.19.1",
     "@types/react": "19.1.17",
     "@types/react-dom": "19.1.11",
