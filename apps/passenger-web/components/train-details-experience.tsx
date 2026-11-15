@@ -37,6 +37,40 @@ type FareQuote = {
   quoteOnlyNotice: string;
 };
 
+type PublicTrainTrackingView = {
+  trainNumber: string;
+  trainName: string;
+  serviceDate: string;
+  operationalStatus: string;
+  currentDelayMinutes: number;
+  routeProgressPercent: number;
+  currentStationCode: string | null;
+  currentStationName: string | null;
+  nextStationCode: string | null;
+  nextStationName: string | null;
+  lastReportedAt: string | null;
+  dataReliabilityStatus: string;
+  stops: {
+    stopIndex: number;
+    stationCode: string;
+    stationName: string;
+    scheduledArrival: string;
+    scheduledDeparture: string;
+    actualArrival: string;
+    actualDeparture: string;
+    delayMinutes: number;
+    platformNumber: string;
+    stopStatus: string;
+  }[];
+  relevantAnnouncements: {
+    announcementId: string;
+    title: string;
+    content: string;
+    announcementType: string;
+    priority: string;
+  }[];
+};
+
 function showError(error: unknown): string {
   return error instanceof ApiRequestError
     ? error.message
@@ -50,6 +84,9 @@ function operatingDays(days: number[]): string {
 
 export function TrainDetailsExperience({ device }: { device: DeviceExperience }) {
   const [detail, setDetail] = useState<TrainDetail | null>(null);
+  const [trackingData, setTrackingData] = useState<PublicTrainTrackingView | null>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [searchTrainNo, setSearchTrainNo] = useState("");
   const [backLink, setBackLink] = useState(`/${device}`);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -81,6 +118,22 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
     return () => window.clearInterval(timer);
   }, [fareQuote]);
 
+  async function fetchTrainTracking(trainNum: string) {
+    if (!trainNum.trim()) return;
+    setTrackingLoading(true);
+    try {
+      const res = await apiFetch<PublicTrainTrackingView>(`/api/v1/tracking/trains/${encodeURIComponent(trainNum.trim())}`);
+      setTrackingData(res.data ?? null);
+      if (res.data) {
+        setError("");
+      }
+    } catch {
+      // fallback
+    } finally {
+      setTrackingLoading(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
     const params = new URLSearchParams(window.location.search);
@@ -88,8 +141,11 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
     const fromStationId = params.get("fromStationId");
     const toStationId = params.get("toStationId");
     const journeyDate = params.get("journeyDate");
+    const trainNo = params.get("trainNo");
+
     params.delete("trainId");
     if (params.has("page")) params.set("page", "0");
+
     if (trainId && fromStationId && toStationId && journeyDate) {
       setBackLink(`/${device}?${params}`);
       const request = new URLSearchParams({ fromStationId, toStationId, journeyDate });
@@ -106,9 +162,16 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
         .finally(() => {
           if (active) setLoading(false);
         });
-    } else {
-      setError("Open train details from a search result so the selected journey is preserved.");
+    } else if (trainNo) {
+      setSearchTrainNo(trainNo);
       setLoading(false);
+      void fetchTrainTracking(trainNo);
+    } else {
+      // No search parameters or trainNo provided
+      setError("");
+      setLoading(false);
+      // Auto-load a popular train (e.g. 12952 Mumbai Tejas Rajdhani or 12650 Karnataka Express)
+      void fetchTrainTracking("12952");
     }
     return () => {
       active = false;
@@ -154,6 +217,222 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
       <Link className="back-to-results" href={backLink}>← Back to search results</Link>
       {loading && <p className="search-loading" role="status">Loading published route details…</p>}
       {error && <div className="search-error" role="alert">{error}</div>}
+
+      {/* Train Lookup & Live Timetable Search Bar */}
+      <div
+        style={{
+          background: "rgba(10, 24, 52, 0.75)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(56, 189, 248, 0.25)",
+          borderRadius: "14px",
+          padding: "1.25rem",
+          margin: "1rem 0 1.5rem 0",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem", marginBottom: "0.75rem" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "1.05rem", color: "#f8fafc", fontWeight: 700 }}>
+              Live Train Schedule &amp; Timetable Lookup
+            </h3>
+            <p style={{ margin: "2px 0 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
+              Lookup route stops, platform numbers, and live operational running status for any scheduled train
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            {["12952", "12951", "20608", "22436", "12301", "12724", "12626"].map((tNo) => (
+              <button
+                key={tNo}
+                type="button"
+                onClick={() => {
+                  setSearchTrainNo(tNo);
+                  void fetchTrainTracking(tNo);
+                }}
+                style={{
+                  padding: "0.25rem 0.55rem",
+                  borderRadius: "6px",
+                  border: "1px solid rgba(56, 189, 248, 0.3)",
+                  background: searchTrainNo === tNo ? "#0284c7" : "rgba(15, 23, 42, 0.8)",
+                  color: "#f8fafc",
+                  fontSize: "0.75rem",
+                  cursor: "pointer",
+                }}
+              >
+                {tNo}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchTrainNo.trim()) void fetchTrainTracking(searchTrainNo.trim());
+          }}
+          style={{ display: "flex", gap: "0.5rem" }}
+        >
+          <input
+            type="text"
+            placeholder="Enter Train Number or Name (e.g. 12952, 12650, 20608)..."
+            value={searchTrainNo}
+            onChange={(e) => setSearchTrainNo(e.target.value)}
+            style={{
+              flex: 1,
+              padding: "0.6rem 0.85rem",
+              borderRadius: "8px",
+              border: "1px solid rgba(56, 189, 248, 0.35)",
+              background: "#081226",
+              color: "#f8fafc",
+              fontSize: "0.85rem",
+              outline: "none",
+            }}
+          />
+          <button
+            type="submit"
+            disabled={trackingLoading}
+            style={{
+              padding: "0.6rem 1.25rem",
+              borderRadius: "8px",
+              background: "linear-gradient(135deg, #0284c7, #2563eb)",
+              color: "#ffffff",
+              border: "none",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              cursor: "pointer",
+            }}
+          >
+            {trackingLoading ? "Finding Train…" : "View Train Details"}
+          </button>
+        </form>
+      </div>
+
+      {/* Standalone / Direct Train Tracking & Route View */}
+      {trackingData && !detail && (
+        <section
+          style={{
+            background: "rgba(10, 24, 52, 0.85)",
+            backdropFilter: "blur(16px)",
+            border: "1px solid rgba(56, 189, 248, 0.2)",
+            borderRadius: "16px",
+            padding: "1.5rem",
+            marginBottom: "2rem",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
+            <div>
+              <span style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px", color: "#38bdf8", fontWeight: 700 }}>
+                Official Railway Master Timetable
+              </span>
+              <h2 style={{ margin: "0.25rem 0", fontSize: "1.6rem", color: "#f8fafc", fontWeight: 800 }}>
+                {trackingData.trainNumber} · {trackingData.trainName}
+              </h2>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "#94a3b8" }}>
+                Service Date: <strong>{trackingData.serviceDate}</strong> &middot; Status:{" "}
+                <span style={{
+                  padding: "2px 8px",
+                  borderRadius: "4px",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  background: trackingData.operationalStatus === "RUNNING" ? "#065f46" : trackingData.operationalStatus === "DELAYED" ? "#854d0e" : "#1e293b",
+                  color: trackingData.operationalStatus === "RUNNING" ? "#34d399" : trackingData.operationalStatus === "DELAYED" ? "#fef08a" : "#94a3b8",
+                }}>
+                  {trackingData.operationalStatus}
+                </span>
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>Current Running Delay</div>
+                <div style={{ fontSize: "1.1rem", fontWeight: 700, color: trackingData.currentDelayMinutes > 0 ? "#f87171" : "#4ade80" }}>
+                  {trackingData.currentDelayMinutes > 0 ? `+${trackingData.currentDelayMinutes} min delay` : "Right Time"}
+                </div>
+              </div>
+              <Link
+                href={`/${device}?trainNo=${encodeURIComponent(trackingData.trainNumber)}`}
+                style={{
+                  padding: "0.55rem 1rem",
+                  borderRadius: "8px",
+                  background: "rgba(56, 189, 248, 0.15)",
+                  border: "1px solid rgba(56, 189, 248, 0.4)",
+                  color: "#38bdf8",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                Book Tickets on this Train →
+              </Link>
+            </div>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
+            <div style={{ background: "rgba(15, 23, 42, 0.7)", padding: "0.75rem 1rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>Current Station</div>
+              <div style={{ fontWeight: 700, color: "#f8fafc", fontSize: "0.95rem" }}>{trackingData.currentStationName ?? "Origin Yard"}</div>
+            </div>
+            <div style={{ background: "rgba(15, 23, 42, 0.7)", padding: "0.75rem 1rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>Next Station</div>
+              <div style={{ fontWeight: 700, color: "#f8fafc", fontSize: "0.95rem" }}>{trackingData.nextStationName ?? "Terminal Yard"}</div>
+            </div>
+            <div style={{ background: "rgba(15, 23, 42, 0.7)", padding: "0.75rem 1rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>Route Progress</div>
+              <div style={{ fontWeight: 700, color: "#38bdf8", fontSize: "0.95rem" }}>{trackingData.routeProgressPercent.toFixed(0)}%</div>
+            </div>
+            <div style={{ background: "rgba(15, 23, 42, 0.7)", padding: "0.75rem 1rem", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>Telemetry Source</div>
+              <div style={{ fontWeight: 600, color: "#94a3b8", fontSize: "0.8rem" }}>{trackingData.dataReliabilityStatus}</div>
+            </div>
+          </div>
+
+          {/* Ordered Route Stops Table */}
+          <h3 style={{ fontSize: "1.05rem", color: "#f8fafc", margin: "0 0 0.75rem 0", fontWeight: 700 }}>
+            Scheduled Route &amp; Stop Details ({trackingData.stops?.length ?? 0} Stops)
+          </h3>
+          <div style={{ overflowX: "auto", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+              <thead>
+                <tr style={{ background: "rgba(15, 23, 42, 0.8)", textAlign: "left", borderBottom: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}>
+                  <th style={{ padding: "0.65rem 0.85rem" }}>#</th>
+                  <th style={{ padding: "0.65rem 0.85rem" }}>Station</th>
+                  <th style={{ padding: "0.65rem 0.85rem" }}>Sched Arr / Dep</th>
+                  <th style={{ padding: "0.65rem 0.85rem" }}>Actual / Rep</th>
+                  <th style={{ padding: "0.65rem 0.85rem" }}>Status / Delay</th>
+                  <th style={{ padding: "0.65rem 0.85rem" }}>Platform</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trackingData.stops.map((stop) => (
+                  <tr key={stop.stopIndex} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td style={{ padding: "0.65rem 0.85rem", color: "#64748b" }}>{stop.stopIndex + 1}</td>
+                    <td style={{ padding: "0.65rem 0.85rem" }}>
+                      <strong style={{ color: "#38bdf8", marginRight: "0.4rem" }}>{stop.stationCode}</strong>
+                      <span style={{ color: "#f8fafc" }}>{stop.stationName}</span>
+                    </td>
+                    <td style={{ padding: "0.65rem 0.85rem", color: "#cbd5e1" }}>
+                      {stop.scheduledArrival} / {stop.scheduledDeparture}
+                    </td>
+                    <td style={{ padding: "0.65rem 0.85rem", color: "#94a3b8" }}>
+                      {stop.actualArrival} / {stop.actualDeparture}
+                    </td>
+                    <td style={{ padding: "0.65rem 0.85rem" }}>
+                      <span style={{
+                        color: stop.delayMinutes > 0 ? "#f87171" : "#4ade80",
+                        fontWeight: 600,
+                      }}>
+                        {stop.delayMinutes > 0 ? `+${stop.delayMinutes}m` : "On time"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "0.65rem 0.85rem", color: "#f8fafc" }}>
+                      PF {stop.platformNumber || "1"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
       {detail && (
         <>
           <section aria-labelledby="train-detail-title" className="train-detail-hero">
