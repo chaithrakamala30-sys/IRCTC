@@ -5854,3 +5854,374 @@ textarea:focus-visible {
   box-shadow: 0 6px 20px rgba(24, 119, 242, 0.6);
   color: #ffffff;
 }
+
+/* ==========================================================================
+   Dark Theme / Glassmorphism overrides for Train Details Experience
+   ========================================================================== */
+html.dark .train-details-page {
+  color: #f1f5f9;
+}
+
+html.dark .back-to-results {
+  color: #38bdf8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+html.dark .back-to-results:hover {
+  color: #7dd3fc;
+  transform: translateX(-3px);
+}
+
+html.dark .train-detail-hero {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 58, 138, 0.35) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  color: #f8fafc;
+}
+
+html.dark .train-detail-hero .eyebrow {
+  color: #38bdf8;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+html.dark .train-detail-hero h1 {
+  color: #ffffff;
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .train-detail-number {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+html.dark .train-detail-summary {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+}
+
+html.dark .train-detail-summary > span {
+  color: #94a3b8;
+}
+
+html.dark .train-detail-summary > strong {
+  color: #38bdf8;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+}
+
+html.dark .train-detail-summary small {
+  color: #64748b;
+}
+
+html.dark .train-detail-facts > div {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+html.dark .train-detail-facts span {
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+html.dark .train-detail-facts strong {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+html.dark .complete-route {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(14px);
+  color: #f8fafc;
+}
+
+html.dark .complete-route .eyebrow {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+html.dark .complete-route h2 {
+  color: #ffffff;
+}
+
+html.dark .complete-route-stop {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .route-stop-marker {
+  background: #0f172a;
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+html.dark .complete-route-stop:not(:last-child) .route-stop-marker::after {
+  background: rgba(56, 189, 248, 0.25);
+}
+
+html.dark .is-selected-origin .route-stop-marker,
+html.dark .is-selected-destination .route-stop-marker {
+  background: #38bdf8;
+  box-shadow: 0 0 14px #38bdf8;
+}
+
+html.dark .route-stop-station strong {
+  color: #ffffff;
+}
+
+html.dark .route-stop-station span {
+  color: #38bdf8;
+}
+
+html.dark .route-stop-station em {
+  background: rgba(2, 132, 199, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+html.dark .route-stop-main small,
+html.dark .route-stop-times small {
+  color: #94a3b8;
+}
+
+html.dark .route-stop-times span {
+  color: #cbd5e1;
+}
+
+html.dark .route-stop-times strong {
+  color: #ffffff;
+}
+
+html.dark .route-stop-distance {
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Inventory & Booking Panels */
+html.dark .passenger-inventory-section {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(14px);
+  color: #f8fafc;
+}
+
+html.dark .passenger-inventory-heading .eyebrow {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+html.dark .passenger-inventory-heading h2 {
+  color: #ffffff;
+}
+
+html.dark .passenger-inventory-heading > span {
+  background: rgba(2, 132, 199, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+html.dark .passenger-inventory-intro,
+html.dark .passenger-inventory-empty,
+html.dark .passenger-inventory-auth-status {
+  color: #94a3b8;
+}
+
+html.dark .passenger-inventory-signin {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+html.dark .passenger-inventory-signin h3 {
+  color: #ffffff;
+}
+
+html.dark .passenger-inventory-controls select,
+html.dark .passenger-inventory-controls input,
+html.dark .passenger-inventory-signin-form input {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+html.dark .passenger-inventory-controls select:focus,
+html.dark .passenger-inventory-controls input:focus,
+html.dark .passenger-inventory-signin-form input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  outline: none;
+}
+
+html.dark .passenger-inventory-result {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+html.dark .reservation-passenger-row {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html.dark .reservation-passenger-row label {
+  color: #cbd5e1;
+}
+
+html.dark .reservation-passenger-row select,
+html.dark .reservation-passenger-row input {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+html.dark .reservation-group-choice {
+  color: #cbd5e1;
+}
+
+html.dark .passenger-inventory-hold {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+html.dark .reservation-result {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+}
+
+html.dark .reservation-result h3 {
+  color: #ffffff;
+}
+
+html.dark .booking-confirmation {
+  background: rgba(6, 95, 70, 0.25);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: #ecfdf5;
+}
+
+html.dark .booking-reference {
+  color: #34d399;
+}
+
+html.dark .reservation-disclaimer {
+  color: #94a3b8;
+}
+
+/* Fare Quote Section */
+html.dark .passenger-fare-section {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(14px);
+  color: #f8fafc;
+}
+
+html.dark .passenger-fare-heading .eyebrow {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+html.dark .passenger-fare-heading h2 {
+  color: #ffffff;
+}
+
+html.dark .passenger-fare-heading > span {
+  background: rgba(2, 132, 199, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+html.dark .passenger-fare-intro {
+  color: #94a3b8;
+}
+
+html.dark .passenger-fare-controls label {
+  color: #cbd5e1;
+}
+
+html.dark .passenger-fare-controls select,
+html.dark .passenger-fare-controls input {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+html.dark .passenger-fare-controls select:focus,
+html.dark .passenger-fare-controls input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  outline: none;
+}
+
+html.dark .fare-passenger-row {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html.dark .fare-passenger-row label {
+  color: #cbd5e1;
+}
+
+html.dark .fare-passenger-row select,
+html.dark .fare-passenger-row input {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+html.dark .fare-remove-passenger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+html.dark .fare-remove-passenger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+html.dark .button--primary {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+}
+
+html.dark .button--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.6);
+  color: #ffffff;
+}
+
+html.dark .button--secondary {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+html.dark .button--secondary:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
