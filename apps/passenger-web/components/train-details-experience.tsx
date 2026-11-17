@@ -332,8 +332,20 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
                   borderRadius: "4px",
                   fontWeight: 700,
                   fontSize: "0.75rem",
-                  background: trackingData.operationalStatus === "RUNNING" ? "#065f46" : trackingData.operationalStatus === "DELAYED" ? "#854d0e" : "#1e293b",
-                  color: trackingData.operationalStatus === "RUNNING" ? "#34d399" : trackingData.operationalStatus === "DELAYED" ? "#fef08a" : "#94a3b8",
+                  background: trackingData.operationalStatus === "RUNNING"
+                    ? "#065f46"
+                    : trackingData.operationalStatus === "COMPLETED"
+                    ? "#0369a1"
+                    : trackingData.operationalStatus === "DELAYED"
+                    ? "#854d0e"
+                    : "#1e293b",
+                  color: trackingData.operationalStatus === "RUNNING"
+                    ? "#34d399"
+                    : trackingData.operationalStatus === "COMPLETED"
+                    ? "#38bdf8"
+                    : trackingData.operationalStatus === "DELAYED"
+                    ? "#fef08a"
+                    : "#94a3b8",
                 }}>
                   {trackingData.operationalStatus}
                 </span>

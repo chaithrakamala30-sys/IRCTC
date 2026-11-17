@@ -16,11 +16,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
 public class TrainOperationsControlService {
     private static final Logger LOGGER = LoggerFactory.getLogger(TrainOperationsControlService.class);
+    private static final ZoneId IST_ZONE = ZoneId.of("Asia/Kolkata");
+    private static final DateTimeFormatter IST_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm").withZone(IST_ZONE);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -178,29 +181,51 @@ public class TrainOperationsControlService {
                 Timestamp.from(input.scheduledTime()), Timestamp.from(input.reportedActualTime()),
                 delayMinutes, input.platformNumber(), input.haltDurationMinutes(), input.remarks(), staffUserId);
 
-        // 2. Compute route progress & propagate downstream
+        // 2. Compute route progress, next station & propagate downstream
         Integer totalStops = jdbcTemplate.queryForObject(
                 "SELECT jsonb_array_length(route_snapshot) FROM inventory_train_runs WHERE train_run_id = ?",
                 Integer.class, input.trainRunId()
         );
-        int stopsCount = totalStops == null || totalStops == 0 ? 1 : totalStops;
+        if (totalStops == null || totalStops == 0) {
+            Integer stopCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM inventory_run_stops WHERE train_run_id = ?",
+                    Integer.class, input.trainRunId()
+            );
+            totalStops = (stopCount == null || stopCount == 0) ? 1 : stopCount;
+        }
+        int stopsCount = totalStops;
         double progressPercent = Math.min(100.0, ((double) (input.stopIndex() + 1) / stopsCount) * 100.0);
 
-        String newStatus = (progressPercent >= 100.0 && "DEPARTURE".equals(input.eventType()))
-                ? "COMPLETED"
-                : (delayMinutes > 15 ? "DELAYED" : "RUNNING");
+        // Find next station if any
+        List<UUID> nextStationList = jdbcTemplate.queryForList(
+                "SELECT station_id FROM inventory_run_stops WHERE train_run_id = ? AND stop_index = ?",
+                UUID.class, input.trainRunId(), input.stopIndex() + 1
+        );
+        UUID nextStationId = nextStationList.isEmpty() ? null : nextStationList.get(0);
+
+        // If at final stop or progress reached 100%, transition status to COMPLETED
+        boolean isFinalStop = input.stopIndex() >= stopsCount - 1 || nextStationId == null;
+        String newStatus;
+        if (isFinalStop && ("ARRIVAL".equals(input.eventType()) || "DEPARTURE".equals(input.eventType()) || progressPercent >= 100.0)) {
+            newStatus = "COMPLETED";
+            progressPercent = 100.0;
+            nextStationId = null;
+        } else {
+            newStatus = (delayMinutes > 15 ? "DELAYED" : "RUNNING");
+        }
 
         // 3. Update or initialize train_run_operations
         String upsertOp = """
             INSERT INTO train_run_operations
-                (operation_id, train_run_id, operational_status, current_station_id,
+                (operation_id, train_run_id, operational_status, current_station_id, next_station_id,
                  last_reported_station_id, last_reported_event, last_reported_at,
                  current_delay_minutes, route_progress_percent, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (train_run_id)
             DO UPDATE SET
                 operational_status = EXCLUDED.operational_status,
                 current_station_id = EXCLUDED.current_station_id,
+                next_station_id = EXCLUDED.next_station_id,
                 last_reported_station_id = EXCLUDED.last_reported_station_id,
                 last_reported_event = EXCLUDED.last_reported_event,
                 last_reported_at = EXCLUDED.last_reported_at,
@@ -210,7 +235,7 @@ public class TrainOperationsControlService {
                 updated_at = CURRENT_TIMESTAMP
             """;
         jdbcTemplate.update(upsertOp,
-                UUID.randomUUID(), input.trainRunId(), newStatus, input.stationId(),
+                UUID.randomUUID(), input.trainRunId(), newStatus, input.stationId(), nextStationId,
                 input.stationId(), input.eventType(), Timestamp.from(input.reportedActualTime()),
                 delayMinutes, progressPercent, staffUserId);
 
@@ -591,6 +616,10 @@ public class TrainOperationsControlService {
     // =========================================================================
 
     public PublicTrainTrackingView getPublicTrainTracking(String trainNumber, String serviceDate) {
+        String effectiveDate = (serviceDate != null && !serviceDate.isBlank())
+                ? serviceDate
+                : LocalDate.now(IST_ZONE).toString();
+
         String runSql = """
             SELECT ir.train_run_id, tr.train_number, tr.train_name, ir.service_date,
                    COALESCE(tro.operational_status, 'SCHEDULED') AS operational_status,
@@ -605,12 +634,13 @@ public class TrainOperationsControlService {
             LEFT JOIN stations cs ON tro.current_station_id = cs.station_id
             LEFT JOIN stations ns ON tro.next_station_id = ns.station_id
             WHERE tr.train_number = ?
-              AND (cast(? as date) IS NULL OR ir.service_date = cast(? as date))
-            ORDER BY ir.service_date DESC
+            ORDER BY
+                CASE WHEN ir.service_date = cast(? as date) THEN 0 ELSE 1 END,
+                ir.service_date DESC
             LIMIT 1
             """;
 
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList(runSql, trainNumber, serviceDate, serviceDate);
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(runSql, trainNumber, effectiveDate);
         if (rows.isEmpty()) {
             // Check if train master record exists
             String trainCheckSql = "SELECT train_number, train_name FROM trains WHERE train_number = ? LIMIT 1";
@@ -621,7 +651,7 @@ public class TrainOperationsControlService {
             return new PublicTrainTrackingView(
                     trainNumber,
                     trainName,
-                    serviceDate != null ? serviceDate : LocalDate.now(ZoneId.of("Asia/Kolkata")).toString(),
+                    effectiveDate,
                     "SCHEDULED",
                     0,
                     0.0,
@@ -637,23 +667,42 @@ public class TrainOperationsControlService {
         }
         Map<String, Object> r = rows.get(0);
         UUID runId = (UUID) r.get("train_run_id");
+        String runServiceDate = r.get("service_date").toString();
+        String operationalStatus = (String) r.get("operational_status");
+        double routeProgressPercent = ((Number) r.get("route_progress_percent")).doubleValue();
 
-        // Load route stops and reported updates
+        // Load route stops with aggregated station updates so ARRIVAL + DEPARTURE never cause duplicate station rows
         String stopsSql = """
             SELECT s.station_code, s.station_name, irs.stop_index,
                    irs.arrival_time, irs.departure_time,
-                   sou.event_type, sou.reported_actual_time, sou.delay_minutes, sou.platform_number
+                   sou.actual_arrival, sou.actual_departure,
+                   COALESCE(sou.delay_minutes, 0) AS delay_minutes,
+                   sou.platform_number
             FROM inventory_run_stops irs
             JOIN stations s ON irs.station_id = s.station_id
-            LEFT JOIN station_operational_updates sou ON irs.train_run_id = sou.train_run_id AND irs.station_id = sou.station_id
+            LEFT JOIN (
+                SELECT train_run_id, station_id,
+                       MAX(CASE WHEN event_type = 'ARRIVAL' THEN reported_actual_time END) AS actual_arrival,
+                       MAX(CASE WHEN event_type = 'DEPARTURE' THEN reported_actual_time END) AS actual_departure,
+                       MAX(delay_minutes) AS delay_minutes,
+                       MAX(platform_number) AS platform_number
+                FROM station_operational_updates
+                GROUP BY train_run_id, station_id
+            ) sou ON irs.train_run_id = sou.train_run_id AND irs.station_id = sou.station_id
             WHERE irs.train_run_id = ?
             ORDER BY irs.stop_index ASC
             """;
 
         List<TrackingStopItem> stops = jdbcTemplate.query(stopsSql, (rs, rowNum) -> {
-            boolean hasReported = rs.getTimestamp("reported_actual_time") != null;
+            Timestamp arrTs = rs.getTimestamp("actual_arrival");
+            Timestamp depTs = rs.getTimestamp("actual_departure");
             int delay = rs.getInt("delay_minutes");
             String platform = rs.getString("platform_number");
+
+            String actualArrStr = arrTs != null ? IST_TIME_FORMATTER.format(arrTs.toInstant()) : "--:--";
+            String actualDepStr = depTs != null ? IST_TIME_FORMATTER.format(depTs.toInstant()) : "--:--";
+
+            boolean hasReported = (arrTs != null || depTs != null);
 
             return new TrackingStopItem(
                     rs.getInt("stop_index"),
@@ -661,8 +710,8 @@ public class TrainOperationsControlService {
                     rs.getString("station_name"),
                     rs.getString("arrival_time") != null ? rs.getString("arrival_time") : "--:--",
                     rs.getString("departure_time") != null ? rs.getString("departure_time") : "--:--",
-                    hasReported ? rs.getTimestamp("reported_actual_time").toInstant().toString().substring(11, 16) : "--:--",
-                    hasReported ? rs.getTimestamp("reported_actual_time").toInstant().toString().substring(11, 16) : "--:--",
+                    actualArrStr,
+                    actualDepStr,
                     delay,
                     platform != null ? platform : "-",
                     hasReported ? "COMPLETED" : "UPCOMING"
@@ -671,20 +720,33 @@ public class TrainOperationsControlService {
 
         // Data reliability flag
         Timestamp lastReportedTs = (Timestamp) r.get("last_reported_at");
-        String reliability = lastReportedTs == null ? "SCHEDULED_ONLY" :
-                (Duration.between(lastReportedTs.toInstant(), Instant.now()).toMinutes() > 120 ? "AWAITING_STATION_UPDATE" : "STAFF_VERIFIED");
+        String reliability;
+        if (lastReportedTs == null) {
+            reliability = "SCHEDULED_ONLY";
+        } else {
+            long minutesSinceReport = Math.abs(Duration.between(lastReportedTs.toInstant(), Instant.now()).toMinutes());
+            // If updated within 12 hours (day of run), flag as verified
+            reliability = minutesSinceReport <= 720 ? "STAFF_VERIFIED" : "AWAITING_STATION_UPDATE";
+        }
+
+        String nextCode = (String) r.get("next_code");
+        String nextName = (String) r.get("next_name");
+        if ("COMPLETED".equals(operationalStatus) || routeProgressPercent >= 100.0) {
+            nextName = "Journey Terminated";
+            nextCode = null;
+        }
 
         return new PublicTrainTrackingView(
                 (String) r.get("train_number"),
                 (String) r.get("train_name"),
-                r.get("service_date").toString(),
-                (String) r.get("operational_status"),
+                runServiceDate,
+                operationalStatus,
                 (Integer) r.get("current_delay_minutes"),
-                ((Number) r.get("route_progress_percent")).doubleValue(),
+                routeProgressPercent,
                 (String) r.get("current_code"),
                 (String) r.get("current_name"),
-                (String) r.get("next_code"),
-                (String) r.get("next_name"),
+                nextCode,
+                nextName,
                 toInstant(lastReportedTs),
                 reliability,
                 stops,
