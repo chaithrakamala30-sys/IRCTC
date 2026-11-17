@@ -386,11 +386,11 @@ BEGIN
         ON CONFLICT (incident_number) DO NOTHING;
 
         INSERT INTO operational_announcements
-            (announcement_id, title, content, announcement_type, priority, target_scope, status, starts_at)
+            (announcement_id, title, content, announcement_type, priority, target_scope, status, starts_at, published_by)
         VALUES
             (gen_random_uuid(), 'Winter Fog Caution Protocols Active',
              'Speed regulation protocols active across Northern, North Central, and Western railway zones. Trains equipped with fog pilot safety units are running normally.',
-             'GENERAL', 'NORMAL', 'ALL', 'PUBLISHED', CURRENT_TIMESTAMP)
+             'GENERAL', 'NORMAL', 'ALL', 'PUBLISHED', CURRENT_TIMESTAMP, v_sys_user)
         ON CONFLICT DO NOTHING;
     END IF;
 
