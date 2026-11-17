@@ -17,11 +17,12 @@ spring:
     hikari:
       pool-name: railconnect-pool
       schema: ${RAILCONNECT_DB_SCHEMA:railconnect}
-      maximum-pool-size: ${RAILCONNECT_DB_POOL_SIZE:20}
-      minimum-idle: ${RAILCONNECT_DB_MIN_IDLE:2}
-      connection-timeout: ${RAILCONNECT_DB_CONNECTION_TIMEOUT_MS:10000}
-      validation-timeout: ${RAILCONNECT_DB_VALIDATION_TIMEOUT_MS:1000}
-      max-lifetime: ${RAILCONNECT_DB_MAX_LIFETIME_MS:1500000}
+      maximum-pool-size: ${RAILCONNECT_DB_POOL_SIZE:5}
+      minimum-idle: ${RAILCONNECT_DB_MIN_IDLE:1}
+      connection-timeout: ${RAILCONNECT_DB_CONNECTION_TIMEOUT_MS:30000}
+      validation-timeout: ${RAILCONNECT_DB_VALIDATION_TIMEOUT_MS:2000}
+      max-lifetime: ${RAILCONNECT_DB_MAX_LIFETIME_MS:900000}
+      idle-timeout: 300000
   jpa:
     open-in-view: false
     hibernate:
