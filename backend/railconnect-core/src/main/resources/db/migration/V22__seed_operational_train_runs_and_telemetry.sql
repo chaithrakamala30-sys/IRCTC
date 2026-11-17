@@ -64,7 +64,12 @@ DECLARE
     v_today DATE := CURRENT_DATE;
 BEGIN
     -- 1. Ensure system user exists
-    SELECT user_id INTO v_sys_user FROM users WHERE role = 'SYSTEM' OR email LIKE '%system%' LIMIT 1;
+    SELECT u.user_id INTO v_sys_user 
+    FROM users u 
+    LEFT JOIN user_roles ur ON ur.user_id = u.user_id 
+    WHERE ur.role_code = 'SYSTEM' OR u.email LIKE '%system%' 
+    LIMIT 1;
+
     IF v_sys_user IS NULL THEN
         SELECT user_id INTO v_sys_user FROM users LIMIT 1;
     END IF;
