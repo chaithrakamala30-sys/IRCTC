@@ -83,10 +83,12 @@ function operatingDays(days: number[]): string {
 }
 
 export function TrainDetailsExperience({ device }: { device: DeviceExperience }) {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
   const [detail, setDetail] = useState<TrainDetail | null>(null);
   const [trackingData, setTrackingData] = useState<PublicTrainTrackingView | null>(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [searchTrainNo, setSearchTrainNo] = useState("");
+  const [selectedServiceDate, setSelectedServiceDate] = useState(today);
   const [backLink, setBackLink] = useState(`/${device}`);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -118,14 +120,21 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
     return () => window.clearInterval(timer);
   }, [fareQuote]);
 
-  async function fetchTrainTracking(trainNum: string) {
+  async function fetchTrainTracking(trainNum: string, dateToFetch?: string) {
     if (!trainNum.trim()) return;
     setTrackingLoading(true);
+    const dateParam = dateToFetch !== undefined ? dateToFetch : selectedServiceDate;
     try {
-      const res = await apiFetch<PublicTrainTrackingView>(`/api/v1/tracking/trains/${encodeURIComponent(trainNum.trim())}`);
+      const queryParams = new URLSearchParams();
+      if (dateParam) queryParams.set("serviceDate", dateParam);
+      const url = `/api/v1/tracking/trains/${encodeURIComponent(trainNum.trim())}?${queryParams.toString()}`;
+      const res = await apiFetch<PublicTrainTrackingView>(url);
       setTrackingData(res.data ?? null);
       if (res.data) {
         setError("");
+        if (res.data.serviceDate) {
+          setSelectedServiceDate(res.data.serviceDate);
+        }
       }
     } catch {
       // fallback
@@ -142,6 +151,13 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
     const toStationId = params.get("toStationId");
     const journeyDate = params.get("journeyDate");
     const trainNo = params.get("trainNo");
+    const serviceDate = params.get("serviceDate");
+
+    if (serviceDate) {
+      setSelectedServiceDate(serviceDate);
+    } else if (journeyDate) {
+      setSelectedServiceDate(journeyDate);
+    }
 
     params.delete("trainId");
     if (params.has("page")) params.set("page", "0");
@@ -165,13 +181,13 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
     } else if (trainNo) {
       setSearchTrainNo(trainNo);
       setLoading(false);
-      void fetchTrainTracking(trainNo);
+      void fetchTrainTracking(trainNo, serviceDate ?? undefined);
     } else {
       // No search parameters or trainNo provided
       setError("");
       setLoading(false);
-      // Auto-load a popular train (e.g. 12952 Mumbai Tejas Rajdhani or 12650 Karnataka Express)
-      void fetchTrainTracking("12952");
+      // Auto-load a popular train (e.g. 12952 Mumbai Tejas Rajdhani)
+      void fetchTrainTracking("12952", serviceDate ?? undefined);
     }
     return () => {
       active = false;
@@ -266,9 +282,9 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (searchTrainNo.trim()) void fetchTrainTracking(searchTrainNo.trim());
+            if (searchTrainNo.trim()) void fetchTrainTracking(searchTrainNo.trim(), selectedServiceDate);
           }}
-          style={{ display: "flex", gap: "0.5rem" }}
+          style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}
         >
           <input
             type="text"
@@ -276,7 +292,7 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
             value={searchTrainNo}
             onChange={(e) => setSearchTrainNo(e.target.value)}
             style={{
-              flex: 1,
+              flex: "2 1 240px",
               padding: "0.6rem 0.85rem",
               borderRadius: "8px",
               border: "1px solid rgba(56, 189, 248, 0.35)",
@@ -286,6 +302,31 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
               outline: "none",
             }}
           />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: "1 1 180px" }}>
+            <span style={{ fontSize: "0.75rem", color: "#94a3b8", whiteSpace: "nowrap" }}>Date:</span>
+            <input
+              type="date"
+              value={selectedServiceDate}
+              onChange={(e) => {
+                const newDate = e.target.value;
+                setSelectedServiceDate(newDate);
+                if (searchTrainNo.trim()) {
+                  void fetchTrainTracking(searchTrainNo.trim(), newDate);
+                }
+              }}
+              style={{
+                width: "100%",
+                padding: "0.55rem 0.75rem",
+                borderRadius: "8px",
+                border: "1px solid rgba(56, 189, 248, 0.35)",
+                background: "#081226",
+                color: "#f8fafc",
+                fontSize: "0.85rem",
+                outline: "none",
+                colorScheme: "dark",
+              }}
+            />
+          </div>
           <button
             type="submit"
             disabled={trackingLoading}
@@ -298,6 +339,7 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
               fontWeight: 700,
               fontSize: "0.85rem",
               cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
           >
             {trackingLoading ? "Finding Train…" : "View Train Details"}
@@ -325,8 +367,33 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
               <h2 style={{ margin: "0.25rem 0", fontSize: "1.6rem", color: "#f8fafc", fontWeight: 800 }}>
                 {trackingData.trainNumber} · {trackingData.trainName}
               </h2>
-              <p style={{ margin: 0, fontSize: "0.85rem", color: "#94a3b8" }}>
-                Service Date: <strong>{trackingData.serviceDate}</strong> &middot; Status:{" "}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.4rem", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "0.85rem", color: "#94a3b8" }}>Service Date:</span>
+                <input
+                  type="date"
+                  value={selectedServiceDate}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    setSelectedServiceDate(newDate);
+                    if (trackingData?.trainNumber) {
+                      void fetchTrainTracking(trackingData.trainNumber, newDate);
+                    }
+                  }}
+                  style={{
+                    padding: "0.25rem 0.55rem",
+                    borderRadius: "6px",
+                    border: "1px solid rgba(56, 189, 248, 0.4)",
+                    background: "rgba(15, 23, 42, 0.9)",
+                    color: "#f8fafc",
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    outline: "none",
+                    colorScheme: "dark",
+                    cursor: "pointer",
+                  }}
+                />
+                <span style={{ fontSize: "0.85rem", color: "#64748b" }}>&middot;</span>
+                <span style={{ fontSize: "0.85rem", color: "#94a3b8" }}>Status:</span>
                 <span style={{
                   padding: "2px 8px",
                   borderRadius: "4px",
@@ -349,7 +416,7 @@ export function TrainDetailsExperience({ device }: { device: DeviceExperience })
                 }}>
                   {trackingData.operationalStatus}
                 </span>
-              </p>
+              </div>
             </div>
 
             <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>

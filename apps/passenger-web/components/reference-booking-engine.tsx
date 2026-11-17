@@ -121,15 +121,24 @@ export function ReferenceBookingEngine({
   const handleLiveSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const query = liveTrainInput.trim();
+    const now = new Date();
+    let targetDate = today;
+    if (liveDay === "yesterday") {
+      const y = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      targetDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(y);
+    } else if (liveDay === "tomorrow") {
+      const t = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      targetDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(t);
+    }
     if (query) {
       try {
         const stored = JSON.parse(window.localStorage.getItem("railconnect.recent-train-queries") ?? "[]");
         const next = [query, ...(Array.isArray(stored) ? stored : []).filter((q: string) => q !== query)].slice(0, 5);
         window.localStorage.setItem("railconnect.recent-train-queries", JSON.stringify(next));
       } catch {}
-      window.location.href = `/laptop/train-details?trainNo=${encodeURIComponent(query)}&day=${liveDay}&tab=live`;
+      window.location.href = `/laptop/train-details?trainNo=${encodeURIComponent(query)}&serviceDate=${encodeURIComponent(targetDate)}&tab=live`;
     } else {
-      window.location.href = `/laptop/train-details`;
+      window.location.href = `/laptop/train-details?serviceDate=${encodeURIComponent(targetDate)}`;
     }
   };
 
