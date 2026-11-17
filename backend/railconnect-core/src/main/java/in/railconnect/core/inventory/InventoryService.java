@@ -245,20 +245,7 @@ public class InventoryService {
                 """
                         SELECT train.train_id, train.train_number, train.train_name
                         FROM trains train
-                        WHERE train.status = 'ACTIVE'
-                          AND EXISTS (
-                              SELECT 1 FROM train_schedules schedule
-                              JOIN train_route_versions route ON route.route_version_id = schedule.route_version_id
-                              WHERE schedule.train_id = train.train_id
-                                AND schedule.status = 'PUBLISHED'
-                                AND route.status = 'PUBLISHED'
-                          )
-                          AND EXISTS (
-                              SELECT 1 FROM train_compositions composition
-                              JOIN train_composition_versions version
-                                ON version.composition_version_id = composition.current_version_id
-                              WHERE composition.train_id = train.train_id AND version.status = 'PUBLISHED'
-                          )
+                        WHERE train.status <> 'RETIRED'
                         ORDER BY train.train_number
                         LIMIT 500
                         """,
