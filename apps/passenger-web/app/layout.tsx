@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ea580c",
+  themeColor: "#0284c7",
   width: "device-width",
   initialScale: 1,
 };
@@ -45,7 +45,7 @@ export default function PassengerLayout({
           }}
         />
       </head>
-      <body className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-[#090d16] dark:text-slate-100 antialiased selection:bg-orange-500 selection:text-white">
+      <body className="min-h-screen bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-[#090d16] dark:text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
         <ThemeProvider>
           {children}
           <MobileBottomNav />

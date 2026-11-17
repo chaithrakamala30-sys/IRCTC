@@ -11,8 +11,8 @@
   --rc-border-glass: rgba(226, 232, 240, 0.8);
   --rc-text-main: #0f172a;
   --rc-text-muted: #64748b;
-  --rc-brand: #ea580c; /* Railway Warm Amber/Orange */
-  --rc-brand-glow: rgba(234, 88, 12, 0.15);
+  --rc-brand: #0284c7; /* Railway Electric Sky/Blue */
+  --rc-brand-glow: rgba(2, 132, 199, 0.15);
 }
 
 .dark {
@@ -23,8 +23,8 @@
   --rc-border-glass: rgba(255, 255, 255, 0.1);
   --rc-text-main: #f8fafc;
   --rc-text-muted: #94a3b8;
-  --rc-brand: #f97316;
-  --rc-brand-glow: rgba(249, 115, 22, 0.2);
+  --rc-brand: #38bdf8;
+  --rc-brand-glow: rgba(56, 189, 248, 0.2);
 }
 
 html.dark {
